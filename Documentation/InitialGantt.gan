@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Untitled Gantt Project" company="" webLink="http://" view-date="2019-08-30" view-index="0" gantt-divider-location="546" resource-divider-location="300" version="2.8.10" locale="en_US">
+    <description/>
+    <view zooming-state="default:0" id="gantt-chart">
+        <field id="tpd3" name="Name" width="264" order="0"/>
+        <field id="tpd4" name="Begin date" width="139" order="1"/>
+        <field id="tpd5" name="End date" width="139" order="2"/>
+        <option id="color.recent">
+            <![CDATA[#33ffff #cccc00 #0000ff #00ff00 #ff0000]]>
+        </option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Name" width="210" order="0"/>
+        <field id="1" name="Default role" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars base-id="Switzerland">
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="1" tue="0" wed="1" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="false"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+        <date year="" month="1" date="1" type="HOLIDAY"/>
+        <date year="" month="1" date="2" type="HOLIDAY"/>
+        <date year="" month="8" date="1" type="HOLIDAY"/>
+        <date year="" month="12" date="25" type="HOLIDAY"/>
+        <date year="" month="12" date="26" type="HOLIDAY"/>
+        <date year="2012" month="4" date="6" type="HOLIDAY"/>
+        <date year="2012" month="4" date="8" type="HOLIDAY"/>
+        <date year="2012" month="4" date="9" type="HOLIDAY"/>
+        <date year="2012" month="5" date="17" type="HOLIDAY"/>
+        <date year="2012" month="5" date="27" type="HOLIDAY"/>
+        <date year="2012" month="5" date="28" type="HOLIDAY"/>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="0" name="Introduzione" color="#8cb6ce" meeting="false" start="2019-09-03" duration="1" complete="0" thirdDate="2019-08-20" thirdDate-constraint="0" expand="true">
+            <depend id="6" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="6" name="Analisi" color="#00ff00" meeting="false" start="2019-09-05" duration="1" complete="0" thirdDate="2019-08-15" thirdDate-constraint="0" expand="true">
+            <depend id="7" type="2" difference="0" hardness="Strong"/>
+            <task id="2" name="Ricerca Linguaggio" color="#8cb6ce" meeting="false" start="2019-09-05" duration="1" complete="0" thirdDate="2019-08-15" thirdDate-constraint="0" expand="true"/>
+            <task id="33" name="Ricerca Sicurezza" color="#8cb6ce" meeting="false" start="2019-09-05" duration="1" complete="0" thirdDate="2019-09-05" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="7" name="Progettazione" color="#0000ff" meeting="false" start="2019-09-06" duration="6" complete="0" thirdDate="2019-08-15" thirdDate-constraint="0" expand="true">
+            <depend id="45" type="2" difference="0" hardness="Strong"/>
+            <task id="36" name="Progettazione Daemon/Servizio" color="#8cb6ce" meeting="false" start="2019-09-06" duration="3" complete="0" thirdDate="2019-09-06" thirdDate-constraint="0" expand="true">
+                <depend id="38" type="2" difference="0" hardness="Strong"/>
+            </task>
+            <task id="38" name="Progettazione GUI" color="#8cb6ce" meeting="false" start="2019-09-13" duration="3" complete="0" thirdDate="2019-09-06" thirdDate-constraint="0" expand="true"/>
+        </task>
+        <task id="45" name="Implementazione Daemon/Servizio" color="#cccc00" meeting="false" start="2019-09-20" duration="6" complete="0" thirdDate="2019-09-12" thirdDate-constraint="0" expand="true">
+            <depend id="9" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="9" name="Test Daemon/Servizio" color="#33ffff" meeting="false" start="2019-10-04" duration="2" complete="0" thirdDate="2019-08-15" thirdDate-constraint="0" expand="true">
+            <depend id="48" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="48" name="Implementazione GUI" color="#cccc00" meeting="false" start="2019-10-10" duration="4" complete="0" thirdDate="2019-08-27" thirdDate-constraint="0" expand="true">
+            <depend id="49" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="49" name="Test GUI" color="#33ffff" meeting="false" start="2019-10-18" duration="2" complete="0" thirdDate="2019-08-27" thirdDate-constraint="0" expand="true">
+            <depend id="50" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="50" name="Test Multipiattaforma" color="#33ffff" meeting="false" start="2019-10-24" duration="5" complete="0" thirdDate="2019-08-27" thirdDate-constraint="0" expand="true"/>
+        <task id="107" name="Documentazione" color="#8cb6ce" meeting="false" start="2019-09-03" duration="47" complete="0" thirdDate="2019-10-24" thirdDate-constraint="0" expand="true">
+            <depend id="102" type="3" difference="0" hardness="Strong"/>
+        </task>
+        <task id="102" name="Presentazione" color="#8cb6ce" meeting="false" start="2019-12-17" duration="2" complete="0" thirdDate="2019-10-24" thirdDate-constraint="0" expand="true"/>
+        <task id="10" name="Consegna" color="#ff0000" meeting="true" start="2019-12-20" duration="0" complete="0" thirdDate="2019-08-15" thirdDate-constraint="0" priority="2" expand="true"/>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+    <roles roleset-name="SoftwareDevelopment"/>
+</project>
