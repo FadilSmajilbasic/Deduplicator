@@ -1,6 +1,6 @@
 
 # PROGETTO Deduplicatore di files multipiattaforma | Diario di lavoro - 03.09.2019
-##### Luca Di Bello, Fadil Smajilbasic, Andrea Rauso, Jari Näser
+##### Fadil Smajilbasic
 ### Canobbio, 03.09.2019
 
 ## Lavori svolti
@@ -20,3 +20,4 @@ Dopo aver analizzato il QDC mi sono giunte delle domande:
 \-
 
 ## Programma di massima per la prossima giornata di lavoro
+\-
