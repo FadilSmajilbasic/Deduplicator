@@ -13,7 +13,7 @@ CREATE TABLE deduplicator.authentication_details(
 );
 
 CREATE TABLE deduplicator.scheduler(
-    id int not null primary key,
+    id int not null auto_increment primary key ,
     monthly int default null,
     weekly tinyint default null,
     hour int,
@@ -25,7 +25,7 @@ CREATE TABLE deduplicator.scheduler(
 
 CREATE TABLE deduplicator.action
 (
-    id int not null primary key,
+    id int not null auto_increment primary key,
     filepath VARCHAR(255),
     new_filepath VARCHAR(255) default null,
     action_type VARCHAR(50) not null,
@@ -39,7 +39,7 @@ CREATE TABLE deduplicator.action
 );
 
 CREATE TABLE deduplicator.report(
-    id int not null primary key,
+    id int not null auto_increment primary key,
     duration int,
     start timestamp,
     duplicate_count int,
