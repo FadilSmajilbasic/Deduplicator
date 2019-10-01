@@ -3,14 +3,14 @@ package samt.smajilbasic.deduplicator.repository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import samt.smajilbasic.deduplicator.entities.ActionType;;
+import samt.smajilbasic.deduplicator.entities.Scheduler;
 
 
 /**
- * ActionTypeRepository
+ * SchedulerRepository
  */
 @Repository
-public interface ActionTypeRepository extends CrudRepository<ActionType,String> {
+public interface SchedulerRepository extends CrudRepository<Scheduler,Integer> {
 
     
 }
