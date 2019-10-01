@@ -1,5 +1,7 @@
 package samt.smajilbasic.deduplicator;
 
+import javax.validation.Valid;
+
 /**
  * MainController
  */
@@ -7,35 +9,30 @@ package samt.smajilbasic.deduplicator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
 import samt.smajilbasic.deduplicator.entities.*;
 import samt.smajilbasic.deduplicator.repository.*;
 
 
 
 @Controller
-@RequestMapping(path = "/main") 
+@RequestMapping(path = "/") 
 public class MainController {
-    @Autowired 
-    private GlobalPathRepository pathRepository;
-    
+
     @Autowired 
     private ActionTypeRepository actionTypeRepository;
 
-
-    @GetMapping(path = "/getGlobalPath")
-    public @ResponseBody Iterable<GlobalPath> getGlobalPath() {
-        return pathRepository.findAll();
-    }
-
-    @GetMapping(value="/getActionType")
+    @GetMapping(value="/actionType")
     public @ResponseBody Iterable<ActionType> getActionTypes() {
         return actionTypeRepository.findAll();
     }
-    @GetMapping(value="/getAction")
-    public @ResponseBody Iterable<ActionType> getAction() {
-        return actionTypeRepository.findAll();
+    @PostMapping(value="/actionType")
+    public ActionType createAction(@Valid @RequestBody ActionType actionType) {
+        return actionTypeRepository.save(actionType);
     }
 
     @GetMapping(value="/getFile")
