@@ -1,6 +1,9 @@
 package samt.smajilbasic.deduplicator.entities;
 
+import java.util.List;
+
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
@@ -10,8 +13,10 @@ import javax.persistence.OneToMany;
 @Entity
 public class ActionType {
     @Id
-    @OneToMany(mappedBy = "actionType")
     private String type;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "actionType")
+    private List<Action> action;
 
     /**
      * @return the type
@@ -25,4 +30,6 @@ public class ActionType {
     public void setType(String type) {
         this.type = type;
     }
-}
+    
+
+} 

@@ -1,39 +1,43 @@
 package samt.smajilbasic.deduplicator.entities;
 
 
+import java.sql.Timestamp;
+
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 
 /**
  * Action
  */
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 @Entity
 public class Action {
     @Id
-    private Integer id;
+    @GeneratedValue(strategy= GenerationType.AUTO)
+    private Integer actionId;
 
     private String filePath;
 
     private String newFilePath;
-    
-    @ManyToOne
-    @JoinColumn(name="type")
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "actionType")
     private ActionType actionType;
 
     private boolean executed;
 
-    private long dateAdded;
+    private Timestamp date_added;
 
-    private String user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="user")
+    private AuthenticationDetails user;
 
-    @ManyToOne
-    @JoinColumn(name="scheduler_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="scheduler")
     private Scheduler scheduler;
 
 
@@ -54,15 +58,15 @@ public class Action {
     /**
      * @return the dateAdded
      */
-    public long getDateAdded() {
-        return dateAdded;
+    public Timestamp getDateAdded() {
+        return date_added;
     }
 
     /**
      * @param dateAdded the dateAdded to set
      */
-    public void setDateAdded(long dateAdded) {
-        this.dateAdded = dateAdded;
+    public void setDateAdded(Timestamp dateAdded) {
+        this.date_added = dateAdded;
     }
 
     /**
@@ -97,7 +101,7 @@ public class Action {
      * @return the id
      */
     public Integer getId() {
-        return id;
+        return actionId;
     }
 
     /**
@@ -117,28 +121,28 @@ public class Action {
     /**
      * @return the scheduler
      */
-    public int getScheduler() {
+    public Scheduler getScheduler() {
         return scheduler;
     }
 
     /**
      * @param scheduler the scheduler to set
      */
-    public void setScheduler(int scheduler) {
+    public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
 
     /**
      * @return the user
      */
-    public String getUser() {
+    public AuthenticationDetails getUser() {
         return user;
     }
 
     /**
      * @param user the user to set
      */
-    public void setUser(String user) {
+    public void setUser(AuthenticationDetails user) {
         this.user = user;
     }
     

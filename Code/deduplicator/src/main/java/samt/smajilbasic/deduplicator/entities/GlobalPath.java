@@ -1,11 +1,11 @@
 package samt.smajilbasic.deduplicator.entities;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-@Entity // This tells Hibernate to make a table out of this class
+@Entity
 public class GlobalPath {
 	@Id
     private String path;
@@ -14,7 +14,7 @@ public class GlobalPath {
 
 	private boolean ignoreFile;
 	
-	private Date date;
+	private Timestamp date;
 
 	/**
 	 * @return the path
@@ -63,14 +63,14 @@ public class GlobalPath {
 	/**
 	 * @return the date
 	 */
-	public Date getDate() {
+	public Timestamp getDate() {
 		return date;
 	}
 
 	/**
 	 * @param date the date to set
 	 */
-	public void setDate(Date date) {
+	public void setDate(Timestamp date) {
 		this.date = date;
 	}
 }
