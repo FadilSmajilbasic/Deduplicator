@@ -1,4 +1,4 @@
-package samt.smajilbasic.deduplicator;
+package samt.smajilbasic.deduplicator.controller;
 
 import javax.validation.Valid;
 
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import samt.smajilbasic.deduplicator.entities.*;
+import samt.smajilbasic.deduplicator.entity.*;
 import samt.smajilbasic.deduplicator.repository.*;
 
 
