@@ -1,16 +1,15 @@
-package samt.smajilbasic.deduplicator.entities;
+package samt.smajilbasic.deduplicator.entity;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.sql.Timestamp;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
+import samt.smajilbasic.deduplicator.PathType;
+import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.exception.PathException;
+
 
 @Entity
 public class GlobalPath {
@@ -43,30 +42,15 @@ public class GlobalPath {
 	 * @param path the path to set
 	 */
 	private void setPath(String path) {
-		try {
-			if (path != null) {
-
-				String pathParsed = path.replaceAll("&#47;", File.separator);
-				System.out.println("Path: " + pathParsed);
-				Path pa = Paths.get(pathParsed);
-
-				this.path = path;
-				if (Files.isDirectory(pa)) {
-					this.setFile(false);
-				} else {
-					if (Files.exists(pa)) {
-						this.setFile(true);
-					} else {
-						throw new InvalidPathException(path, "Doesn't exist");
-					}
-				}
-
-			} else {
-				throw new PathException();
-			}
-		} catch (InvalidPathException | NullPointerException | SecurityException ex) {
-			System.err.println("[ERROR] " + ex.getMessage());
-			throw new PathException(ex.getMessage());
+		PathType type = Validator.getPathType(path) ;
+		if(type  == PathType.File){
+			this.path = path;
+			this.setFile(true);
+		}else if (type == PathType.Directory){
+			this.path = path;
+			this.setFile(false);
+		}else{
+			throw new PathException("Invalid path: " + path);
 		}
 	}
 

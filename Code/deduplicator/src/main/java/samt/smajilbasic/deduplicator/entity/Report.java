@@ -1,7 +1,9 @@
-package samt.smajilbasic.deduplicator.entities;
+package samt.smajilbasic.deduplicator.entity;
 
 import java.sql.Timestamp;
+import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -9,6 +11,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+import org.springframework.lang.Nullable;
+
+import samt.smajilbasic.deduplicator.exception.InvalidUserException;
 
 /**
  * Report
@@ -20,15 +27,30 @@ public class Report {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Integer reportId;
 
-    private Integer duration;
+    @Nullable
+    private Long duration;
 
     private Timestamp start;
 
+    @Column(nullable = true)
     private Integer duplicateCount;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
     private AuthenticationDetails user;
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "report")
+    private List<File> file;
+
+
+    public Report() {
+        setStart(new Timestamp(System.currentTimeMillis()));
+    }
+
+    public Report(AuthenticationDetails user) {
+        this();
+        setUser(user);
+    }
 
     /**
      * @return the id
@@ -41,14 +63,14 @@ public class Report {
     /**
      * @return the duration
      */
-    public Integer getDuration() {
+    public Long getDuration() {
         return duration;
     }
 
     /**
      * @param duration the duration to set
      */
-    public void setDuration(Integer duration) {
+    public void setDuration(Long duration) {
         this.duration = duration;
     }
     /**
@@ -60,7 +82,7 @@ public class Report {
     /**
      * @param start the start to set
      */
-    public void setStart(Timestamp start) {
+    private void setStart(Timestamp start) {
         this.start = start;
     }
     /**
@@ -87,8 +109,11 @@ public class Report {
     /**
      * @param user the user to set
      */
-    public void setUser(AuthenticationDetails user) {
-        this.user = user;
+    private void setUser(AuthenticationDetails user) {
+        if(user != null)
+            this.user = user;
+        else
+            throw new InvalidUserException();
     }
 
 

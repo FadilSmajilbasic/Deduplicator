@@ -1,4 +1,4 @@
-package samt.smajilbasic.deduplicator.entities;
+package samt.smajilbasic.deduplicator.entity;
 
 import java.sql.Date;
 import java.util.List;
