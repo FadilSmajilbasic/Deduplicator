@@ -9,11 +9,11 @@ import java.nio.file.Paths;
  */
 public class ScannerThread extends Thread {
     
-    private ScannerThreadListener stl;
+    private ScannerThreadListener listener;
     private Path rootPath;
 
-    public ScannerThread(Path rootPath,ScannerThreadListener stl){
-        this.stl = stl;
+    public ScannerThread(Path rootPath,ScannerThreadListener listener){
+        this.listener = listener;
         this.rootPath = rootPath;
     }
 
@@ -23,13 +23,17 @@ public class ScannerThread extends Thread {
         for (File file : list) {
             if (file.isFile()) {
                 System.out.println("File " + file.getName());
-                stl.fileFound(file);
+                listener.fileFound(file);
             } else if (file.isDirectory()) {
                 System.out.println("Directory " + file.getName());
-                new ScannerThread(Paths.get(file.getAbsolutePath()), stl);
+                ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener);
+                try{
+                thread.join();
+                }catch(InterruptedException ie){
+                    System.out.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
+                }
             }
         }
-        stl.work();
     }
 
     
