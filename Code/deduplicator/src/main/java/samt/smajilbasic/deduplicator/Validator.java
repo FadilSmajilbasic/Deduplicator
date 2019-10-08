@@ -36,4 +36,18 @@ public class Validator {
 			return PathType.Invalid;
 		}
 	}
+
+	/**
+	 * 
+	 * @param input input to validate (usually uri parameter)
+	 * @return the integer value if input is a number, null otherwise
+	 */
+	public static Integer isInt(String input) {
+		try {
+			return Integer.parseInt(input);
+		} catch (NumberFormatException nfe) {
+			return null;
+		}
+			
+	}
 }
