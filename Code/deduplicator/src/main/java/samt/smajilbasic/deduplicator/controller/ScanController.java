@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  * ScanController
  */
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -29,22 +28,22 @@ import samt.smajilbasic.deduplicator.scanner.ScanManager;
 public class ScanController {
 
     @Autowired
-    ReportRepository rr;
+    ReportRepository reportRepository;
 
+    @Autowired
     ScanManager currentScan;
 
 
     @PostMapping("/start")
     public @ResponseBody Report start(){
         // TODO: check authentication
-
         Report report = new Report();
-        rr.save(report);
+        reportRepository.save(report);
 
-        currentScan = new ScanManager( rr.findById(report.getId()).get());
+        // currentScan = new ScanManager( reportRepository.findById(report.getId()).get());
+        currentScan.setReportRepository(reportRepository);
+        currentScan.setReportId(report.getId());
         currentScan.start();
-
-        report.setDuration( (System.currentTimeMillis() - report.getStart().getTime()));
 
         return report;
     }
@@ -53,15 +52,32 @@ public class ScanController {
     public @ResponseBody Report stop(){
         // TODO: check authentication
 
-        currentScan.interrupt();
+        currentScan.stopScan();
+        try{
+            currentScan.join();
+        }catch(InterruptedException ie){
+
+        }
+
         Report report = currentScan.getReport();
         report.setDuration( (System.currentTimeMillis() - report.getStart().getTime()));
         return report;
     }
 
-    @GetMapping(value="/getProgress")
-    public @ResponseBody String getFile() {
-        return "Progress";
+    @PostMapping("/pause")
+    public @ResponseBody ErrorMessage pause(){
+        // TODO: check authentication
+
+        currentScan.pauseAll();
+        return new ErrorMessage(HttpStatus.OK,"Scan paused");
+    }
+
+    @PostMapping("/resume")
+    public @ResponseBody ErrorMessage resume(){
+        // TODO: check authentication
+
+        currentScan.resumeAll();
+        return new ErrorMessage(HttpStatus.OK,"Scan resumed");
     }
 
 
