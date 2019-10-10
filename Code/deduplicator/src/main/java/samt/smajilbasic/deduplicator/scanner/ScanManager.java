@@ -1,22 +1,26 @@
 package samt.smajilbasic.deduplicator.scanner;
 
+import samt.smajilbasic.deduplicator.entity.Duplicate;
 import samt.smajilbasic.deduplicator.entity.File;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.entity.Report;
+import samt.smajilbasic.deduplicator.exception.InvalidReportException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import samt.smajilbasic.deduplicator.repository.DuplicateRepository;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
@@ -40,11 +44,20 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private ReportRepository reportRepository;
 
-    private int reportId;
+    private Integer reportId;
 
-    private int filesFound;
+    private Integer filesFound = 0;
 
     private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
+
+    private final Integer THREAD_COUNT = 200;
+
+    private ExecutorService pool = Executors.newFixedThreadPool(THREAD_COUNT);
+
+    private Report report;
+
+    @Autowired
+    DuplicateRepository duplicateRepository;
 
     public ScanManager() {
         super();
@@ -53,68 +66,86 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     @Override
     public void run() {
 
+        report = getReport();
+
         paths = gpr.findAll().iterator();
 
         try {
             while (paths.hasNext()) {
                 ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this);
-
                 rootThreads.add(thread);
-                thread.join();
+
+                // pool.submit(thread);
+                // pool.awaitTermination(timeout, unit);
                 thread.start();
+                thread.join();
             }
 
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
         } finally {
-            System.out.println("[INFO] Sending work command");
-            work();
+            this.work();
+
+            List<Duplicate> duplicates = duplicateRepository.findDuplicates(report);
+
+            report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
+            report.setDuplicateCount(duplicates.size());
+            
+            reportRepository.save(report);
+            System.out.println("[INFO] Done all");
+
+            System.out.println("Writing duplicates");
+            for (Duplicate var : duplicates) {
+                System.out.println("Path: " + var.getPath());
+                System.out.println("Last modified: " + var.getLastModified());
+            }
         }
 
     }
 
     @Override
-    public void fileFound(java.io.File file) {      
+    public void fileFound(java.io.File file) {
         System.out.println("Found new file: " + file.getAbsolutePath().toString());
         files.add(file);
     }
 
-    private void work() {
-        Report report = getReport();
+    public void work() {
         while (files.peek() != null) {
             java.io.File file = files.poll();
+
             try {
-                if(!fileRepository.existsById(file.getAbsolutePath())){
-                    String hash = Hasher.getFileHash(Paths.get(file.getAbsolutePath()));
-                    Timestamp lastModified = new Timestamp(file.lastModified());
-                    int size = (Files.readAllBytes(Paths.get(file.getAbsolutePath().toString()))).length;
-                    File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
-                    
-                    fileRepository.save(record);
-                    filesFound++;
-                }
+                String hash = Hasher.getFileHash(Paths.get(file.getAbsolutePath()));
+                Long lastModified = file.lastModified();
+                int size = (Files.readAllBytes(Paths.get(file.getAbsolutePath().toString()))).length;
+                File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
+                fileRepository.save(record);
+                filesFound++;
+
             } catch (NoSuchAlgorithmException nsae) {
                 System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
 
             } catch (IOException ioe) {
                 System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
+            } catch (NullPointerException npe) {
+                System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
             }
         }
 
-        //TODO: call method for duplicate check
-        System.out.println("Done");
-        report.setDuration((System.currentTimeMillis() - getReport().getStart().getTime()));
-        report.setDuplicateCount(filesFound);
-        reportRepository.save(report);
+        System.out.println("[INFO] Done saving files");
+
     }
 
-    public void pauseAll(){
+    public void checkDuplicates() {
+
+    }
+
+    public void pauseAll() {
         rootThreads.forEach(rootThread -> rootThread.pause());
     }
 
     public void resumeAll() {
         rootThreads.forEach(rootThread -> rootThread.resumeScan());
-	}
+    }
 
     /**
      * @param reportId the reportId to set
@@ -146,14 +177,20 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     public Report getReport() {
         // TODO: check if null
-        return reportRepository.findById(reportId).get();
+        if (reportId != null && reportRepository != null) {
+            if (reportRepository.existsById(reportId)) {
+                return reportRepository.findById(reportId).get();
+            } else {
+                throw new InvalidReportException("[ERROR] Unable to find report");
+            }
+        } else {
+            throw new InvalidReportException("[ERROR] Report id or report repository not set");
+        }
     }
 
-    public void stopScan(){
-        rootThreads.forEach(rootThread->rootThread.stop());
+    public void stopScan() {
+        rootThreads.forEach(rootThread -> rootThread.stopScan());
 
     }
-
-
 
 }
