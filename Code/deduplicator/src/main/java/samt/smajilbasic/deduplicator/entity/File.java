@@ -1,7 +1,5 @@
 package samt.smajilbasic.deduplicator.entity;
 
-import java.sql.Timestamp;
-
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -21,21 +19,21 @@ public class File {
     @Id
     private String path;
 
-    private Timestamp lastModified;
+    private Long lastModified;
 
     private String hash;
     
     private Integer size;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="file")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="report")
     private Report report;
 
 
     public File() {
     }
 
-    public File(String path,Timestamp lastModified,String hash,Integer size,Report report) {
+    public File(String path,Long lastModified,String hash,Integer size,Report report) {
         setPath(path);
         setLastModified(lastModified);
         setHash(hash);
@@ -67,14 +65,14 @@ public class File {
     /**
      * @return the lastModified
      */
-    public Timestamp getLastModified() {
+    public Long getLastModified() {
         return lastModified;
     }
 
     /**
      * @param lastModified the lastModified to set
      */
-    private void setLastModified(Timestamp lastModified) {
+    private void setLastModified(Long lastModified) {
         this.lastModified = lastModified;
     }
 
