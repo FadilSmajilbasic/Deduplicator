@@ -24,15 +24,14 @@ import samt.smajilbasic.deduplicator.repository.ReportRepository;
 
 
 @RestController
-@RequestMapping(path = "/report") 
-@Validated
+@RequestMapping(path = "/report")
 public class ReportController {
 
     @Autowired
     ReportRepository reportRepository;
 
     @GetMapping(value = "/get")
-    public @ResponseBody Iterable<Report> getPaths() {
+    public @ResponseBody Iterable<Report> getReports() {
         return reportRepository.findAll();
     }
 
