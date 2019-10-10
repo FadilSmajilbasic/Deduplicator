@@ -1,6 +1,5 @@
 package samt.smajilbasic.deduplicator.controller;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,15 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.ErrorMessage;
+import samt.smajilbasic.deduplicator.exception.InvalidReportException;
 import samt.smajilbasic.deduplicator.exception.InvalidUserException;
+import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
 
-
-
-
 @RestController
-@RequestMapping(path = "/scan") 
+@RequestMapping(path = "/scan")
 public class ScanController {
 
     @Autowired
@@ -33,57 +31,68 @@ public class ScanController {
     @Autowired
     ScanManager currentScan;
 
+    @Autowired
+    GlobalPathRepository gpr;
 
     @PostMapping("/start")
-    public @ResponseBody Report start(){
+    public @ResponseBody Object start() {
+
         // TODO: check authentication
-        Report report = new Report();
-        reportRepository.save(report);
+        if (gpr.count() > 0) {
 
-        // currentScan = new ScanManager( reportRepository.findById(report.getId()).get());
-        currentScan.setReportRepository(reportRepository);
-        currentScan.setReportId(report.getId());
-        currentScan.start();
+            Report report = new Report();
+            reportRepository.save(report);
 
-        return report;
+            currentScan.setReportRepository(reportRepository);
+            currentScan.setReportId(report.getId());
+            
+            currentScan.start();
+            return report;
+        } else {
+            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
+        }
     }
 
     @PostMapping("/stop")
-    public @ResponseBody Report stop(){
+    public @ResponseBody Report stop() {
         // TODO: check authentication
 
         currentScan.stopScan();
-        try{
+        try {
             currentScan.join();
-        }catch(InterruptedException ie){
+        } catch (InterruptedException ie) {
 
         }
 
         Report report = currentScan.getReport();
-        report.setDuration( (System.currentTimeMillis() - report.getStart().getTime()));
+        report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
         return report;
     }
 
     @PostMapping("/pause")
-    public @ResponseBody ErrorMessage pause(){
+    public @ResponseBody ErrorMessage pause() {
         // TODO: check authentication
 
         currentScan.pauseAll();
-        return new ErrorMessage(HttpStatus.OK,"Scan paused");
+        return new ErrorMessage(HttpStatus.OK, "Scan paused");
     }
 
     @PostMapping("/resume")
-    public @ResponseBody ErrorMessage resume(){
+    public @ResponseBody ErrorMessage resume() {
         // TODO: check authentication
 
         currentScan.resumeAll();
-        return new ErrorMessage(HttpStatus.OK,"Scan resumed");
+        return new ErrorMessage(HttpStatus.OK, "Scan resumed");
     }
-
 
     @ExceptionHandler({ InvalidUserException.class })
     public @ResponseBody ErrorMessage invalidUser() {
         return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid user set in report");
     }
-    
+
+    @ExceptionHandler({ InvalidReportException.class })
+    public @ResponseBody ErrorMessage invalidReport(InvalidReportException ire) {
+        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ire.getMessage());
+    }
+
 }
