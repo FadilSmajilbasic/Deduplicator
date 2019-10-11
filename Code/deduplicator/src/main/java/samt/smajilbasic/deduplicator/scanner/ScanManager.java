@@ -4,7 +4,6 @@ import samt.smajilbasic.deduplicator.entity.Duplicate;
 import samt.smajilbasic.deduplicator.entity.File;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.entity.Report;
-import samt.smajilbasic.deduplicator.exception.InvalidReportException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,9 +51,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
 
-    private final Integer THREAD_COUNT = 200;
+    // List<Callable<ScannerThread>> callableTasks = new ArrayList<>();
 
-    private ExecutorService pool = Executors.newFixedThreadPool(THREAD_COUNT);
+    private final Integer DEFAULT_THREAD_COUNT = 200;
+
+    private Integer threadCount;
+
+    private ExecutorService pool;
 
     private Report report;
 
@@ -65,7 +70,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     @Override
     public void run() {
-
+        pool = Executors.newFixedThreadPool(threadCount == null ? DEFAULT_THREAD_COUNT : threadCount);
         report = getReport();
 
         paths = gpr.findAll().iterator();
@@ -74,31 +79,25 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             while (paths.hasNext()) {
                 ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this);
                 rootThreads.add(thread);
-
-                // pool.submit(thread);
-                // pool.awaitTermination(timeout, unit);
-                thread.start();
-                thread.join();
+                pool.execute(thread);
             }
+            pool.shutdown();
+
+            pool.awaitTermination(10, TimeUnit.SECONDS);
 
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
         } finally {
+
             this.work();
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicates(report);
 
             report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
             report.setDuplicateCount(duplicates.size());
-            
+
             reportRepository.save(report);
             System.out.println("[INFO] Done all");
-
-            System.out.println("Writing duplicates");
-            for (Duplicate var : duplicates) {
-                System.out.println("Path: " + var.getPath());
-                System.out.println("Last modified: " + var.getLastModified());
-            }
         }
 
     }
@@ -110,6 +109,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     public void work() {
+        System.out.println("Files found: " + files.size());
         while (files.peek() != null) {
             java.io.File file = files.poll();
 
@@ -147,6 +147,11 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         rootThreads.forEach(rootThread -> rootThread.resumeScan());
     }
 
+    public void stopScan() {
+        rootThreads.forEach(rootThread -> rootThread.stopScan());
+
+    }
+
     /**
      * @param reportId the reportId to set
      */
@@ -181,16 +186,18 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             if (reportRepository.existsById(reportId)) {
                 return reportRepository.findById(reportId).get();
             } else {
-                throw new InvalidReportException("[ERROR] Unable to find report");
+                throw new RuntimeException("[ERROR] Unable to find report");
             }
         } else {
-            throw new InvalidReportException("[ERROR] Report id or report repository not set");
+            throw new RuntimeException("[ERROR] Report id or report repository not set");
         }
     }
 
-    public void stopScan() {
-        rootThreads.forEach(rootThread -> rootThread.stopScan());
-
+    /**
+     * @param threadCount the threadCount to set
+     */
+    public void setThreadCount(Integer threadCount) {
+        this.threadCount = threadCount;
     }
 
 }
