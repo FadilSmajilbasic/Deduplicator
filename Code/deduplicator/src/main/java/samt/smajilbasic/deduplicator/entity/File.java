@@ -7,7 +7,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 import samt.smajilbasic.deduplicator.PathType;
-import samt.smajilbasic.deduplicator.exception.PathException;
 import samt.smajilbasic.deduplicator.Validator;
 
 /**
@@ -56,9 +55,9 @@ public class File {
 		if(type  == PathType.File){
 			this.path = path;
 		}else if (type == PathType.Directory){
-            throw new PathException("[ERROR] Path is not a file: " + path);
+            throw new RuntimeException("[ERROR] Path is not a file: " + path);
 		}else{
-			throw new PathException("[ERROR] Invalid path: " + path);
+			throw new RuntimeException("[ERROR] Invalid path: " + path);
 		}
     }
 

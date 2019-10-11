@@ -10,13 +10,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.ErrorMessage;
-import samt.smajilbasic.deduplicator.exception.InvalidReportException;
-import samt.smajilbasic.deduplicator.exception.InvalidUserException;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
@@ -35,9 +34,8 @@ public class ScanController {
     GlobalPathRepository gpr;
 
     @PostMapping("/start")
-    public @ResponseBody Object start() {
+    public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
 
-        // TODO: check authentication
         if (gpr.count() > 0) {
 
             Report report = new Report();
@@ -45,8 +43,10 @@ public class ScanController {
 
             currentScan.setReportRepository(reportRepository);
             currentScan.setReportId(report.getId());
+            currentScan.setThreadCount(threadCount);
             
             currentScan.start();
+
             return report;
         } else {
             return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
@@ -85,14 +85,9 @@ public class ScanController {
         return new ErrorMessage(HttpStatus.OK, "Scan resumed");
     }
 
-    @ExceptionHandler({ InvalidUserException.class })
-    public @ResponseBody ErrorMessage invalidUser() {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid user set in report");
-    }
-
-    @ExceptionHandler({ InvalidReportException.class })
-    public @ResponseBody ErrorMessage invalidReport(InvalidReportException ire) {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ire.getMessage());
+    @ExceptionHandler({ RuntimeException.class })
+    public @ResponseBody ErrorMessage invalidReport(RuntimeException ex) {
+        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
 }

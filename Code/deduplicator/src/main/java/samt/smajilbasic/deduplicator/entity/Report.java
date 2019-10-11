@@ -15,7 +15,6 @@ import javax.persistence.OneToMany;
 
 import org.springframework.lang.Nullable;
 
-import samt.smajilbasic.deduplicator.exception.InvalidUserException;
 
 /**
  * Report
@@ -113,7 +112,7 @@ public class Report {
         if(user != null)
             this.user = user;
         else
-            throw new InvalidUserException();
+            throw new RuntimeException("[ERROR] Report Username invalid");
     }
 
 
