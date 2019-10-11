@@ -1,11 +1,8 @@
 package samt.smajilbasic.deduplicator.controller;
-
 import samt.smajilbasic.deduplicator.exception.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.NoSuchElementException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
 import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
@@ -47,7 +43,7 @@ public class PathController {
                 throw new NoSuchElementException();
             }
         } catch (NoSuchElementException nsee) {
-            throw new PathException("Invalid path: " + path + " --> " + path.replaceAll("&#47;", File.separator).trim() );
+            throw new RuntimeException("Invalid path: " + path + " --> " + path.replaceAll("&#47;", File.separator).trim() );
         }
     }
 
@@ -62,26 +58,27 @@ public class PathController {
                 throw new NoSuchElementException();
             }
         } catch (NoSuchElementException nsee) {
-            throw new PathException("Invalid path: " + path + " --> " + path.replaceAll("&#47;", File.separator).trim() );
+            throw new RuntimeException("Invalid path: " + path + " --> " + path.replaceAll("&#47;", File.separator).trim() );
         }
     }
 
     @PostMapping(value = "/remove")
     public @ResponseBody GlobalPath remove(@RequestParam String path) {
 
-        GlobalPath entry = gpr.findById(path.replaceAll("&#47;", File.separator).trim()).get();
-        if (entry != null)
+        PathType type = Validator.getPathType(path);
+        path = path.replaceAll("&#47;", File.separator).trim();
+
+        if(gpr.existsById(path) && type != PathType.Invalid){
+            GlobalPath entry = gpr.findById(path).get();
             gpr.delete(entry);
-        return entry;
+            return entry;
+        }else {
+            throw new RuntimeException("Invalid path to remove set");
+        }
     }
 
-    @ExceptionHandler({ PathException.class })
-    public @ResponseBody ErrorMessage invalidPathException(PathException ex) {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path " + ex.getMessage());
-    }
-
-    @ExceptionHandler({ DuplicatePathException.class })
-    public @ResponseBody ErrorMessage duplicateException(DuplicatePathException dpe) {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Duplicate path " + dpe.getMessage());
+    @ExceptionHandler({ RuntimeException.class })
+    public @ResponseBody ErrorMessage invalidPathException(RuntimeException ex) {
+        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 }
