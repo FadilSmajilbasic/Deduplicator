@@ -12,10 +12,15 @@ public class Duplicate {
     @Id
     private String path;
     private Long lastModified;
+    private Integer size;
+    private String hash;
 
-    public Duplicate(String path, Long lastModified) {
+
+    public Duplicate(String path, Long lastModified,Integer size,String hash) {
         this.path = path;
         this.lastModified = lastModified;
+        this.size = size;
+        this.hash = hash;
     }
 
 
@@ -31,6 +36,19 @@ public class Duplicate {
      */
     public Long getLastModified() {
         return lastModified;
+    }
+    /**
+     * @return the size
+     */
+    public Integer getSize() {
+        return size;
+    }
+
+    /**
+     * @return the hash
+     */
+    public String getHash() {
+        return hash;
     }
 
 }
