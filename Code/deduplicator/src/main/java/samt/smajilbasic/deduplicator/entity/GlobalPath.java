@@ -8,7 +8,6 @@ import javax.persistence.Id;
 
 import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
-import samt.smajilbasic.deduplicator.exception.PathException;
 
 
 @Entity
@@ -50,7 +49,7 @@ public class GlobalPath {
 			this.path = path;
 			this.setFile(false);
 		}else{
-			throw new PathException("Invalid path: " + path);
+			throw new RuntimeException("Invalid path: " + path);
 		}
 	}
 
