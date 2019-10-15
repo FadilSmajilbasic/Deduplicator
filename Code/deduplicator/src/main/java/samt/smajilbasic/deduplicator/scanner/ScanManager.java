@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,19 +46,29 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private Integer reportId;
 
-    private Integer filesFound = 0;
+    private Integer filesScanned = 0;
 
     private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
 
-    // List<Callable<ScannerThread>> callableTasks = new ArrayList<>();
+    private static final Integer DEFAULT_THREAD_COUNT = 200;
 
-    private final Integer DEFAULT_THREAD_COUNT = 200;
-
-    private Integer threadCount;
+    private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
     private ExecutorService pool;
 
     private Report report;
+
+    private boolean paused = false;
+
+    /**
+     * Default timeout for the scanning thread pool given in seconds
+     */
+    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 1800;
+
+    /**
+     * An optional timeout for the scanning thread pool
+     */
+    private Integer terminationTimeout = ScanManager.DEFAULT_TERMINATION_TIMEOUT;
 
     @Autowired
     DuplicateRepository duplicateRepository;
@@ -70,7 +79,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     @Override
     public void run() {
-        pool = Executors.newFixedThreadPool(threadCount == null ? DEFAULT_THREAD_COUNT : threadCount);
+        pool = Executors.newFixedThreadPool(threadCount);
         report = getReport();
 
         paths = gpr.findAll().iterator();
@@ -83,7 +92,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             }
             pool.shutdown();
 
-            pool.awaitTermination(10, TimeUnit.SECONDS);
+            pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
 
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
@@ -91,12 +100,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
             this.work();
 
-            List<Duplicate> duplicates = duplicateRepository.findDuplicates(report);
+            List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
+            report.setFilesScanned(filesScanned);
+            report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
             report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
-            report.setDuplicateCount(duplicates.size());
-
             reportRepository.save(report);
+
             System.out.println("[INFO] Done all");
         }
 
@@ -119,7 +129,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
                 int size = (Files.readAllBytes(Paths.get(file.getAbsolutePath().toString()))).length;
                 File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
                 fileRepository.save(record);
-                filesFound++;
+                filesScanned++;
 
             } catch (NoSuchAlgorithmException nsae) {
                 System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
@@ -135,11 +145,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     }
 
-    public void checkDuplicates() {
-
-    }
-
     public void pauseAll() {
+        paused = true;
         rootThreads.forEach(rootThread -> rootThread.pause());
     }
 
@@ -160,17 +167,17 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     /**
-     * @param reportRepository the reportRepository to set
-     */
-    public void setReportRepository(ReportRepository reportRepository) {
-        this.reportRepository = reportRepository;
-    }
-
-    /**
      * @return the reportId
      */
     public int getReportId() {
         return reportId;
+    }
+
+    /**
+     * @param reportRepository the reportRepository to set
+     */
+    public void setReportRepository(ReportRepository reportRepository) {
+        this.reportRepository = reportRepository;
     }
 
     /**
@@ -180,8 +187,27 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         return reportRepository;
     }
 
+    /**
+     * @param terminationTimeout the terminationTimeout to set
+     */
+    public void setTerminationTimeout(Integer terminationTimeout) {
+        if (terminationTimeout > 0)
+            this.terminationTimeout = terminationTimeout;
+        else
+            this.terminationTimeout = DEFAULT_TERMINATION_TIMEOUT;
+    }
+
+    /**
+     * @param threadCount the threadCount to set
+     */
+    public void setThreadCount(Integer threadCount) {
+        if (threadCount > 0)
+            this.threadCount = threadCount;
+        else
+            this.threadCount = DEFAULT_THREAD_COUNT;
+    }
+
     public Report getReport() {
-        // TODO: check if null
         if (reportId != null && reportRepository != null) {
             if (reportRepository.existsById(reportId)) {
                 return reportRepository.findById(reportId).get();
@@ -194,10 +220,10 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     /**
-     * @param threadCount the threadCount to set
+     * @return the paused
      */
-    public void setThreadCount(Integer threadCount) {
-        this.threadCount = threadCount;
+    public boolean isPaused() {
+        return paused;
     }
 
 }
