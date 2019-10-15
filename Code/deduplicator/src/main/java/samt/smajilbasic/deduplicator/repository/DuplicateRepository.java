@@ -14,13 +14,12 @@ import samt.smajilbasic.deduplicator.entity.Duplicate;
  */
 @Repository
 public interface DuplicateRepository extends CrudRepository<Duplicate, String> {
-    @Query("SELECT " +
-           "    new samt.smajilbasic.deduplicator.entity.Duplicate(f.path, f.lastModified,f.size,f.hash) " +
-           "FROM " +
-           "    File f " +
-           " WHERE report = ?1 " + 
-           "GROUP BY " +
-           "f.hash, f.size " + 
-           "order by path")
-    List<Duplicate> findDuplicates(Report report);
+    @Query( value = "SELECT f.size,f.hash,count(*) as count "+
+                    "FROM file f "+
+                    "WHERE report=?1 "+
+                    "GROUP BY f.hash,f.size "+
+                    "HAVING count > 1 "+
+                    "ORDER BY hash,size DESC",
+            nativeQuery = true)
+    List<Duplicate> findDuplicatesFromReport(Report report);
 }
