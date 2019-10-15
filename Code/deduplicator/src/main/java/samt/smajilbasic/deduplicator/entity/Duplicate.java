@@ -10,32 +10,19 @@ import javax.persistence.Id;
 public class Duplicate {
 
     @Id
-    private String path;
-    private Long lastModified;
-    private Integer size;
     private String hash;
+    private Integer size;
+    private Integer count;
+    
 
+    public Duplicate() {
+        super();
+    }
 
-    public Duplicate(String path, Long lastModified,Integer size,String hash) {
-        this.path = path;
-        this.lastModified = lastModified;
+    public Duplicate(Integer size,String hash,Integer count) {
         this.size = size;
         this.hash = hash;
-    }
-
-
-    /**
-     * @return the path
-     */
-    public String getPath() {
-        return path;
-    }
-
-    /**
-     * @return the lastModified
-     */
-    public Long getLastModified() {
-        return lastModified;
+        this.count = count;
     }
     /**
      * @return the size
@@ -51,4 +38,10 @@ public class Duplicate {
         return hash;
     }
 
+    /**
+     * @return the count
+     */
+    public Integer getCount() {
+        return count;
+    }
 }

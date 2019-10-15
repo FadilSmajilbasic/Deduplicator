@@ -35,15 +35,13 @@ public class ScanController {
 
     @PostMapping("/start")
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
-
         if (gpr.count() > 0) {
-
             Report report = new Report();
-            reportRepository.save(report);
+            reportRepository.save(report);           
 
             currentScan.setReportRepository(reportRepository);
             currentScan.setReportId(report.getId());
-            currentScan.setThreadCount(threadCount);
+            if(threadCount != null) currentScan.setThreadCount(threadCount);
             
             currentScan.start();
 
@@ -72,8 +70,8 @@ public class ScanController {
     @PostMapping("/pause")
     public @ResponseBody ErrorMessage pause() {
         // TODO: check authentication
-
-        currentScan.pauseAll();
+        if(!currentScan.isPaused())
+            currentScan.pauseAll();
         return new ErrorMessage(HttpStatus.OK, "Scan paused");
     }
 

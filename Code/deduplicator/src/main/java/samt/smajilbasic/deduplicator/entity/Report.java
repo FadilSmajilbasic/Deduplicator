@@ -32,7 +32,10 @@ public class Report {
     private Timestamp start;
 
     @Column(nullable = true)
-    private Integer duplicateCount;
+    private Integer filesScanned;
+
+    @Column(nullable = true)
+    private Float averageDuplicateCount;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
@@ -84,18 +87,19 @@ public class Report {
     private void setStart(Timestamp start) {
         this.start = start;
     }
+
     /**
-     * @return the duplicateCount
+     * @return the averageDuplicateCount
      */
-    public Integer getDuplicateCount() {
-        return duplicateCount;
+    public Float getAverageDuplicateCount() {
+        return averageDuplicateCount;
     }
 
     /**
-     * @param duplicateCount the duplicateCount to set
+     * @param averageDuplicateCount the averageDuplicateCount to set
      */
-    public void setDuplicateCount(Integer duplicateCount) {
-        this.duplicateCount = duplicateCount;
+    public void setAverageDuplicateCount(Float averageDuplicateCount) {
+        this.averageDuplicateCount = averageDuplicateCount;
     }
 
     /**
@@ -115,6 +119,25 @@ public class Report {
             throw new RuntimeException("[ERROR] Report Username invalid");
     }
 
+    /**
+     * @return the file
+     */
+    public List<File> getFile() {
+        return file;
+    }
 
-    
+    /**
+     * @return the filesScanned
+     */
+    public Integer getFilesScanned() {
+        return filesScanned;
+    }
+
+    /**
+     * @param filesScanned the filesScanned to set
+     */
+    public void setFilesScanned(Integer filesScanned) {
+        this.filesScanned = (filesScanned >= 0) ? filesScanned : 0;
+    }
+
 }
