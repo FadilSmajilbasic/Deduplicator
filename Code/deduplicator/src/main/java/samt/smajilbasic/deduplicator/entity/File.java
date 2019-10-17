@@ -6,6 +6,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
 
@@ -24,8 +25,9 @@ public class File {
     
     private Integer size;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="report")
+    @JsonBackReference
     private Report report;
 
 

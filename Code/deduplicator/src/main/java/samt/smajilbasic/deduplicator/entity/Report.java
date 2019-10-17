@@ -13,6 +13,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import org.springframework.lang.Nullable;
 
 
@@ -42,6 +43,7 @@ public class Report {
     private AuthenticationDetails user;
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "report")
+    @JsonManagedReference
     private List<File> file;
 
 
