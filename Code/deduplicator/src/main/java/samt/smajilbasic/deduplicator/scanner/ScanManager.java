@@ -1,17 +1,12 @@
 package samt.smajilbasic.deduplicator.scanner;
 
 import samt.smajilbasic.deduplicator.entity.Duplicate;
-import samt.smajilbasic.deduplicator.entity.File;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.entity.Report;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,8 +35,6 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private Iterator<GlobalPath> paths;
 
-    private LinkedList<java.io.File> files = new LinkedList<java.io.File>();
-
     private ReportRepository reportRepository;
 
     private Integer reportId;
@@ -50,7 +43,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
 
-    private static final Integer DEFAULT_THREAD_COUNT = 200;
+    private static final Integer DEFAULT_THREAD_COUNT = 10;
 
     private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
@@ -70,6 +63,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
      */
     private Integer terminationTimeout = ScanManager.DEFAULT_TERMINATION_TIMEOUT;
 
+    
+
     @Autowired
     DuplicateRepository duplicateRepository;
 
@@ -84,9 +79,17 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
         paths = gpr.findAll().iterator();
 
+        List<GlobalPath> ignorePathsFromRepository = gpr.findIgnored();
+
+        List<String> ignorePaths = new ArrayList<>();
+
+        for (GlobalPath ignorePath : ignorePathsFromRepository) {
+            ignorePaths.add(ignorePath.getPath());
+        }
+
         try {
             while (paths.hasNext()) {
-                ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this);
+                ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this,report,fileRepository,ignorePaths);
                 rootThreads.add(thread);
                 pool.execute(thread);
             }
@@ -98,7 +101,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
         } finally {
 
-            this.work();
+            // this.work();
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
@@ -113,36 +116,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     @Override
-    public void fileFound(java.io.File file) {
-        System.out.println("Found new file: " + file.getAbsolutePath().toString());
-        files.add(file);
-    }
-
-    public void work() {
-        System.out.println("Files found: " + files.size());
-        while (files.peek() != null) {
-            java.io.File file = files.poll();
-
-            try {
-                String hash = Hasher.getFileHash(Paths.get(file.getAbsolutePath()));
-                Long lastModified = file.lastModified();
-                int size = (Files.readAllBytes(Paths.get(file.getAbsolutePath().toString()))).length;
-                File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
-                fileRepository.save(record);
-                filesScanned++;
-
-            } catch (NoSuchAlgorithmException nsae) {
-                System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
-
-            } catch (IOException ioe) {
-                System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
-            } catch (NullPointerException npe) {
-                System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
-            }
-        }
-
-        System.out.println("[INFO] Done saving files");
-
+    public synchronized void addFilesScanned(){
+        filesScanned++;
     }
 
     public void pauseAll() {
