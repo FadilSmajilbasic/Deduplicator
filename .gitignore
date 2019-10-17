@@ -5,6 +5,7 @@ build/
 !**/src/main/**
 !**/src/test/**
 TODO.md
+.notes
 
 # Compiled class file
 *.class
