@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.Report;
-import samt.smajilbasic.deduplicator.exception.ErrorMessage;
+import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.DuplicateRepository;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
@@ -46,7 +46,7 @@ public class ReportController {
         if (intId != null && reportRepository.existsById(intId))
             return reportRepository.findById(intId).get();
         else
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
     }
 
     @GetMapping(value = "/get/duplicates/{id}")
@@ -55,7 +55,7 @@ public class ReportController {
         if (intId != null && reportRepository.existsById(intId))
             return duplicateRepository.findDuplicatesFromReport((Report) getReportById(id));
         else
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
     }
 
     @GetMapping(value = "/get/duplicates/{id}/{hash}")
@@ -65,7 +65,7 @@ public class ReportController {
                 && reportRepository.existsById(intId)) {
             return fileRepository.findFilesFromHashAndReport(reportRepository.findById(intId).get(), hash);
         } else {
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid file path");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid file path");
         }
     }
 }

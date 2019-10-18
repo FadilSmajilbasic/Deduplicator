@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -47,7 +48,8 @@ public class PathController {
         }
     }
 
-    @PostMapping(value = "/put")
+    
+    @PutMapping(value = "/put")
     public @ResponseBody GlobalPath insert(@RequestParam String path, @RequestParam String ignoreFile)
             throws IOException {
         try {
@@ -62,7 +64,7 @@ public class PathController {
         }
     }
 
-    @PostMapping(value = "/remove")
+    @DeleteMapping(value = "/delete")
     public @ResponseBody GlobalPath remove(@RequestParam String path) {
 
         PathType type = Validator.getPathType(path);
@@ -78,7 +80,7 @@ public class PathController {
     }
 
     @ExceptionHandler({ RuntimeException.class })
-    public @ResponseBody ErrorMessage invalidPathException(RuntimeException ex) {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    public @ResponseBody Message invalidPathException(RuntimeException ex) {
+        return new Message(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 }
