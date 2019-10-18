@@ -26,53 +26,58 @@ public class ScannerThread extends Thread {
 
     private boolean paused = false;
     private boolean ignoreFound = false;
+    Object monitor;
 
     public ScannerThread(Path rootPath, ScannerThreadListener listener, Report report, FileRepository fileRepository,
-            List<String> ignorePaths) {
+            List<String> ignorePaths, Object monitor) {
         this.listener = listener;
         this.rootPath = rootPath;
         this.report = report;
         this.fileRepository = fileRepository;
         this.ignorePaths = ignorePaths;
-
+        this.monitor = monitor;
         for (String ignorePath : ignorePaths) {
-            if (rootPath.toString().contains(ignorePath)) {
+            if (rootPath.toString().startsWith(ignorePath)) {
                 ignoreFound = true;
             }
+
         }
+    }
+
+    public synchronized void look() {
+        synchronized (monitor) {
+            while(isPaused()) {
+                try {
+                    System.out.println("enterd wait");
+                    monitor.wait();
+                    System.out.println("Resumed");
+                } catch (InterruptedException e) {
+                    System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace());
+                }
+                System.out.println("wait ended");
+            }
+        }
+
     }
 
     @Override
     public void run() {
 
-    
         if (!ignoreFound) {
+
             File[] list = new File(rootPath.toString()).listFiles();
             LinkedList<File> files = new LinkedList<File>();
 
             for (File file : list) {
 
-                if (isPaused()) {
-
-                    children.forEach(child -> {
-                        child.pause();
-                    });
-
-                    try {
-                        this.wait();
-                        System.out.println("[INFO] Paused thread with root path: " + rootPath);
-                    } catch (InterruptedException e) {
-
-                    }
-
-                }
+                look();
 
                 if (file.isFile()) {
                     files.add(file);
                 } else if (file.isDirectory()) {
-                    System.out.println("Directory " + file.getAbsolutePath());
+                    System.out.println("[INFO] New directory found: " + file.getAbsolutePath());
                     ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener, report,
-                            fileRepository, ignorePaths);
+                            fileRepository, ignorePaths, monitor);
                     children.add(thread);
                     thread.start();
                     try {
@@ -83,35 +88,43 @@ public class ScannerThread extends Thread {
 
                 }
             }
-
             Hasher hasher = new Hasher(files, report, listener, fileRepository);
             hasher.start();
             try {
                 hasher.join();
             } catch (InterruptedException e) {
-                System.err.println("[ERROR] Interrupted exception: Unable to hash files " + e.getMessage());
+                System.err.println("[ERROR] Interrupted exception on join hasher " + e.getMessage());
             }
 
-            System.out.println("[INFO] Done scanning and working ThreadId: " + this.getId());
         } else {
             System.out.println("[INFO] Path not scanned, set to ignore: " + rootPath.toString());
         }
     }
 
-    public void pause() {
+    public synchronized void pause() {
+        // if(isAlive()){
         this.paused = true;
+        System.out.println("[INFO] Paused thread with root path: " + rootPath);
+        children.forEach(child -> {
+            child.pause();
+        });
+        // }
     }
 
     /**
      * @return the paused
      */
-    public boolean isPaused() {
-        return paused;
+    public synchronized boolean isPaused() {
+        return this.paused;
+
     }
 
     public void resumeScan() {
+        // System.out.println("[INFO] Scan resumed ");
         this.paused = false;
-        this.notifyAll();
+        // notifyAll();
+        // this.notify();
+        System.out.println("notify all");
         children.forEach(child -> {
             child.resumeScan();
         });
