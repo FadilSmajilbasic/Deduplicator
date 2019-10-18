@@ -1,25 +1,26 @@
 package samt.smajilbasic.deduplicator.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-/**
- * ScanController
- */
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import samt.smajilbasic.deduplicator.context.SpringContext;
 import samt.smajilbasic.deduplicator.entity.Report;
-import samt.smajilbasic.deduplicator.exception.ErrorMessage;
+import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
 
+/**
+ * ScanController
+ */
 @RestController
 @RequestMapping(path = "/scan")
 public class ScanController {
@@ -27,7 +28,7 @@ public class ScanController {
     @Autowired
     ReportRepository reportRepository;
 
-    @Autowired
+    // @Autowired
     ScanManager currentScan;
 
     @Autowired
@@ -35,57 +36,68 @@ public class ScanController {
 
     @PostMapping("/start")
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
+
         if (gpr.count() > 0) {
+            ApplicationContext context = SpringContext.getAppContext();
+
+            currentScan = (ScanManager) context.getBean("scanManager",ScanManager.class);
+
             Report report = new Report();
-            reportRepository.save(report);           
+            reportRepository.save(report);
 
             currentScan.setReportRepository(reportRepository);
             currentScan.setReportId(report.getId());
-            if(threadCount != null) currentScan.setThreadCount(threadCount);
-            
+            if (threadCount != null)
+                currentScan.setThreadCount(threadCount);
             currentScan.start();
+
+            
 
             return report;
         } else {
-            return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
         }
     }
 
     @PostMapping("/stop")
-    public @ResponseBody Report stop() {
-        // TODO: check authentication
+    public @ResponseBody Object stop() {
+        if (currentScan != null) {
+            currentScan.stopScan();
+            Report report = currentScan.getReport();
+            report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
+            ApplicationContext context = SpringContext.getAppContext();
+            ((DefaultListableBeanFactory) context.getParentBeanFactory()).destroyBean("scanManager",ScanManager.class);
+            return report;
 
-        currentScan.stopScan();
-        try {
-            currentScan.join();
-        } catch (InterruptedException ie) {
-
+        } else {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
         }
-
-        Report report = currentScan.getReport();
-        report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
-        return report;
     }
 
     @PostMapping("/pause")
-    public @ResponseBody ErrorMessage pause() {
-        // TODO: check authentication
-        if(!currentScan.isPaused())
-            currentScan.pauseAll();
-        return new ErrorMessage(HttpStatus.OK, "Scan paused");
+    public @ResponseBody Message pause() {
+        if (currentScan != null) {
+            if (!currentScan.isPaused())
+                currentScan.pauseAll();
+            return new Message(HttpStatus.OK, "Scan paused");
+        } else {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
+        }
     }
 
     @PostMapping("/resume")
-    public @ResponseBody ErrorMessage resume() {
-        // TODO: check authentication
-
-        currentScan.resumeAll();
-        return new ErrorMessage(HttpStatus.OK, "Scan resumed");
+    public @ResponseBody Message resume() {
+        if (currentScan != null) {
+            currentScan.resumeAll();
+            return new Message(HttpStatus.OK, "Scan resumed");
+        } else {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
+        }
     }
 
     @ExceptionHandler({ RuntimeException.class })
-    public @ResponseBody ErrorMessage invalidReport(RuntimeException ex) {
-        return new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    public @ResponseBody Message invalidReport(RuntimeException ex) {
+        return new Message(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
 }
