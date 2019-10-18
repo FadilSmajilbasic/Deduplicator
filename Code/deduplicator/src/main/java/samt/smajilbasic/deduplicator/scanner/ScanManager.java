@@ -1,9 +1,5 @@
 package samt.smajilbasic.deduplicator.scanner;
 
-import samt.smajilbasic.deduplicator.entity.Duplicate;
-import samt.smajilbasic.deduplicator.entity.GlobalPath;
-import samt.smajilbasic.deduplicator.entity.Report;
-
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,8 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
+import samt.smajilbasic.deduplicator.entity.Duplicate;
+import samt.smajilbasic.deduplicator.entity.GlobalPath;
+import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.repository.DuplicateRepository;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
@@ -24,7 +23,7 @@ import samt.smajilbasic.deduplicator.repository.ReportRepository;
  * ScanManager
  */
 
-@Service
+@Component
 public class ScanManager extends Thread implements ScannerThreadListener {
 
     @Autowired
@@ -63,7 +62,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
      */
     private Integer terminationTimeout = ScanManager.DEFAULT_TERMINATION_TIMEOUT;
 
-    
+    private final Object monitor = new Object();
 
     @Autowired
     DuplicateRepository duplicateRepository;
@@ -89,20 +88,22 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
         try {
             while (paths.hasNext()) {
-                ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this,report,fileRepository,ignorePaths);
+                ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this, report,
+                        fileRepository, ignorePaths, monitor);
                 rootThreads.add(thread);
                 pool.execute(thread);
             }
+
             pool.shutdown();
 
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
+            pool.shutdownNow();
 
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
+            pool.shutdownNow();
         } finally {
-
-            // this.work();
-
+            pool.shutdownNow();
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
             report.setFilesScanned(filesScanned);
@@ -116,17 +117,25 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     @Override
-    public synchronized void addFilesScanned(){
+    public synchronized void addFilesScanned() {
         filesScanned++;
     }
 
     public void pauseAll() {
-        paused = true;
+        if (!paused)
+            paused = true;
         rootThreads.forEach(rootThread -> rootThread.pause());
     }
 
     public void resumeAll() {
+        paused = false;
         rootThreads.forEach(rootThread -> rootThread.resumeScan());
+        // rootThreads.forEach(rootThread -> rootThread.notify());
+        // this.notifyAll();
+        synchronized (monitor) {
+            monitor.notifyAll();
+        }
+        System.out.println("nnotified");
     }
 
     public void stopScan() {
