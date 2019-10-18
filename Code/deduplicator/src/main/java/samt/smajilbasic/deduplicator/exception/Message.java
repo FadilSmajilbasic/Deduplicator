@@ -9,23 +9,23 @@ import org.springframework.http.HttpStatus;
 /**
  * ErrorMessage
  */
-public class ErrorMessage {
+public class Message {
 
     private HttpStatus status;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
     private LocalDateTime timestamp;
     private String message;
 
-    private ErrorMessage() {
+    private Message() {
         timestamp = LocalDateTime.now();
     }
 
-    public ErrorMessage(HttpStatus status) {
+    public Message(HttpStatus status) {
         this();
         this.status = status;
     }
 
-    public ErrorMessage(HttpStatus status, String message) {
+    public Message(HttpStatus status, String message) {
         this();
         this.status = status;
         this.message = message;
