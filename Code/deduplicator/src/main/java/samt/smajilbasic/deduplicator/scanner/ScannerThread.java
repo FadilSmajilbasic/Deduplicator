@@ -24,7 +24,7 @@ public class ScannerThread extends Thread {
 
     private List<ScannerThread> children = new ArrayList<ScannerThread>();
 
-    private boolean paused = false;
+    private Boolean paused = false;
     private boolean ignoreFound = false;
     Object monitor;
 
@@ -46,13 +46,13 @@ public class ScannerThread extends Thread {
 
     public synchronized void look() {
         synchronized (monitor) {
-            while(isPaused()) {
+            while (isPaused()) {
                 try {
                     System.out.println("enterd wait");
                     monitor.wait();
                     System.out.println("Resumed");
                 } catch (InterruptedException e) {
-                    System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace());
+                    System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace().toString());
                 }
                 System.out.println("wait ended");
             }
@@ -62,53 +62,65 @@ public class ScannerThread extends Thread {
 
     @Override
     public void run() {
+        LinkedList<File> files = new LinkedList<File>();
+        try {
+            if (!ignoreFound) {
 
-        if (!ignoreFound) {
+                File[] list = new File(rootPath.toString()).listFiles();
 
-            File[] list = new File(rootPath.toString()).listFiles();
-            LinkedList<File> files = new LinkedList<File>();
+                for (File file : list) {
+                    if (!Thread.interrupted()) {
+                        look();
 
-            for (File file : list) {
-
-                look();
-
-                if (file.isFile()) {
-                    files.add(file);
-                } else if (file.isDirectory()) {
-                    System.out.println("[INFO] New directory found: " + file.getAbsolutePath());
-                    ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener, report,
-                            fileRepository, ignorePaths, monitor);
-                    children.add(thread);
-                    thread.start();
-                    try {
-                        thread.join();
-                    } catch (InterruptedException ie) {
-                        System.err.println("[ERROR] Scan thread interrupted: " + ie.getStackTrace());
+                        if (file.isFile()) {
+                            files.add(file);
+                        } else if (file.isDirectory()) {
+                            System.out.println("[INFO] New directory found: " + file.getAbsolutePath());
+                            ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener,
+                                    report, fileRepository, ignorePaths, monitor);
+                            children.add(thread);
+                            if (!Thread.interrupted()) {
+                                thread.start();
+                                thread.join();
+                            }
+                        }
+                    }else{
+                        stopScan();
                     }
-
                 }
-            }
-            Hasher hasher = new Hasher(files, report, listener, fileRepository);
-            hasher.start();
-            try {
-                hasher.join();
-            } catch (InterruptedException e) {
-                System.err.println("[ERROR] Interrupted exception on join hasher " + e.getMessage());
-            }
 
-        } else {
-            System.out.println("[INFO] Path not scanned, set to ignore: " + rootPath.toString());
+            } else {
+                System.out.println("[INFO] Path not scanned, set to ignore: " +
+                rootPath.toString());
+            }
+        } catch (InterruptedException ie) {
+            System.err.println("[ERROR] Scan thread interrupted: " + ie.getStackTrace().toString());
+        } finally {
+
+            if (files.size() > 0) {
+                Hasher hasher = new Hasher(files, report, listener, fileRepository);
+                hasher.start();
+                try {
+                    hasher.join();
+                } catch (InterruptedException e) {
+                    System.err.println("[ERROR] Interrupted exception on join hasher " + e.getMessage());
+                }
+            }else{
+            }
+            this.paused = null;
+
+
         }
     }
 
     public synchronized void pause() {
-        // if(isAlive()){
-        this.paused = true;
-        System.out.println("[INFO] Paused thread with root path: " + rootPath);
+        if (isAlive()) {
+            this.paused = true;
+            System.out.println("[INFO] Paused thread with root path: " + rootPath);
+        }
         children.forEach(child -> {
             child.pause();
         });
-        // }
     }
 
     /**
@@ -116,22 +128,19 @@ public class ScannerThread extends Thread {
      */
     public synchronized boolean isPaused() {
         return this.paused;
-
     }
 
     public void resumeScan() {
-        // System.out.println("[INFO] Scan resumed ");
         this.paused = false;
-        // notifyAll();
-        // this.notify();
-        System.out.println("notify all");
         children.forEach(child -> {
             child.resumeScan();
         });
     }
 
-    public void stopScan() {
-        this.interrupt();
+    public synchronized void stopScan() {
+        System.out.println("[INFO] Stopped thread" + getId());
+        if(!Thread.interrupted())
+            interrupt();
         children.forEach(child -> child.stopScan());
     }
 

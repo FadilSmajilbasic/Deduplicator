@@ -95,15 +95,23 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             }
 
             pool.shutdown();
-
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
-            pool.shutdownNow();
 
         } catch (InterruptedException ie) {
-            System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace());
+            System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
             pool.shutdownNow();
         } finally {
             pool.shutdownNow();
+            long time = System.currentTimeMillis();
+            System.out.print("\n[INFO] Waiting for pool termination");
+            while (!pool.isTerminated()) {
+                if (System.currentTimeMillis() - time > 500) {
+                    System.out.print(".");
+                    time = System.currentTimeMillis();
+                }
+            }
+            System.out.println("\n");
+
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
             report.setFilesScanned(filesScanned);
@@ -111,10 +119,18 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
             reportRepository.save(report);
 
-            System.out.println("[INFO] Done all");
-        }
 
+            
+
+            System.out.println("[INFO] Scan manager Finished");
+        }
     }
+
+
+    private void deleteThreads(){
+        rootThreads.forEach(thread -> {thread = null;});
+    }
+
 
     @Override
     public synchronized void addFilesScanned() {
@@ -130,17 +146,16 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     public void resumeAll() {
         paused = false;
         rootThreads.forEach(rootThread -> rootThread.resumeScan());
-        // rootThreads.forEach(rootThread -> rootThread.notify());
-        // this.notifyAll();
         synchronized (monitor) {
             monitor.notifyAll();
         }
-        System.out.println("nnotified");
     }
 
     public void stopScan() {
+        pool.shutdownNow();
         rootThreads.forEach(rootThread -> rootThread.stopScan());
 
+        
     }
 
     /**
