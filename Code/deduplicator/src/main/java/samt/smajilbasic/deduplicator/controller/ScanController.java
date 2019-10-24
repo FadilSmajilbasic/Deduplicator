@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import samt.smajilbasic.deduplicator.context.SpringContext;
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
@@ -28,8 +27,7 @@ public class ScanController {
     @Autowired
     ReportRepository reportRepository;
 
-    // @Autowired
-    
+
     ScanManager currentScan;
 
     @Autowired
@@ -42,7 +40,6 @@ public class ScanController {
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
 
         if (gpr.count() > 0) {
-            ApplicationContext context = SpringContext.getAppContext();
 
             currentScan = (ScanManager) context.getBean("scanManager");
             Report report = new Report();
@@ -64,18 +61,16 @@ public class ScanController {
     public @ResponseBody Object stop() {
         if (currentScan != null) {
             currentScan.stopScan();
-            // Report report = currentScan.getReport();
-            // report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
-            
+
             System.out.println("Waiting finish");
             while (currentScan.isAlive()) {
                 long time = System.currentTimeMillis();
-                if(System.currentTimeMillis() - time > 500){
+                if (System.currentTimeMillis() - time > 500) {
                     System.out.print(".");
                 }
             }
             System.out.println("dooone");
-            
+
             Report report = currentScan.getReport();
 
             BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
@@ -83,7 +78,6 @@ public class ScanController {
             ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
 
             System.out.println(currentScan.toString());
-            
 
             return report;
         } else {
@@ -94,10 +88,10 @@ public class ScanController {
     @PostMapping("/pause")
     public @ResponseBody Message pause() {
         if (currentScan != null) {
-            if (!currentScan.isPaused()){
+            if (!currentScan.isPaused()) {
                 currentScan.pauseAll();
                 return new Message(HttpStatus.OK, "Scan paused");
-            }else{
+            } else {
                 return new Message(HttpStatus.OK, "Scan already paused");
             }
         } else {
@@ -108,17 +102,12 @@ public class ScanController {
     @PostMapping("/resume")
     public @ResponseBody Message resume() {
         if (currentScan != null) {
-             if (currentScan.isPaused())
+            if (currentScan.isPaused())
                 currentScan.resumeAll();
             return new Message(HttpStatus.OK, "Scan resumed");
         } else {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
         }
     }
-
-    // @ExceptionHandler({ RuntimeException.class })
-    // public @ResponseBody Message invalidReport(RuntimeException ex) {
-    //     return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Runtime: "+ex.getMessage());
-    // }
 
 }
