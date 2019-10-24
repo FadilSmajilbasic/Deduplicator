@@ -35,12 +35,12 @@ public class ReportController {
     @Autowired
     FileRepository fileRepository;
 
-    @GetMapping(value = "/get")
+    @GetMapping()
     public @ResponseBody Iterable<Report> getReports() {
         return reportRepository.findAll();
     }
 
-    @GetMapping(value = "/get/{id}")
+    @GetMapping(value = "/{id}")
     public @ResponseBody Object getReportById(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && reportRepository.existsById(intId))
@@ -49,7 +49,7 @@ public class ReportController {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
     }
 
-    @GetMapping(value = "/get/duplicates/{id}")
+    @GetMapping(value = "/duplicate/{id}")
     public @ResponseBody Object getDuplicateByReportId(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && reportRepository.existsById(intId))
@@ -58,7 +58,7 @@ public class ReportController {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
     }
 
-    @GetMapping(value = "/get/duplicates/{id}/{hash}")
+    @GetMapping(value = "/duplicate/{id}/{hash}")
     public @ResponseBody Object getFileByHash(@PathVariable String id, @PathVariable String hash) {
         Integer intId = Validator.isInt(id);
         if (hash != null && fileRepository.existsByHash(hash) && hash.length() == 32 && intId != null

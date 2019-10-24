@@ -30,12 +30,12 @@ public class FileController {
     @Autowired
     ReportRepository reportRepository;
 
-    @GetMapping(value = "/get")
+    @GetMapping()
     public @ResponseBody Iterable<File> getFiles() {
         return fileRepository.findAll();
     }
 
-    @GetMapping(value = "/get/{id}")
+    @GetMapping(value = "/{id}")
     public @ResponseBody Object getFilesFromReport(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && reportRepository.existsById(intId))

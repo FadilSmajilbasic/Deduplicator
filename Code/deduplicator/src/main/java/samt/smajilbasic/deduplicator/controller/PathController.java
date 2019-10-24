@@ -30,12 +30,12 @@ public class PathController {
     @Autowired
     GlobalPathRepository gpr;
 
-    @GetMapping(value = "/get")
+    @GetMapping()
     public @ResponseBody Iterable<GlobalPath> getPaths() {
         return gpr.findAll();
     }
 
-    @GetMapping(value = "/get/{path}")
+    @GetMapping(value = "/{path}")
     public @ResponseBody GlobalPath getValueByPath(@PathVariable String path) {
         try {
             if (Validator.getPathType(path) != PathType.Invalid) {
@@ -49,12 +49,12 @@ public class PathController {
     }
 
     
-    @PutMapping(value = "/put")
-    public @ResponseBody GlobalPath insert(@RequestParam String path, @RequestParam String ignoreFile)
+    @PutMapping()
+    public @ResponseBody GlobalPath insert(@RequestParam String path, @RequestParam String ignorePath)
             throws IOException {
         try {
             if (Validator.getPathType(path) != PathType.Invalid) {
-                gpr.save(new GlobalPath(path.replaceAll("&#47;", File.separator).trim(), (ignoreFile.equals("true"))));
+                gpr.save(new GlobalPath(path.replaceAll("&#47;", File.separator).trim(), (ignorePath.equals("true"))));
                 return getValueByPath(path);
             } else {
                 throw new NoSuchElementException();
@@ -64,7 +64,7 @@ public class PathController {
         }
     }
 
-    @DeleteMapping(value = "/delete")
+    @DeleteMapping()
     public @ResponseBody GlobalPath remove(@RequestParam String path) {
 
         PathType type = Validator.getPathType(path);
