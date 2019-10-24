@@ -126,12 +126,6 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         }
     }
 
-
-    private void deleteThreads(){
-        rootThreads.forEach(thread -> {thread = null;});
-    }
-
-
     @Override
     public synchronized void addFilesScanned() {
         filesScanned++;
