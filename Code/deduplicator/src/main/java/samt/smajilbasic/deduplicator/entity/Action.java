@@ -1,8 +1,6 @@
 package samt.smajilbasic.deduplicator.entity;
 
 
-import java.sql.Timestamp;
-
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -11,62 +9,77 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+
 /**
  * Action
  */
 @Entity
 public class Action {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer actionId;
 
     private String filePath;
 
     private String newFilePath;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "actionType")
-    private ActionType actionType;
+    private String actionType;
 
     private boolean executed;
 
-    private Timestamp date_added;
+    private Long dateAdded;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user")
+    @JoinColumn(name = "user")
     private AuthenticationDetails user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="scheduler")
+    @JoinColumn(name = "scheduler")
     private Scheduler scheduler;
+
+
+    public Action(String type, String path, String newPath) {
+        setActionType(type);
+        setFilePath(path);
+        setNewFilePath(newPath);
+        setDateAdded(System.currentTimeMillis());
+        setExecuted(false);
+    }
+
+    public Action(String type, String path) {
+        this(type,path,null);
+    }
+
+    public Action() {
+    }
 
 
     /**
      * @return the actionType
      */
-    public ActionType getActionType() {
+    public String getActionType() {
         return actionType;
     }
 
     /**
      * @param actionType the actionType to set
      */
-    public void setActionType(ActionType actionType) {
+    public void setActionType(String actionType) {
         this.actionType = actionType;
     }
 
     /**
      * @return the dateAdded
      */
-    public Timestamp getDateAdded() {
-        return date_added;
+    public Long getDateAdded() {
+        return dateAdded;
     }
 
     /**
      * @param dateAdded the dateAdded to set
      */
-    public void setDateAdded(Timestamp dateAdded) {
-        this.date_added = dateAdded;
+    public void setDateAdded(Long dateAdded) {
+        this.dateAdded = dateAdded;
     }
 
     /**
@@ -145,5 +158,5 @@ public class Action {
     public void setUser(AuthenticationDetails user) {
         this.user = user;
     }
-    
+
 }
