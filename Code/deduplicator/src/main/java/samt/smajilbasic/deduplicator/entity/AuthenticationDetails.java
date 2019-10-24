@@ -1,11 +1,14 @@
 package samt.smajilbasic.deduplicator.entity;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+
+import samt.smajilbasic.deduplicator.scanner.Hasher;
 
 /**
  * AuthenticationDetails
@@ -24,6 +27,14 @@ public class AuthenticationDetails {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
     private List<Action> action;
 
+    public AuthenticationDetails(String username, String password) throws NoSuchAlgorithmException {
+        setUsername(username);
+        setPassword(password);
+    }
+
+    public AuthenticationDetails() {
+        super();
+    }
 
     /**
      * @return the username
@@ -31,22 +42,28 @@ public class AuthenticationDetails {
     public String getUsername() {
         return username;
     }
+
     /**
      * @param username the username to set
      */
     public void setUsername(String username) {
         this.username = username;
     }
+
     /**
      * @return the password
      */
     public String getPassword() {
+
         return password;
     }
+
     /**
      * @param password the password to set
+     * @throws NoSuchAlgorithmException
      */
-    public void setPassword(String password) {
+    public void setPassword(String password) throws NoSuchAlgorithmException {
+        password = Hasher.getHash(password.getBytes(), "SHA-512");
         this.password = password;
     }
 
