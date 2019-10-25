@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +22,6 @@ import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.Action;
 import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
-import samt.smajilbasic.deduplicator.repository.ReportRepository;
 
 @RestController
 @RequestMapping(path = "/action")
@@ -30,21 +30,24 @@ public class ActionController {
     @Autowired
     ActionRepository actionRepository;
 
-    @Autowired
-    ReportRepository reportRepository;
-
     @GetMapping()
     public @ResponseBody Iterable<Action> getFiles() {
         return actionRepository.findAll();
     }
 
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object getFilesFromReport(@PathVariable String id) {
+    public @ResponseBody Object getActions(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
-        if (intId != null && reportRepository.existsById(intId))
-            return reportRepository.findById(intId).get().getFile();
+        if (intId != null && actionRepository.existsById(intId))
+            return actionRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid action id");
+    }
+
+    @PostMapping("/execute/")
+    public @ResponseBody Message executeActions(){
+
+        return new Message(HttpStatus.OK);
     }
 
     @PutMapping()
@@ -72,11 +75,17 @@ public class ActionController {
     }
 
     private String getType(String type){
-        if(type.toUpperCase().equals(ActionType.DELETE) || type.toUpperCase().equals(ActionType.MOVE) || type.toUpperCase().equals(ActionType.DELETE) || type.toUpperCase().equals(ActionType.IGNORE) || type.toUpperCase().equals(ActionType.NONE))
+        if(type.equalsIgnoreCase(ActionType.DELETE) ||
+            type.equalsIgnoreCase(ActionType.MOVE) ||
+            type.equalsIgnoreCase(ActionType.DELETE) ||
+            type.equalsIgnoreCase(ActionType.IGNORE) ||
+            type.equalsIgnoreCase(ActionType.NONE))
             return type.toUpperCase();
         else
             return null;
     }
+
+
     
 
 }
