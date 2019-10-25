@@ -1,6 +1,5 @@
 package samt.smajilbasic.deduplicator.entity;
 
-
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -8,6 +7,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+
+import org.springframework.lang.Nullable;
 
 
 /**
@@ -21,6 +22,7 @@ public class Action {
 
     private String filePath;
 
+    @Nullable
     private String newFilePath;
 
     private String actionType;
@@ -52,7 +54,6 @@ public class Action {
 
     public Action() {
     }
-
 
     /**
      * @return the actionType
