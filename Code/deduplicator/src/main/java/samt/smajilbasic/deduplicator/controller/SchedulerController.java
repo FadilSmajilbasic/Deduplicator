@@ -51,7 +51,7 @@ public class SchedulerController {
 
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);
-        Integer hourInt = Validator.isInt(hour);
+        Integer minutes = Validator.isInt(hour);
         boolean repeatedBool = (repeated.equals("true")) ? true : false;
         Date date;
         Scheduler scheduler = new Scheduler();
@@ -62,24 +62,23 @@ public class SchedulerController {
         }
         if (repeatedBool) {
             scheduler.setRepeated(repeatedBool);
-            if (hourInt != null && hourInt >=  0  && hourInt <= 1440 ) {
+            if (minutes != null && minutes >=  0  && minutes <= 1440 ) { // 60 min * 24 h = 1440
                 if (monthlyInt != null) {
                     Integer dayMonth = getFirstPosition(monthlyInt, 31);
 
                     scheduler.setMonthly(dayMonth);
                     
-
-
                 } else if (weeklyInt != null) {
                     Integer dayWeek = getFirstPosition(weeklyInt, 7);
                     scheduler.setWeekly(dayWeek);
 
                 } else {
                     return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Schedule parameters monthly and weekly invalid");
+                            "Schedule monthly and weekly parameters invalid");
                 }
+                scheduler.setMinutes(minutes);
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Schedule parameter hour invalid");
+                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Schedule hour parameter invalid");
             }
         } else {
             

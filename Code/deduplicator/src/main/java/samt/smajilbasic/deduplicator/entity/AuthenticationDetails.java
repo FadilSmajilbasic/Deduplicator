@@ -8,7 +8,8 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
-import samt.smajilbasic.deduplicator.scanner.Hasher;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * AuthenticationDetails
@@ -63,8 +64,12 @@ public class AuthenticationDetails {
      * @throws NoSuchAlgorithmException
      */
     public void setPassword(String password) throws NoSuchAlgorithmException {
-        password = Hasher.getHash(password.getBytes(), "SHA-512");
-        this.password = password;
+        if(password != null){
+            PasswordEncoder encoder = new BCryptPasswordEncoder();
+            this.password = encoder.encode(password);;
+        }else{
+            this.password = null;
+        }
     }
 
 }

@@ -40,16 +40,17 @@ public class Action {
     private Scheduler scheduler;
 
 
-    public Action(String type, String path, String newPath) {
+    public Action(String type, String path, String newPath,AuthenticationDetails user) {
         setActionType(type);
         setFilePath(path);
         setNewFilePath(newPath);
         setDateAdded(System.currentTimeMillis());
+        setUser(user);
         setExecuted(false);
     }
 
-    public Action(String type, String path) {
-        this(type,path,null);
+    public Action(String type, String path,AuthenticationDetails user) {
+        this(type,path,null,user);
     }
 
     public Action() {

@@ -10,6 +10,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
+
 /**
  * Scheduler
  */
@@ -24,9 +25,10 @@ public class Scheduler {
 
     private Integer weekly;
 
-    private Integer hour;
+    private Integer minutes;
     private boolean repeated;
     private Date dateStart;
+    private Integer executonCounter = 0;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "scheduler")
     private List<Action> action;
@@ -67,17 +69,17 @@ public class Scheduler {
     }
 
     /**
-     * @return the hour
+     * @return the minutes
      */
-    public Integer getHour() {
-        return hour;
+    public Integer getMinutes() {
+        return minutes;
     }
 
     /**
-     * @param hour the hour to set
+     * @param minutes the minutes to set
      */
-    public void setHour(Integer hour) {
-        this.hour = hour;
+    public void setMinutes(Integer minutes) {
+        this.minutes = minutes;
     }
 
     /**
@@ -106,5 +108,16 @@ public class Scheduler {
      */
     public void setDateStart(Date dateStart) {
         this.dateStart = dateStart;
+    }
+
+    /**
+     * @return the executonCounter
+     */
+    public Integer getExecutonCounter() {
+        return executonCounter;
+    }
+
+    public void executed(){
+        executonCounter++;
     }
 }
