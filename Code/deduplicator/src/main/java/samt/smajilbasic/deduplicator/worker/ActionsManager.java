@@ -4,12 +4,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
 import samt.smajilbasic.deduplicator.ActionType;
 import samt.smajilbasic.deduplicator.entity.Action;
+import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
@@ -18,19 +23,31 @@ import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 /**
  * ActionsManager
  */
-public class ActionsManager extends Thread {
+public class ActionsManager extends TimerTask {
 
     @Autowired
     ActionRepository actionRepository;
     
     @Autowired
     GlobalPathRepository globalPathRepository;
-    
+  
 
     Scheduler actionScheduler;
 
-    public ActionsManager(Scheduler actionScheduler) {
+    Timer timer;
+
+    List<Action> actions;
+
+    AuthenticationDetails user;
+
+    public ActionsManager(Scheduler actionScheduler,Timer timer) {
         setActionScheduler(actionScheduler);
+        this.timer = timer;
+    }
+
+    public ActionsManager(List<Action> actions, AuthenticationDetails user) {
+        this.actions = actions;
+        this.user = user;
     }
 
     @Override
@@ -40,7 +57,7 @@ public class ActionsManager extends Thread {
 
             for (Action action : actions) {
                 if (!action.isExecuted()) {
-                    boolean executed = false;                    
+                    boolean executed = false;    
                     if (action.getActionType() == ActionType.MOVE) {
                         
                         if (this.move(action.getFilePath(), action.getNewFilePath())) {
@@ -72,6 +89,29 @@ public class ActionsManager extends Thread {
                     action.setExecuted(executed);
                 }
             }
+
+            timer.cancel();
+            
+            long difference = 0;
+            Calendar nextDate = Calendar.getInstance();
+
+
+            Calendar startCalendar = Calendar.getInstance();
+
+            if (actionScheduler.isRepeated()) {
+                if (actionScheduler.getMonthly() != null) {
+                    nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH), actionScheduler.getMonthly());
+
+                    difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis()); // get time in
+                                                                                               // milliseconds until
+                                                                                               // next execution
+
+                } else if (actionScheduler.getWeekly() != null) {
+                    difference = Math.abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                }
+                timer.schedule(new ActionsManager(actionScheduler,timer), new Date(startCalendar.getTime().getTime()+difference));
+            }
+            actionScheduler.executed();
         } else {
             System.out.println("[ERROR] Unable to find actions, actionScheduler not set");
         }
