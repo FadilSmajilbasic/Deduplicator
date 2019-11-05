@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import samt.smajilbasic.deduplicator.Timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 
@@ -26,7 +27,13 @@ public class DeduplicatorApplication {
 	@PostConstruct
 	void started() throws NoSuchAlgorithmException {
 		TimeZone.setDefault(TimeZone.getDefault());
-		adr.save(new AuthenticationDetails("admin","admin"));
+		if(!adr.existsById("admin"))
+			adr.save(new AuthenticationDetails("admin","admin"));
+		else
+			adr.save(new AuthenticationDetails("scheduler",null));
+
+		ScheduleChecker checker = new ScheduleChecker();
+		checker.start();
 	}
 
 }
