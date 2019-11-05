@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'samt.smajilbasic'
-version = '0.0.6'
+version = '0.0.7'
 sourceCompatibility = '1.8'
 
 repositories {
@@ -19,4 +19,10 @@ dependencies {
 	runtimeOnly 'mysql:mysql-connector-java'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	compile('org.quartz-scheduler:quartz:2.2.1')
+	implementation 'org.springframework.security:spring-security'
+	implementation 'org.springframework.security:spring-security-config'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	implementation 'org.springframework.security:spring-security-core'
+
+
 }
