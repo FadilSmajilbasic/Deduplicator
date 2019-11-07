@@ -32,12 +32,12 @@ public class SchedulerController {
     SchedulerRepository schedulerRepository;
 
     @GetMapping()
-    public @ResponseBody Iterable<Scheduler> getFiles() {
+    public @ResponseBody Iterable<Scheduler> getSchdulers() {
         return schedulerRepository.findAll();
     }
 
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object getActions(@PathVariable String id) {
+    public @ResponseBody Object getSchduler(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && schedulerRepository.existsById(intId))
             return schedulerRepository.findById(intId).get();
@@ -84,11 +84,9 @@ public class SchedulerController {
             
             scheduler.setDateStart(date);
             scheduler.setRepeated(repeatedBool);
-
-            return schedulerRepository.findById(scheduler.getSchedulerId());
         }
-
-        return scheduler;
+        schedulerRepository.save(scheduler);
+        return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 
     public Integer getFirstPosition(Integer number, int max) {

@@ -13,6 +13,7 @@ import java.util.TimerTask;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import samt.smajilbasic.deduplicator.ActionType;
+import samt.smajilbasic.deduplicator.controller.ScanController;
 import samt.smajilbasic.deduplicator.entity.Action;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.entity.GlobalPath;
@@ -27,10 +28,9 @@ public class ActionsManager extends TimerTask {
 
     @Autowired
     ActionRepository actionRepository;
-    
+
     @Autowired
     GlobalPathRepository globalPathRepository;
-  
 
     Scheduler actionScheduler;
 
@@ -40,7 +40,7 @@ public class ActionsManager extends TimerTask {
 
     AuthenticationDetails user;
 
-    public ActionsManager(Scheduler actionScheduler,Timer timer) {
+    public ActionsManager(Scheduler actionScheduler, Timer timer) {
         setActionScheduler(actionScheduler);
         this.timer = timer;
     }
@@ -57,9 +57,9 @@ public class ActionsManager extends TimerTask {
 
             for (Action action : actions) {
                 if (!action.isExecuted()) {
-                    boolean executed = false;    
+                    boolean executed = false;
                     if (action.getActionType() == ActionType.MOVE) {
-                        
+
                         if (this.move(action.getFilePath(), action.getNewFilePath())) {
                             System.out.println("[INFO] File moved succesfully: " + action.getFilePath());
                             executed = true;
@@ -74,8 +74,8 @@ public class ActionsManager extends TimerTask {
                         } else {
                             System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
                         }
-                    }else if(action.getActionType() == ActionType.IGNORE){
-                        GlobalPath path = new GlobalPath(action.getFilePath(),true);
+                    } else if (action.getActionType() == ActionType.IGNORE) {
+                        GlobalPath path = new GlobalPath(action.getFilePath(), true);
                         globalPathRepository.save(path);
 
                         if (globalPathRepository.findById(path.getPath()).get() != null) {
@@ -84,34 +84,44 @@ public class ActionsManager extends TimerTask {
                         } else {
                             System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
                         }
+                    } else if (action.getActionType() == ActionType.SCAN) {
+                        ScanController controller = new ScanController();
+                        controller.start(null);
+                        timer.cancel();
+
+                        long difference = 0;
+                        Calendar nextDate = Calendar.getInstance();
+
+                        Calendar startCalendar = Calendar.getInstance();
+
+                        if (actionScheduler.isRepeated()) {
+                            if (actionScheduler.getMonthly() != null) {
+                                nextDate.set(
+                                        startCalendar.get(Calendar.YEAR) + 1900,
+                                        startCalendar.get(Calendar.MONTH),
+                                        actionScheduler.getMonthly()
+                                        );
+
+                                // get time in
+                                // milliseconds until
+                                // next execution
+                                difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
+
+                            } else if (actionScheduler.getWeekly() != null) {
+                                difference = Math
+                                        .abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                            }
+                            timer.schedule(new ActionsManager(actionScheduler, timer),
+                                    new Date(startCalendar.getTime().getTime() + difference));
+                        }
+                        actionScheduler.executed();
+
                     }
 
                     action.setExecuted(executed);
                 }
             }
 
-            timer.cancel();
-            
-            long difference = 0;
-            Calendar nextDate = Calendar.getInstance();
-
-
-            Calendar startCalendar = Calendar.getInstance();
-
-            if (actionScheduler.isRepeated()) {
-                if (actionScheduler.getMonthly() != null) {
-                    nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH), actionScheduler.getMonthly());
-
-                    difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis()); // get time in
-                                                                                               // milliseconds until
-                                                                                               // next execution
-
-                } else if (actionScheduler.getWeekly() != null) {
-                    difference = Math.abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
-                }
-                timer.schedule(new ActionsManager(actionScheduler,timer), new Date(startCalendar.getTime().getTime()+difference));
-            }
-            actionScheduler.executed();
         } else {
             System.out.println("[ERROR] Unable to find actions, actionScheduler not set");
         }

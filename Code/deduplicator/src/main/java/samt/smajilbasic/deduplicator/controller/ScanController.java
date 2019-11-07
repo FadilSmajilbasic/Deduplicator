@@ -47,8 +47,7 @@ public class ScanController {
 
             currentScan.setReportRepository(reportRepository);
             currentScan.setReportId(report.getId());
-            if (threadCount != null)
-                currentScan.setThreadCount(threadCount);
+            currentScan.setThreadCount(threadCount);
             currentScan.start();
 
             return report;

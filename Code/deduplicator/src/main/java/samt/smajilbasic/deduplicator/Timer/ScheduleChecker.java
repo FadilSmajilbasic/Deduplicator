@@ -28,8 +28,13 @@ public class ScheduleChecker extends Thread {
             Calendar startCalendar = Calendar.getInstance();
             startCalendar.setTime(startDate);
             Timer timer = new Timer();
-            
-            timer.schedule(new ActionsManager(schedule,timer), startDate);
+            if(schedule.getExecutonCounter() < 1){
+                timer.schedule(new ActionsManager(schedule,timer), startDate);
+            }else{
+                if(schedule.isRepeated()){
+                    timer.schedule(new ActionsManager(schedule,timer), startDate);
+                }
+            }
         });
     }
 }

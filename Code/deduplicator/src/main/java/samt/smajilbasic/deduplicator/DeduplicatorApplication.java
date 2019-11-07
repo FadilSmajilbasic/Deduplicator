@@ -8,13 +8,14 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
 
 import samt.smajilbasic.deduplicator.Timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
-
-// (scanBasePackages = { "samt.smajilbasic.deduplicator.controller", "samt.smajilbasic.deduplicator.repository","samt.smajilbasic.deduplicator.entity"})
-@SpringBootApplication
+@ComponentScan(basePackages = "samt.smajilbasic.deduplicator.security")
+@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
 public class DeduplicatorApplication {
 
 	@Autowired
@@ -30,7 +31,7 @@ public class DeduplicatorApplication {
 		if(!adr.existsById("admin"))
 			adr.save(new AuthenticationDetails("admin","admin"));
 		else
-			adr.save(new AuthenticationDetails("scheduler",null));
+			adr.save(new AuthenticationDetails("scheduler",""));
 
 		ScheduleChecker checker = new ScheduleChecker();
 		checker.start();

@@ -66,7 +66,7 @@ public class AuthenticationDetails {
     public void setPassword(String password) throws NoSuchAlgorithmException {
         if(password != null){
             PasswordEncoder encoder = new BCryptPasswordEncoder();
-            this.password = encoder.encode(password);;
+            this.password = encoder.encode(password);
         }else{
             this.password = null;
         }

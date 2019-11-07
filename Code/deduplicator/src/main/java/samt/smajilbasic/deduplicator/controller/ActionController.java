@@ -39,7 +39,7 @@ public class ActionController {
     AuthenticationDetailsRepository adr;
 
     @GetMapping()
-    public @ResponseBody Iterable<Action> getFiles() {
+    public @ResponseBody Iterable<Action> getActions() {
         return actionRepository.findAll();
     }
 
