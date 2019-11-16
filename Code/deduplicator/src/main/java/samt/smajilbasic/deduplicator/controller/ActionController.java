@@ -1,7 +1,11 @@
 package samt.smajilbasic.deduplicator.controller;
 
+import java.util.Timer;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -26,6 +30,8 @@ import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
+import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
+import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.worker.ActionsManager;
 
 @RestController
@@ -36,9 +42,17 @@ public class ActionController {
     ActionRepository actionRepository;
 
     @Autowired
+    SchedulerRepository schedulerRepository;
+
+    @Autowired
     AuthenticationDetailsRepository adr;
 
-    @GetMapping()
+    @Autowired
+    ScheduleChecker checker;
+    @Autowired
+    ApplicationContext context;
+
+    @GetMapping("/")
     public @ResponseBody Iterable<Action> getActions() {
         return actionRepository.findAll();
     }
@@ -49,53 +63,63 @@ public class ActionController {
         if (intId != null && actionRepository.existsById(intId))
             return actionRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid action id");
+            return new Message(HttpStatus.NOT_FOUND, "Invalid action id");
     }
 
-    @PostMapping("/execute/")
-    public @ResponseBody Message executeActions() {
+    @PostMapping("/execute/all")
+    public @ResponseBody Object executeActions() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authenticatedUser = authentication.getName();
 
         AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
+        
 
-        new ActionsManager(actionRepository.findActionsFromUser(internalUser), internalUser);
-        return new Message(HttpStatus.OK);
+        ActionsManager manager = (ActionsManager) context.getBean("actionsManager");
+        manager.setValues(actionRepository.findActionsFromUser(internalUser), internalUser);
+        Timer timer = new Timer();
+        timer.schedule(manager, 0);
+        
+        return actionRepository.findActionsFromUser(internalUser);
     }
 
-    @PutMapping()
-    public @ResponseBody Object addAction(@RequestParam String type, @RequestParam String path,
-            @RequestParam String newPath, @RequestParam(required = false) String user) {
+    @PutMapping("/")
+    public @ResponseBody Object addAction(@RequestParam String type, @RequestParam(required = false) String path,
+            @RequestParam(required = false) String newPath, @RequestParam(required = true) String scheduler) {
 
-        if (adr.existsById(user)) {
-            AuthenticationDetails internalUser = adr.findById(user).get();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUser = authentication.getName();
+
+        Integer schedulerIdInt = Validator.isInt(scheduler);
+        if (schedulerRepository.existsById(schedulerIdInt != null ? schedulerIdInt : -1)) {
             type = getType(type);
             if (type == null)
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Action type invalid");
 
-            if (type.equals(ActionType.MOVE) && (newPath.trim().equals("") || newPath == null))
+            if (type.equals(ActionType.MOVE) && (newPath.trim().equalsIgnoreCase("") || newPath == null))
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path not set while having type = MOVE");
 
-            if (Validator.getPathType(path) != PathType.File)
+            if (Validator.getPathType(path) != PathType.File && !type.equals(ActionType.SCAN))
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "File path invalid");
 
-            if (Validator.getPathType(newPath) != PathType.Directory)
+            if (Validator.getPathType(newPath) != PathType.Directory && !type.equals(ActionType.SCAN))
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path is invalid or not a directory");
 
-            Action action = new Action(type, path, newPath, internalUser);
+            Action action = new Action(type, path, newPath, adr.findById(currentUser).get(),
+                    schedulerRepository.findById(schedulerIdInt).get());
             actionRepository.save(action);
-
+            checker.check();
             return action;
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "User invalid");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Scheduler id invalid");
         }
+
     }
 
     private String getType(String type) {
         if (type.equalsIgnoreCase(ActionType.DELETE) || type.equalsIgnoreCase(ActionType.MOVE)
                 || type.equalsIgnoreCase(ActionType.DELETE) || type.equalsIgnoreCase(ActionType.IGNORE)
-                || type.equalsIgnoreCase(ActionType.NONE))
+                || type.equalsIgnoreCase(ActionType.NONE) || type.equalsIgnoreCase(ActionType.SCAN))
             return type.toUpperCase();
         else
             return null;
