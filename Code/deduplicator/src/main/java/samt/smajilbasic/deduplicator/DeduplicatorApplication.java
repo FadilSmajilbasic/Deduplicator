@@ -15,8 +15,8 @@ import samt.smajilbasic.deduplicator.Timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 
-// @ComponentScan(basePackages = "samt.smajilbasic.deduplicator.security")
-@SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
+// @ComponentScan(basePackages = "samt.smajilbasic.deduplicator.config")
+@SpringBootApplication
 public class DeduplicatorApplication {
 
 	@Autowired
