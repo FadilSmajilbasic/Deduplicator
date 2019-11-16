@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 /**
  * ScanController
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.Validator;
+import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;;
@@ -31,8 +34,14 @@ public class SchedulerController {
     @Autowired
     SchedulerRepository schedulerRepository;
 
+    @Autowired
+    ScheduleChecker checker;
+
+    @Autowired
+    ApplicationContext context;
+
     @GetMapping()
-    public @ResponseBody Iterable<Scheduler> getSchdulers() {
+    public @ResponseBody Iterable<Scheduler> getSchedulers() {
         return schedulerRepository.findAll();
     }
 
@@ -42,7 +51,7 @@ public class SchedulerController {
         if (intId != null && schedulerRepository.existsById(intId))
             return schedulerRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid scheduler id");
+            return new Message(HttpStatus.NOT_FOUND, "Invalid scheduler id");
     }
 
     @PutMapping()
@@ -62,12 +71,12 @@ public class SchedulerController {
         }
         if (repeatedBool) {
             scheduler.setRepeated(repeatedBool);
-            if (minutes != null && minutes >=  0  && minutes <= 1440 ) { // 60 min * 24 h = 1440
+            if (minutes != null && minutes >= 0 && minutes <= 1440) { // 60 min * 24 h = 1440
                 if (monthlyInt != null) {
                     Integer dayMonth = getFirstPosition(monthlyInt, 31);
 
                     scheduler.setMonthly(dayMonth);
-                    
+
                 } else if (weeklyInt != null) {
                     Integer dayWeek = getFirstPosition(weeklyInt, 7);
                     scheduler.setWeekly(dayWeek);
@@ -81,20 +90,28 @@ public class SchedulerController {
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Schedule hour parameter invalid");
             }
         } else {
-            
+
             scheduler.setDateStart(date);
+            scheduler.setMinutes(minutes);
             scheduler.setRepeated(repeatedBool);
         }
         schedulerRepository.save(scheduler);
+        checker.check();
         return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 
     public Integer getFirstPosition(Integer number, int max) {
-        return this.getPositions(number, max).get(0);
+        List<Integer> positions = this.getPositions(number, max);
+        if(positions.size() > 0){
+            return positions.get(0);
+        }
+        return 0;
+        
     }
 
     /**
      * For future implementations (multiple days)
+     * 
      * @param number
      * @param max
      * @return
@@ -112,5 +129,24 @@ public class SchedulerController {
             ;
         }
         return positions;
+    }
+
+
+    @DeleteMapping("/{id}")
+    public @ResponseBody Object deleteScheduler(@PathVariable String id){
+        Integer intId = Validator.isInt(id);
+        if(intId != null){
+            if(schedulerRepository.existsById(intId)){
+                Scheduler scheduler = schedulerRepository.findById(intId).get();
+                schedulerRepository.delete(scheduler);
+                return scheduler;
+            }else{
+                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to find scheduler with id: " + id);
+            }
+        }else{
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id );
+        }
+        
+
     }
 }
