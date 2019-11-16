@@ -1,10 +1,11 @@
-package samt.smajilbasic.deduplicator.Timer;
+package samt.smajilbasic.deduplicator.timer;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import samt.smajilbasic.deduplicator.entity.Scheduler;
@@ -15,26 +16,36 @@ import samt.smajilbasic.deduplicator.worker.ActionsManager;
  * RemindTask
  */
 @Component
-public class ScheduleChecker extends Thread {
+public class ScheduleChecker {
 
     @Autowired
     SchedulerRepository schedulerRepository;
 
-    @Override
-    public void run() {
+    @Autowired
+    ActionsManager actionsManager;
+
+    @Autowired
+    ApplicationContext context;
+
+    public ScheduleChecker() {
+        super();
+    }
+
+    public void check(){
         Iterable<Scheduler> schedulers = schedulerRepository.findAll();
 
         schedulers.forEach(schedule -> {
+
+            actionsManager = (ActionsManager) context.getBean("actionsManager");
             Date startDate = schedule.getDateStart();
 
             Calendar startCalendar = Calendar.getInstance();
             startCalendar.setTime(startDate);
             Timer timer = new Timer();
-            if(schedule.getExecutonCounter() < 1){
-                timer.schedule(new ActionsManager(schedule,timer), startDate);
-            }else{
-                if(schedule.isRepeated()){
-                    timer.schedule(new ActionsManager(schedule,timer), startDate);
+
+            if (!(schedule.getExecutonCounter() < 1) && schedule.isRepeated()) {
+                synchronized(timer){
+                    timer.schedule(actionsManager.setValues(schedule, timer), startDate);
                 }
             }
         });
