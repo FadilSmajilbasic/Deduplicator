@@ -14,8 +14,9 @@ import org.springframework.context.annotation.ComponentScan;
 import samt.smajilbasic.deduplicator.Timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
-@ComponentScan(basePackages = "samt.smajilbasic.deduplicator.security")
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+
+// @ComponentScan(basePackages = "samt.smajilbasic.deduplicator.security")
+@SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 public class DeduplicatorApplication {
 
 	@Autowired
@@ -28,13 +29,11 @@ public class DeduplicatorApplication {
 	@PostConstruct
 	void started() throws NoSuchAlgorithmException {
 		TimeZone.setDefault(TimeZone.getDefault());
-		if(!adr.existsById("admin"))
-			adr.save(new AuthenticationDetails("admin","admin"));
-		else
-			adr.save(new AuthenticationDetails("scheduler",""));
+		adr.save(new AuthenticationDetails("admin", "admin"));
+		adr.save(new AuthenticationDetails("scheduler", "scheduler"));
 
-		ScheduleChecker checker = new ScheduleChecker();
-		checker.start();
+		// ScheduleChecker checker = new ScheduleChecker();
+		// checker.start();
 	}
 
 }
