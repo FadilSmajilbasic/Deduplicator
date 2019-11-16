@@ -9,7 +9,6 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * AuthenticationDetails
@@ -65,7 +64,7 @@ public class AuthenticationDetails {
      */
     public void setPassword(String password) throws NoSuchAlgorithmException {
         if(password != null){
-            this.password = password;
+            this.password = new BCryptPasswordEncoder().encode(password);
         }else{
             this.password = "";
         }

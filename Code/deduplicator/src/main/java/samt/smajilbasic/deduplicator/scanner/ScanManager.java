@@ -194,8 +194,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
      * @param threadCount the threadCount to set
      */
     public void setThreadCount(Integer threadCount) {
-        if (threadCount > 0)
-            this.threadCount = threadCount;
+        if (threadCount != null)
+            this.threadCount = threadCount > 0 ? threadCount : DEFAULT_THREAD_COUNT;
         else
             this.threadCount = DEFAULT_THREAD_COUNT;
     }

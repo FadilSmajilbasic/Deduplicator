@@ -40,17 +40,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
         PasswordEncoder encoder = passwordEncoder();
 
 
-        adr.findAll().forEach(user -> { // get every user form the database
-            String type = "USER"; // set type of user
-            if (user.getUsername().equals("admin")) { // check if they are admin
+        adr.findAll().forEach(user -> {
+            String type = "USER";
+            if (user.getUsername().equals("admin")) { 
                 type = "ADMIN";
             }
 
             try {
                 auth.inMemoryAuthentication().passwordEncoder(encoder)
-                        .withUser(user.getUsername()) // add user to the authentication memory
-                        .password(encoder.encode(user.getPassword())) // add user's password 
-                        .roles(type); // set user type
+                        .withUser(user.getUsername()) 
+                        .password(user.getPassword()) 
+                        .roles(type); 
                         System.out.println("user: " + user.getUsername() + " pass: " + user.getPassword());
 
 
@@ -62,7 +62,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
         }
 
         );
-        System.out.println("enduser");
 
     }
 
