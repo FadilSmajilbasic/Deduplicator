@@ -15,10 +15,10 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compile('org.springframework.boot:spring-boot-starter-security')
+	compile('org.quartz-scheduler:quartz:2.2.1')
 	compile("com.h2database:h2")
 	runtimeOnly 'mysql:mysql-connector-java'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	compile('org.quartz-scheduler:quartz:2.2.1')
-	compile('org.springframework.boot:spring-boot-starter-security')
 	testImplementation 'org.springframework.security:spring-security-test'
 }
