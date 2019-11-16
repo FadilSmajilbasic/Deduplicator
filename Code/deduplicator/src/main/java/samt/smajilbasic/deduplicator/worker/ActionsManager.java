@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import  org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import samt.smajilbasic.deduplicator.ActionType;
@@ -24,6 +26,7 @@ import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 /**
  * ActionsManager
  */
+@Component
 public class ActionsManager extends TimerTask {
 
     @Autowired
@@ -31,6 +34,9 @@ public class ActionsManager extends TimerTask {
 
     @Autowired
     GlobalPathRepository globalPathRepository;
+
+    @Autowired
+    ApplicationContext context;
 
     Scheduler actionScheduler;
 
@@ -40,21 +46,19 @@ public class ActionsManager extends TimerTask {
 
     AuthenticationDetails user;
 
-    public ActionsManager(Scheduler actionScheduler, Timer timer) {
-        setActionScheduler(actionScheduler);
-        this.timer = timer;
-    }
-
-    public ActionsManager(List<Action> actions, AuthenticationDetails user) {
-        this.actions = actions;
-        this.user = user;
+    public ActionsManager() {
+        super();
     }
 
     @Override
     public void run() {
         if (actionScheduler != null) {
-            List<Action> actions = actionRepository.findActionsFromScheduler(actionScheduler);
-
+            actions = actionRepository.findActionsFromScheduler(actionScheduler);
+        } else {
+            System.out.println("[INFO] Unable to find actions, actionScheduler not set");
+        }
+        if(actions != null ){
+            System.out.println("working");
             for (Action action : actions) {
                 if (!action.isExecuted()) {
                     boolean executed = false;
@@ -111,7 +115,9 @@ public class ActionsManager extends TimerTask {
                                 difference = Math
                                         .abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
                             }
-                            timer.schedule(new ActionsManager(actionScheduler, timer),
+                            ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
+                            
+                            timer.schedule(actionsManager.setValues(actionScheduler, timer),
                                     new Date(startCalendar.getTime().getTime() + difference));
                         }
                         actionScheduler.executed();
@@ -121,10 +127,11 @@ public class ActionsManager extends TimerTask {
                     action.setExecuted(executed);
                 }
             }
-
-        } else {
-            System.out.println("[ERROR] Unable to find actions, actionScheduler not set");
+        }else{
+            System.out.println("[ERROR] No action to execute set");
         }
+
+        
     }
 
     private boolean move(String oldPath, String newPath) {
@@ -151,5 +158,17 @@ public class ActionsManager extends TimerTask {
     public void setActionScheduler(Scheduler actionScheduler) {
         this.actionScheduler = actionScheduler;
     }
+
+	public ActionsManager setValues(Scheduler schedule, Timer timer) {
+		setActionScheduler(actionScheduler);
+        this.timer = timer;
+        return this;
+    }
+    
+    public ActionsManager setValues(List<Action> actions, AuthenticationDetails user) {
+		this.actions = actions;
+        this.user = user;
+        return this;
+	}
 
 }
