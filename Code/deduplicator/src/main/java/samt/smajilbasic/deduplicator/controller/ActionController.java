@@ -5,9 +5,9 @@ import java.util.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 /**
  * ScanController
@@ -73,13 +73,13 @@ public class ActionController {
         String authenticatedUser = authentication.getName();
 
         AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
-        
 
         ActionsManager manager = (ActionsManager) context.getBean("actionsManager");
-        manager.setValues(actionRepository.findActionsFromUser(internalUser), internalUser);
+        manager.setActions(actionRepository.findActionsFromUser(internalUser));
+        manager.setUser(internalUser);
         Timer timer = new Timer();
         timer.schedule(manager, 0);
-        
+
         return actionRepository.findActionsFromUser(internalUser);
     }
 
@@ -123,6 +123,22 @@ public class ActionController {
             return type.toUpperCase();
         else
             return null;
+    }
+    
+    @DeleteMapping("/{id}")
+    public @ResponseBody Object deleteAction(@PathVariable String id){
+        Integer intId = Validator.isInt(id);
+        if(intId != null){
+            if(actionRepository.existsById(intId)){
+                Action action = actionRepository.findById(intId).get();
+                actionRepository.delete(action);
+                return action;
+            }else{
+                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to find action with id: " + id);
+            }
+        }else{
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id );
+        }
     }
 
 }
