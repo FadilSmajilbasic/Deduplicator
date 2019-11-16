@@ -54,6 +54,7 @@ out/
 /dist/
 /nbdist/
 /.nb-gradle/
+*.form
 
 ### VS Code ###
 .vscode/
