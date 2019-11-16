@@ -15,9 +15,9 @@ public class GlobalPath {
 	@Id
 	private String path;
 
-	private boolean file;
+	private Boolean file;
 
-	private boolean ignoreFile;
+	private Boolean ignoreFile;
 
 	private Timestamp date;
 

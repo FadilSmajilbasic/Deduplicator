@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Timer;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
@@ -13,6 +14,7 @@ import samt.smajilbasic.deduplicator.worker.ActionsManager;
 /**
  * RemindTask
  */
+@Component
 public class ScheduleChecker extends Thread {
 
     @Autowired

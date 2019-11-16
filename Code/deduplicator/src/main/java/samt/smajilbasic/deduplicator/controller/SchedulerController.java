@@ -56,9 +56,9 @@ public class SchedulerController {
         Date date;
         Scheduler scheduler = new Scheduler();
         try {
-            date = new Date(new Long(dateStart));
+            date = new Date(Long.parseLong(dateStart));
         } catch (NumberFormatException e) {
-            date = new Date(new Long(System.currentTimeMillis()));
+            date = new Date(System.currentTimeMillis());
         }
         if (repeatedBool) {
             scheduler.setRepeated(repeatedBool);

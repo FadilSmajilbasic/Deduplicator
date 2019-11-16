@@ -12,8 +12,10 @@ import org.springframework.http.HttpStatus;
 public class Message {
 
     private HttpStatus status;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
     private LocalDateTime timestamp;
+    
     private String message;
 
     private Message() {

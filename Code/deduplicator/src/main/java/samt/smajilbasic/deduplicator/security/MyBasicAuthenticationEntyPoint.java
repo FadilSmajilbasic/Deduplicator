@@ -29,14 +29,16 @@ public class MyBasicAuthenticationEntyPoint extends BasicAuthenticationEntryPoin
         response.addHeader("WWW-Authenticate", "Basic realm=" + getRealmName() + "");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         PrintWriter writer = response.getWriter();
-        Message message =  new Message(HttpStatus.NETWORK_AUTHENTICATION_REQUIRED,"Error message: " + authEx.getMessage());
+        Message message =  new Message(HttpStatus.UNAUTHORIZED,"Error message: " + authEx.getMessage());
         ObjectMapper mapper = new ObjectMapper();
         writer.write(mapper.writeValueAsString(message));
     }
  
     @Override
     public void afterPropertiesSet() throws Exception {
-        setRealmName("Baeldung");
+        setRealmName("Deduplicator");
         super.afterPropertiesSet();
     }
+
+    
 }
