@@ -48,9 +48,8 @@ public class ScannerThread extends Thread {
         synchronized (monitor) {
             while (isPaused()) {
                 try {
-                    System.out.println("enterd wait");
                     monitor.wait();
-                    System.out.println("Resumed");
+                    System.out.println("[INFO] Threads resumed");
                 } catch (InterruptedException e) {
                     System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace().toString());
                 }

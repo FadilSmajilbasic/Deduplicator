@@ -103,14 +103,12 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         } finally {
             pool.shutdownNow();
             long time = System.currentTimeMillis();
-            System.out.print("\n[INFO] Waiting for pool termination");
             while (!pool.isTerminated()) {
-                if (System.currentTimeMillis() - time > 500) {
+                if (System.currentTimeMillis() - time > 50) {
                     System.out.print(".");
                     time = System.currentTimeMillis();
                 }
             }
-            System.out.println("\n");
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 

@@ -47,9 +47,8 @@ public class Hasher extends Thread{
         return hashtext;
     }
 
-    public static String getFileHash(Path file) throws NoSuchAlgorithmException, IOException {
+    public static String getFileHash(Path file) throws NoSuchAlgorithmException, IOException,OutOfMemoryError {
         return Hasher.getHash(Files.readAllBytes(file), "MD5");
-
     }
 
     @Override
@@ -73,9 +72,9 @@ public class Hasher extends Thread{
                 System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
             } catch (NullPointerException npe) {
                 System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
+            } catch (OutOfMemoryError ex){
+                System.out.println("[ERROR] File too big to calculate hash");
             }
         }
-
-        System.out.println("[INFO] Done saving files");
     }
 }

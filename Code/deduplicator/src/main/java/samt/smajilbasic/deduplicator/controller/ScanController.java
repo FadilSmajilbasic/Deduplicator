@@ -1,5 +1,7 @@
 package samt.smajilbasic.deduplicator.controller;
 
+import java.sql.Timestamp;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -43,6 +45,7 @@ public class ScanController {
 
             currentScan = (ScanManager) context.getBean("scanManager");
             Report report = new Report();
+            report.setStart(new Timestamp(System.currentTimeMillis()));
             reportRepository.save(report);
 
             currentScan.setReportRepository(reportRepository);
@@ -64,11 +67,10 @@ public class ScanController {
             System.out.println("Waiting finish");
             while (currentScan.isAlive()) {
                 long time = System.currentTimeMillis();
-                if (System.currentTimeMillis() - time > 500) {
+                if (System.currentTimeMillis() - time > 100) {
                     System.out.print(".");
                 }
             }
-            System.out.println("dooone");
 
             Report report = currentScan.getReport();
 
@@ -76,7 +78,6 @@ public class ScanController {
 
             ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
 
-            System.out.println(currentScan.toString());
 
             return report;
         } else {

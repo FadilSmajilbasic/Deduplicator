@@ -48,11 +48,9 @@ public class Report {
 
 
     public Report() {
-        setStart(new Timestamp(System.currentTimeMillis()));
     }
 
     public Report(AuthenticationDetails user) {
-        this();
         setUser(user);
     }
 
@@ -86,7 +84,7 @@ public class Report {
     /**
      * @param start the start to set
      */
-    private void setStart(Timestamp start) {
+    public void setStart(Timestamp start) {
         this.start = start;
     }
 
