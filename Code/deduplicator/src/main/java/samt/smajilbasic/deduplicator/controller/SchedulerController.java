@@ -3,9 +3,9 @@ package samt.smajilbasic.deduplicator.controller;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,7 +30,7 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;;
 
 @RestController
 @RequestMapping(path = "/scheduler")
-public class SchedulerController {
+public class SchedulerController implements TimerListener {
 
     @Autowired
     SchedulerRepository schedulerRepository;
@@ -37,8 +38,7 @@ public class SchedulerController {
     @Autowired
     ScheduleChecker checker;
 
-    @Autowired
-    ApplicationContext context;
+    List<Timer> timers = new ArrayList<>();
 
     @GetMapping()
     public @ResponseBody Iterable<Scheduler> getSchedulers() {
@@ -100,13 +100,24 @@ public class SchedulerController {
         return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 
+    @PostMapping("/stopTimers")
+    public Message stopTimers() {
+        
+        timers.forEach(timer ->{
+            timer.cancel();
+            timers.remove(timer);
+        });
+
+        return new Message(HttpStatus.OK,"Timers stopped");
+    }
+
     public Integer getFirstPosition(Integer number, int max) {
         List<Integer> positions = this.getPositions(number, max);
-        if(positions.size() > 0){
+        if (positions.size() > 0) {
             return positions.get(0);
         }
         return 0;
-        
+
     }
 
     /**
@@ -131,22 +142,24 @@ public class SchedulerController {
         return positions;
     }
 
-
     @DeleteMapping("/{id}")
-    public @ResponseBody Object deleteScheduler(@PathVariable String id){
+    public @ResponseBody Object deleteScheduler(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
-        if(intId != null){
-            if(schedulerRepository.existsById(intId)){
+        if (intId != null) {
+            if (schedulerRepository.existsById(intId)) {
                 Scheduler scheduler = schedulerRepository.findById(intId).get();
                 schedulerRepository.delete(scheduler);
                 return scheduler;
-            }else{
+            } else {
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to find scheduler with id: " + id);
             }
-        }else{
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id );
+        } else {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id);
         }
-        
+    }
 
+    @Override
+    public void timerAdded(Timer timer) {
+        timers.add(timer);
     }
 }
