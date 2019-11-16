@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import  org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -22,6 +22,7 @@ import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
+import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 
 /**
  * ActionsManager
@@ -34,6 +35,8 @@ public class ActionsManager extends TimerTask {
 
     @Autowired
     GlobalPathRepository globalPathRepository;
+    @Autowired
+    SchedulerRepository schedulerRepository;
 
     @Autowired
     ApplicationContext context;
@@ -52,17 +55,20 @@ public class ActionsManager extends TimerTask {
 
     @Override
     public void run() {
+        System.out.println("WORKER STARTED");
+
         if (actionScheduler != null) {
             actions = actionRepository.findActionsFromScheduler(actionScheduler);
         } else {
             System.out.println("[INFO] Unable to find actions, actionScheduler not set");
         }
-        if(actions != null ){
-            System.out.println("working");
+        if (actions != null) {
             for (Action action : actions) {
+                System.out.println("executing action: " + action.getActionType());
+
                 if (!action.isExecuted()) {
                     boolean executed = false;
-                    if (action.getActionType() == ActionType.MOVE) {
+                    if (action.getActionType().equals(ActionType.MOVE)) {
 
                         if (this.move(action.getFilePath(), action.getNewFilePath())) {
                             System.out.println("[INFO] File moved succesfully: " + action.getFilePath());
@@ -71,14 +77,14 @@ public class ActionsManager extends TimerTask {
                             System.out.println("[ERROR] Unable to move file: " + action.getFilePath()
                                     + " to destination: " + action.getNewFilePath());
                         }
-                    } else if (action.getActionType() == ActionType.DELETE) {
+                    } else if (action.getActionType().equals(ActionType.DELETE)) {
                         if (this.delete(action.getFilePath())) {
                             System.out.println("[INFO] File deleted succesfully: " + action.getFilePath());
                             executed = true;
                         } else {
                             System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
                         }
-                    } else if (action.getActionType() == ActionType.IGNORE) {
+                    } else if (action.getActionType().equals(ActionType.IGNORE)) {
                         GlobalPath path = new GlobalPath(action.getFilePath(), true);
                         globalPathRepository.save(path);
 
@@ -88,8 +94,9 @@ public class ActionsManager extends TimerTask {
                         } else {
                             System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
                         }
-                    } else if (action.getActionType() == ActionType.SCAN) {
-                        ScanController controller = new ScanController();
+                    } else if (action.getActionType().equals(ActionType.SCAN)) {
+                        System.out.println("scan");
+                        ScanController controller = (ScanController) context.getBean("scanController");
                         controller.start(null);
                         timer.cancel();
 
@@ -98,40 +105,49 @@ public class ActionsManager extends TimerTask {
 
                         Calendar startCalendar = Calendar.getInstance();
 
-                        if (actionScheduler.isRepeated()) {
-                            if (actionScheduler.getMonthly() != null) {
-                                nextDate.set(
-                                        startCalendar.get(Calendar.YEAR) + 1900,
-                                        startCalendar.get(Calendar.MONTH),
-                                        actionScheduler.getMonthly()
-                                        );
+                        if (actionScheduler != null) {
+                            System.out.println("sched");
+                            if (actionScheduler.isRepeated()) {
+                                if (actionScheduler.getMonthly() != null) {
+                                    nextDate.set(startCalendar.get(Calendar.YEAR) + 1900,
+                                            startCalendar.get(Calendar.MONTH), actionScheduler.getMonthly());
+                                    // get time in
+                                    // milliseconds until
+                                    // next execution
+                                    difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
 
-                                // get time in
-                                // milliseconds until
-                                // next execution
-                                difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
+                                } else if (actionScheduler.getWeekly() != null) {
+                                    difference = Math
+                                            .abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                                }
+                                ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
+                                actionsManager.setActionScheduler(actionScheduler);
+                                actionsManager.setTimer(timer);
 
-                            } else if (actionScheduler.getWeekly() != null) {
-                                difference = Math
-                                        .abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                                timer.schedule(actionsManager,
+                                        new Date(startCalendar.getTime().getTime() + difference));
+
                             }
-                            ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
-                            
-                            timer.schedule(actionsManager.setValues(actionScheduler, timer),
-                                    new Date(startCalendar.getTime().getTime() + difference));
                         }
-                        actionScheduler.executed();
+                        executed = true;
 
                     }
 
                     action.setExecuted(executed);
+
+                    actionScheduler.executed();
+
+                    actionRepository.save(action);
+                    schedulerRepository.save(actionScheduler);
+                }else{
+                    System.out.println("[INFO] Action "+action.getId()+" already executed ");
                 }
             }
-        }else{
+        } else {
             System.out.println("[ERROR] No action to execute set");
         }
 
-        
+        System.out.println("finished working");
     }
 
     private boolean move(String oldPath, String newPath) {
@@ -159,16 +175,39 @@ public class ActionsManager extends TimerTask {
         this.actionScheduler = actionScheduler;
     }
 
-	public ActionsManager setValues(Scheduler schedule, Timer timer) {
-		setActionScheduler(actionScheduler);
-        this.timer = timer;
-        return this;
+    /**
+     * @param actions the actions to set
+     */
+    public void setActions(List<Action> actions) {
+        this.actions = actions;
     }
-    
-    public ActionsManager setValues(List<Action> actions, AuthenticationDetails user) {
-		this.actions = actions;
+
+    /**
+     * @return the actions
+     */
+    public List<Action> getActions() {
+        return actions;
+    }
+
+    /**
+     * @param user the user to set
+     */
+    public void setUser(AuthenticationDetails user) {
         this.user = user;
-        return this;
-	}
+    }
+
+    /**
+     * @return the user
+     */
+    public AuthenticationDetails getUser() {
+        return user;
+    }
+
+    /**
+     * @param timer the timer to set
+     */
+    public void setTimer(Timer timer) {
+        this.timer = timer;
+    }
 
 }
