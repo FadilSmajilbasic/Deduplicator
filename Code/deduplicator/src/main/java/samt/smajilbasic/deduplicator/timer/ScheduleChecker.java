@@ -31,7 +31,7 @@ public class ScheduleChecker {
         super();
     }
 
-    public void check(){
+    public void check() {
         Iterable<Scheduler> schedulers = schedulerRepository.findAll();
 
         schedulers.forEach(schedule -> {
@@ -43,10 +43,22 @@ public class ScheduleChecker {
             startCalendar.setTime(startDate);
             Timer timer = new Timer();
 
-            if (!(schedule.getExecutonCounter() < 1) && schedule.isRepeated()) {
-                synchronized(timer){
-                    timer.schedule(actionsManager.setValues(schedule, timer), startDate);
+            if (!(schedule.getExecutonCounter() < 1 && schedule.isRepeated())) {
+                synchronized (timer) {
+                    try {
+                        actionsManager.setActionScheduler(schedule);
+                        actionsManager.setTimer(timer);
+
+                        timer.schedule(actionsManager, startDate);
+                        System.out.println("Scheduled");
+                    } catch (IllegalStateException ise) {
+                        System.out.println(
+                                "[INFO] Unable to set timer: " + ise.getMessage() + " >> " + schedule.getSchedulerId());
+                    }
                 }
+            } else {
+                System.out.println("[INFO] Scheduler already executed");
+
             }
         });
     }
