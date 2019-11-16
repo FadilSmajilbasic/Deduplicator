@@ -51,9 +51,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
                         .withUser(user.getUsername()) 
                         .password(user.getPassword()) 
                         .roles(type); 
-                        System.out.println("user: " + user.getUsername() + " pass: " + user.getPassword());
-
-
             } catch (Exception e) {
                 System.out.println("[ERROR] Unable to add user for http authentication: " + user.getUsername());
                 e.printStackTrace();

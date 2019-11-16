@@ -15,14 +15,14 @@ import samt.smajilbasic.deduplicator.entity.*;
 public interface ActionRepository extends CrudRepository<Action,Integer> {
 
      @Query( value = "SELECT * "+
-                    "FROM actions  "+
+                    "FROM action "+
                     "WHERE scheduler=?1",
             nativeQuery = true)
     List<Action> findActionsFromScheduler(Scheduler schedule);
 
 
     @Query( value = "SELECT * "+
-                    "FROM actions "+
+                    "FROM action "+
                     "WHERE user=?1 ",
             nativeQuery = true)
     List<Action> findActionsFromUser(AuthenticationDetails user);

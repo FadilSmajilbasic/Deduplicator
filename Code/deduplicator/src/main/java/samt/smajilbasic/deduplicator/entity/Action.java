@@ -31,26 +31,27 @@ public class Action {
 
     private Long dateAdded;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user")
     private AuthenticationDetails user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "scheduler")
     private Scheduler scheduler;
 
 
-    public Action(String type, String path, String newPath,AuthenticationDetails user) {
+    public Action(String type, String path, String newPath,AuthenticationDetails user,Scheduler scheduler) {
         setActionType(type);
         setFilePath(path);
         setNewFilePath(newPath);
         setDateAdded(System.currentTimeMillis());
         setUser(user);
         setExecuted(false);
+        setScheduler(scheduler);
     }
 
-    public Action(String type, String path,AuthenticationDetails user) {
-        this(type,path,null,user);
+    public Action(String type, String path,AuthenticationDetails user,Scheduler scheduler) {
+        this(type,path,null,user,scheduler);
     }
 
     public Action() {

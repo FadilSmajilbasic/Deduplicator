@@ -46,7 +46,7 @@ public class ReportController {
         if (intId != null && reportRepository.existsById(intId))
             return reportRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid report id");
+            return new Message(HttpStatus.NOT_FOUND, "Invalid report id");
     }
 
     @GetMapping(value = "/duplicate/{id}")
