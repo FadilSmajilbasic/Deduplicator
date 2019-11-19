@@ -19,7 +19,7 @@ public class Message {
     
     private String message;
 
-    private Message() {
+    public Message() {
         timestamp = LocalDateTime.now();
     }
 

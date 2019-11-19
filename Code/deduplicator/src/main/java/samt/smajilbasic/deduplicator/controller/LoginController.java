@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/login")
 public class LoginController {
 
-    @GetMapping("/")
+    @RequestMapping("/")
     public @ResponseBody Message checkLogin(){
         return new Message(HttpStatus.OK, "User authenticated sucessfuly");
     }

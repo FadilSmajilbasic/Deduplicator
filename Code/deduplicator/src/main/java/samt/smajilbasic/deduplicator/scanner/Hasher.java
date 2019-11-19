@@ -73,7 +73,7 @@ public class Hasher extends Thread{
             } catch (NullPointerException npe) {
                 System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
             } catch (OutOfMemoryError ex){
-                System.out.println("[ERROR] File too big to calculate hash");
+                System.out.println("[ERROR] File too big to calculate hash: " + file.getAbsolutePath());
             }
         }
     }
