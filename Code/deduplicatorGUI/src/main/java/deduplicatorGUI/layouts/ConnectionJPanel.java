@@ -36,6 +36,11 @@ public class ConnectionJPanel extends BaseJPanel {
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
 
+
+        ipTextField1.setText("localhost:8080");
+        usernameTextField.setText("admin");
+        passwordTextField.setText("admin");
+
         connectButton.setText("Connect");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
