@@ -7,7 +7,7 @@ import deduplicatorGUI.layouts.MainJFrame;
  *
  * @author Fadil Smajilbasic
  */
-public class Main {
+public class DeduplicatorGUI {
 
     /**
      * @param args the command line arguments
@@ -19,5 +19,5 @@ public class Main {
             }
         });
     }
-    
+
 }
