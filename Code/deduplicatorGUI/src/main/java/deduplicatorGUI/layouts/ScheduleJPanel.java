@@ -172,21 +172,21 @@ public class ScheduleJPanel extends BaseJPanel {
         );
     }
 
-    private void dateTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateTextFieldActionPerformed
+    private void dateTextFieldActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-    }//GEN-LAST:event_dateTextFieldActionPerformed
+    }
 
-    private void oneOffRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oneOffRadioButtonActionPerformed
+    private void oneOffRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-    }//GEN-LAST:event_oneOffRadioButtonActionPerformed
+    }
 
-    private void mondayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mondayRadioButtonActionPerformed
+    private void mondayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-    }//GEN-LAST:event_mondayRadioButtonActionPerformed
+    }
 
-    private void fridayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fridayRadioButtonActionPerformed
+    private void fridayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-    }//GEN-LAST:event_fridayRadioButtonActionPerformed
+    }
 
 
     
