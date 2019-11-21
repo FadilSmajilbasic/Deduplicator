@@ -1,11 +1,21 @@
 
 package deduplicatorGUI.layouts;
 
-import javax.swing.AbstractListModel;
+import java.awt.event.ActionEvent;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.swing.AbstractListModel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import deduplicatorGUI.communication.Client;
+
 /**
  *
  * @author Fadil Smajilbasic
@@ -23,23 +33,25 @@ public class PathJPanel extends BaseJPanel {
 
     private void initComponents() {
 
-        PathTextField = new javax.swing.JTextField();
+        pathTextField = new javax.swing.JTextField();
         typeComboBox = new javax.swing.JComboBox<>();
         insertButton = new javax.swing.JButton();
         deleteButton = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jList1 = new javax.swing.JList<>();
+        pathJScrollPane = new javax.swing.JScrollPane();
+        pathJList = new javax.swing.JList<>();
 
-        PathTextField.setText("path");
-        PathTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                PathTextFieldActionPerformed(evt);
-            }
-        });
+        pathTextField.setText("path");
 
-        typeComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        typeComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Scan", "Ignore" }));
 
         insertButton.setText("Insert");
+
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                insertButtonActionPerformed(evt);
+            }
+
+        });
 
         deleteButton.setText("Delete");
         deleteButton.addActionListener(new java.awt.event.ActionListener() {
@@ -48,81 +60,126 @@ public class PathJPanel extends BaseJPanel {
             }
         });
 
-        jList1.setModel(new AbstractListModel<String>() {
-            private static final long serialVersionUID = -7377859027736547554L;
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
-        jScrollPane1.setViewportView(jList1);
+        pathJScrollPane.setViewportView(pathJList);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+        layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(layout
+                .createSequentialGroup().addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(PathTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(typeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1))
+                        .addGroup(layout.createSequentialGroup()
+                                .addComponent(pathTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 163,
+                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18).addComponent(typeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(pathJScrollPane))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createSequentialGroup().addGap(18, 18, 18).addComponent(insertButton).addGap(0,
+                                0, Short.MAX_VALUE))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
+                                layout.createSequentialGroup().addGap(39, 39, 39).addComponent(deleteButton)))
+                .addContainerGap()));
+        layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup().addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(pathTextField, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(typeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE,
+                                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(insertButton))
                         .addGap(18, 18, 18)
-                        .addComponent(insertButton)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(39, 39, 39)
-                        .addComponent(deleteButton)))
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(PathTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(typeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(insertButton))
-                .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 188, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(deleteButton)
-                .addContainerGap())
-        );
+                        .addComponent(pathJScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 188,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+                                javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(deleteButton).addContainerGap()));
     }
 
+    private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {
+        int n = JOptionPane.showConfirmDialog(this,
+                "Do you really want to delete this path:" + pathJList.getSelectedValue().toString(), "Login error",
+                JOptionPane.OK_CANCEL_OPTION);
+        if (n == JOptionPane.YES_OPTION) {
 
-    private void PathTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PathTextFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_PathTextFieldActionPerformed
+            Object response = getClient().delete("path", pathJList.getSelectedValue().toString());
+            if (response != null) {
+                if (response.getClass().equals(JSONObject.class)) {
+                    JSONObject obj = (JSONObject) response;
+                    System.out.println("jsonobj");
+                    System.out.println("body: " + obj.get("status"));
+                } else {
+                    System.out.println("jsonarray");
 
-    private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_deleteButtonActionPerformed
+                }
 
-
-    @Override
-    public void tabSelected() {
-        JSONObject response =  getClient().getAll("path/");
-        if(response != null){
-            JSONObject[] paths =  (JSONObject[])response.getOrDefault("",null);
-            for (JSONObject path : paths) {
-                System.out.println(path.get("path"));
+                updatePathsList();
+            } else {
+                JOptionPane.showMessageDialog(this, "Unable to delete :" + pathJList.getSelectedValue().toString(),
+                        "Delete error", JOptionPane.INFORMATION_MESSAGE);
             }
+
+
         }
 
     }
 
-    
-    private javax.swing.JTextField PathTextField;
+    private void insertButtonActionPerformed(ActionEvent evt) {
+    }
+
+    @Override
+    public void tabSelected() {
+
+        updatePathsList();
+
+    }
+
+    private void updatePathsList(){
+        Object response = getClient().getAll("path/");
+
+        if (response.getClass().equals(JSONObject.class)) {
+            JSONObject resp = (JSONObject) response;
+
+            String stat = (String) resp.get("status");
+            if (stat.equals("OK")) {
+                System.out.println("Stat is 200");
+
+            } else {
+                JOptionPane.showMessageDialog(this, "Unable to get paths ", "Server error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+
+            JSONObject[] array = getArray((JSONArray) response);
+            pathJList.setModel(new AbstractListModel<String>() {
+                public int getSize() {
+                    return array.length;
+                }
+                public String getElementAt(int i) {
+                    return array[i].get("path").toString();
+                }
+            });
+        }
+    }
+
+    public JSONObject[] getArray(JSONArray array) {
+
+        Object[] objectArray = (Object[]) array.toArray();
+        JSONParser parser = new JSONParser();
+        JSONObject[] result = new JSONObject[objectArray.length];
+        for (int i = 0; i < objectArray.length; i++) {
+            try {
+                result[i] = (JSONObject) parser.parse(objectArray[i].toString());
+            } catch (ParseException e) {
+                System.out.println("unable to parse " + objectArray[i].toString());
+            }
+        }
+        return result;
+    }
+
+    private javax.swing.JTextField pathTextField;
     private javax.swing.JButton deleteButton;
     private javax.swing.JButton insertButton;
-    private javax.swing.JList<String> jList1;
-    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JList<String> pathJList;
+    private javax.swing.JScrollPane pathJScrollPane;
     private javax.swing.JComboBox<String> typeComboBox;
 
-    
 }
