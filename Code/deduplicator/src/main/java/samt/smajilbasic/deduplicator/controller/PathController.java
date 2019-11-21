@@ -66,8 +66,8 @@ public class PathController {
         }
     }
 
-    @DeleteMapping()
-    public @ResponseBody Object remove(@RequestParam String path) {
+    @DeleteMapping("/{path}")
+    public @ResponseBody Object remove(@PathVariable String path) {
 
         PathType type = Validator.getPathType(path);
         path = path.replaceAll("&#47;", File.separator).trim();
