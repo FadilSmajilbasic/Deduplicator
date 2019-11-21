@@ -64,9 +64,6 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
     private void changeTabsAccessibility(JTabbedPane menu, boolean state) {
         for (int i = 1; i < menu.getTabCount(); i++) {
             menu.setEnabledAt(i, state);
-            if (state)
-                ((BaseJPanel) menu.getComponentAt(i)).setClient(client);
-
         }
     }
 
@@ -84,6 +81,11 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
         System.out.println("frame");
         changeTabsAccessibility(menu, true);
         this.client = client;
+
+        for (int i = 1; i < menu.getTabCount(); i++) {
+            ((BaseJPanel) menu.getComponentAt(i)).setClient(client);
+        }
+
     }
 
     @Override
