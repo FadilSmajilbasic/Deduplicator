@@ -1,29 +1,27 @@
 
 package deduplicatorGUI.communication;
 
-import org.json.simple.JSONObject;
+
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter;
-
-import java.io.IOException;
-import java.net.Authenticator;
 import java.net.InetAddress;
-import java.net.PasswordAuthentication;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.util.Base64;
 import java.util.Map;
-import java.util.function.BiConsumer;
+
+import javax.swing.JTextField;
 
 /**
  *
@@ -31,7 +29,7 @@ import java.util.function.BiConsumer;
  */
 public class Client {
 
-    private final HttpClient httpClient;
+    // private final HttpClient httpClient;
 
     private String username;
 
@@ -39,7 +37,6 @@ public class Client {
     private InetAddress addr;
 
     private int port;
-    private URI uri;
 
     private final JSONParser parser = new JSONParser();
 
@@ -55,68 +52,57 @@ public class Client {
     }
 
     public Client(String username, String password) {
-
-        Authenticator.setDefault(new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password.toCharArray());
-            }
-
-        });
-        httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
-                .authenticator(Authenticator.getDefault()).build();
-
+        this.username = username;
+        this.password = password;
     }
 
     public boolean isAuthenticated(InetAddress addr, int port) {
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "http://" + addr.getHostName() + ":" + port + "/login/", HttpMethod.GET, requestEntity,
+                    String.class);
 
-            var request = HttpRequest.newBuilder().uri(new URI("http://" + addr.getHostName() + ":" + port + "/login/"))
-                    .GET().build();
+            if (response.getStatusCode() == HttpStatus.OK) {
+                this.addr = addr;
+                setPort(port);
+                return true;
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            Object responseObj = new JSONParser().parse(response.body());
-
-            JSONObject jsonObj = (JSONObject) responseObj;
-            String stat = (String) jsonObj.get("status");
-
-            this.addr = addr;
-            setPort(port);
-            return stat.equals("OK");
-
-        } catch (URISyntaxException ex) {
-            System.out.println("Uri exception " + ex.getMessage());
-        } catch (InterruptedException ex) {
-            System.out.println("Interrupted exception " + ex.getMessage());
-        } catch (IOException ex) {
-            System.out.println("IO exceptionn " + ex.getMessage());
-        } catch (ParseException ex) {
-            System.out.println("Parse exception " + ex.getMessage());
+            } else {
+                return false;
+            }
+        } catch (RestClientException rce) {
+            System.out.println(rce);
+            return false;
         }
-        return false;
 
     }
 
     public Object getAll(String path) {
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "http://" + addr.getHostName() + ":" + port + "/" + path + "/", HttpMethod.GET, requestEntity,
+                    String.class);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("http://" + addr.getHostAddress() + ":" + port + "/" + path)).GET().build();
+            if (response.getStatusCode() == HttpStatus.OK) {
+                setPort(port);
+                Object responseObj = new JSONParser().parse(response.getBody());
+                return responseObj;
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } else {
 
-            Object responseObj = new JSONParser().parse(response.body());
-
-            return responseObj;
-
-        } catch (URISyntaxException ex) {
-            System.out.println("deduplicatorGUI.communication.Client.getAll()");
-
-        } catch (InterruptedException ie) {
-            System.out.println("interr" + ie.getMessage());
-        } catch (IOException ioe) {
-            System.err.println("ioe" + ioe.getMessage());
+                return null;
+            }
+        } catch (RestClientException rce) {
+            System.out.println(rce);
+            return null;
         } catch (ParseException pe) {
             System.err.println("parse get : " + pe.getStackTrace());
 
@@ -128,48 +114,47 @@ public class Client {
         return null;
     }
 
-    public Object delete(String path, String param) {
+    public ResponseEntity<String> delete(String path, String param) {
 
-        HttpHeaders headers = new HttpHeaders();
-
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("path", param);
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        values.add("path", param);
 
         RestTemplate restTemplate = new RestTemplate();
-        // HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
-        // ResponseEntity<String> response = restTemplate.postForEntity("http://" +
-        // addr.getHostAddress() + ":" + port + "/form", request, String.class);
 
-        restTemplate.delete("http://" + addr.getHostAddress() + ":" + port + "/path/" + param.replace("/", "&47#;"),
-                map);
-        return new Object();
-        // try {
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
 
-        // HttpRequest request = HttpRequest.newBuilder()
-        // .uri(new URI("http://" + addr.getHostAddress() + ":" + port + "/" + path))
-        // .method("DELETE", HttpRequest.BodyPublishers.ofString("path:" +
-        // param)).build();
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/path/",
+                    HttpMethod.DELETE, 
+                    requestEntity, String.class);
+        } catch (RestClientException rce) {
+            System.out.println("rce: " + rce.getMessage());
+        }
 
-        // HttpResponse<String> response = httpClient.send(request,
-        // HttpResponse.BodyHandlers.ofString());
+        if (response != null) {
+            return response;
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+    }
 
-        // System.out.println("body: " + response.body());
-        // Object resp = parser.parse(response.body());
+    private HttpHeaders createHeaders(boolean hasFormData) {
+        HttpHeaders header =  new HttpHeaders();
+        
+        String auth = username + ":" + password;
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(Charset.forName("US-ASCII")));
+        String authHeader = "Basic " + new String(encodedAuth);
 
-        // return resp;
+        header.add("Authorization", authHeader);
 
-        // } catch (URISyntaxException ex) {
-        // System.out.println("deduplicatorGUI.communication.Client.delete()");
-        // } catch (InterruptedException ie) {
-        // System.out.println("interr delete: " + ie.getMessage());
-        // } catch (IOException ioe) {
-        // System.err.println("ioe delete: " + ioe.getMessage());
-        // } catch (ParseException pe) {
-        // System.err.println("parse ex delete :" + pe.getMessage());
-        // }
-
-        // return null;
+        
+        if(hasFormData)
+        {
+            header.setContentType(MediaType.MULTIPART_FORM_DATA);
+        }
+        return header;
     }
 
     public Object post(String path, Map<String, String> values) {
@@ -179,5 +164,32 @@ public class Client {
     public Object put(String path, Map<String, String> values) {
         return null;
     }
+
+	public ResponseEntity<String> insertPath(String pathText, boolean ignored) {
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        values.add("path", pathText);
+        values.add("ignorePath",ignored);
+
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
+
+        ResponseEntity<String> response = null;
+
+        try {
+            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/path/",
+                    HttpMethod.PUT, 
+                    requestEntity, String.class);
+        } catch (RestClientException rce) {
+            System.out.println("rce: " + rce.getMessage());
+        }
+
+        if (response != null) {
+            return response;
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+	}
 
 }
