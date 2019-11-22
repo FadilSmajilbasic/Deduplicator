@@ -66,8 +66,8 @@ public class PathController {
         }
     }
 
-    @DeleteMapping("/{path}")
-    public @ResponseBody Object remove(@PathVariable String path) {
+    @DeleteMapping()
+    public @ResponseBody Object remove(@RequestParam String path) {
 
         PathType type = Validator.getPathType(path);
         path = path.replaceAll("&#47;", File.separator).trim();
@@ -78,7 +78,7 @@ public class PathController {
             return entry;
         } else {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Invalid path to remove seT (DELETE): " + path.replaceAll("&#47;", File.separator).trim());
+                    "Invalid path to remove set (DELETE): " + path.replaceAll("&#47;", File.separator).trim());
         }
     }
 }
