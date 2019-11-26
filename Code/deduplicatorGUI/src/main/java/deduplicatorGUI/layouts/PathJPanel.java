@@ -8,8 +8,6 @@ import javax.swing.JOptionPane;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -132,20 +130,10 @@ public class PathJPanel extends BaseJPanel {
     }
 
     private void updatePathsList() {
-        Object response = getClient().getAll("path/");
+        Object response = getClient().get("path/");
 
-        if (response.getClass().equals(JSONObject.class)) {
-            JSONObject resp = (JSONObject) response;
-
-            String stat = (String) resp.get("status");
-            if (stat.equals("OK")) {
-                System.out.println("Stat is 200");
-
-            } else {
-                JOptionPane.showMessageDialog(this, "Unable to get paths ", "Server error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-
+        
+        if(response != null){
             JSONObject[] array = getArray((JSONArray) response);
             pathJList.setModel(new AbstractListModel<String>() {
                 public int getSize() {
@@ -156,26 +144,16 @@ public class PathJPanel extends BaseJPanel {
                     return array[i].get("path").toString();
                 }
             });
+        
+        }else{
+            JOptionPane.showMessageDialog(this, "Unable to get retrieve paths",
+                    "Get error ", JOptionPane.INFORMATION_MESSAGE);
         }
 
         pathJScrollPane.revalidate();
         pathJScrollPane.repaint();
     }
 
-    public JSONObject[] getArray(JSONArray array) {
-
-        Object[] objectArray = (Object[]) array.toArray();
-        JSONParser parser = new JSONParser();
-        JSONObject[] result = new JSONObject[objectArray.length];
-        for (int i = 0; i < objectArray.length; i++) {
-            try {
-                result[i] = (JSONObject) parser.parse(objectArray[i].toString());
-            } catch (ParseException e) {
-                System.out.println("unable to parse " + objectArray[i].toString());
-            }
-        }
-        return result;
-    }
 
     private javax.swing.JTextField pathTextField;
     private javax.swing.JButton deleteButton;
