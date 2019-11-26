@@ -1,12 +1,12 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import java.sql.Timestamp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,7 +45,7 @@ public class ScanController {
 
             currentScan = (ScanManager) context.getBean("scanManager");
             Report report = new Report();
-            report.setStart(new Timestamp(System.currentTimeMillis()));
+            report.setStart(System.currentTimeMillis());
             reportRepository.save(report);
 
             currentScan.setReportRepository(reportRepository);
@@ -106,8 +106,21 @@ public class ScanController {
                 currentScan.resumeAll();
             return new Message(HttpStatus.OK, "Scan resumed");
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently running");
         }
+    }
+
+    @GetMapping("/status")
+    public @ResponseBody Object getStatus(){
+        Object response = new Object(){
+            public String status = currentScan==null ? "Scan stopped" : (currentScan.isPaused()?"Scan paused" : "Scan running")  ;
+            public Long timeStart = currentScan.getReport().getStart();
+            public int objectsScanned = currentScan.getReport().getFilesScanned();
+        };
+
+        return response;
+
+
     }
 
 }

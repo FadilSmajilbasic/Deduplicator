@@ -1,6 +1,5 @@
 package samt.smajilbasic.deduplicator.entity;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -14,6 +13,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import org.hibernate.annotations.Type;
 import org.springframework.lang.Nullable;
 
 
@@ -30,7 +31,7 @@ public class Report {
     @Nullable
     private Long duration;
 
-    private Timestamp start;
+    private Long start;
 
     @Column(nullable = true)
     private Integer filesScanned;
@@ -78,13 +79,13 @@ public class Report {
     /**
      * @return the start
      */
-    public Timestamp getStart() {
+    public Long getStart() {
         return start;
     }
     /**
      * @param start the start to set
      */
-    public void setStart(Timestamp start) {
+    public void setStart(Long start) {
         this.start = start;
     }
 

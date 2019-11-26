@@ -1,7 +1,6 @@
 package samt.smajilbasic.deduplicator.entity;
 
 
-import java.sql.Timestamp;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -19,7 +18,7 @@ public class GlobalPath {
 
 	private Boolean ignoreFile;
 
-	private Timestamp date;
+	private Long date;
 
 	public GlobalPath() {
 	}
@@ -27,7 +26,7 @@ public class GlobalPath {
 	public GlobalPath(String path, boolean ignoreFile) {
 		this.setPath(path);
 		this.setIgnoreFile(ignoreFile);
-		this.setDate(new Timestamp(System.currentTimeMillis()));
+		this.setDate(System.currentTimeMillis());
 	}
 
 	/**
@@ -84,14 +83,14 @@ public class GlobalPath {
 	/**
 	 * @return the date
 	 */
-	public Timestamp getDate() {
+	public Long getDate() {
 		return date;
 	}
 
 	/**
 	 * @param date the date to set
 	 */
-	private void setDate(Timestamp date) {
+	private void setDate(Long date) {
 		this.date = date;
 	}
 }
