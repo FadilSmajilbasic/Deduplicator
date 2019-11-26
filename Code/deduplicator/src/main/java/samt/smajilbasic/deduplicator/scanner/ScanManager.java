@@ -114,11 +114,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
             report.setFilesScanned(filesScanned);
             report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
-            report.setDuration((System.currentTimeMillis() - report.getStart().getTime()));
+            report.setDuration((System.currentTimeMillis() - report.getStart()));
             reportRepository.save(report);
-
-
-            
 
             System.out.println("[INFO] Scan manager Finished");
         }
@@ -215,6 +212,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
      */
     public boolean isPaused() {
         return paused;
+    }
+
+    /**
+     * @return the paths
+     */
+    public Iterator<GlobalPath> getPaths() {
+        return paths;
     }
 
 }
