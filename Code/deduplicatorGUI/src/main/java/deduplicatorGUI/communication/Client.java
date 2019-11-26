@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JTextField;
@@ -81,14 +82,14 @@ public class Client {
 
     }
 
-    public Object getAll(String path) {
+    public Object get(String path) {
 
         RestTemplate restTemplate = new RestTemplate();
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    "http://" + addr.getHostName() + ":" + port + "/" + path + "/", HttpMethod.GET, requestEntity,
+                    "http://" + addr.getHostName() + ":" + port + "/" + path , HttpMethod.GET, requestEntity,
                     String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -107,10 +108,6 @@ public class Client {
             System.err.println("parse get : " + pe.getStackTrace());
 
         }
-        return null;
-    }
-
-    public Object get(String path) {
         return null;
     }
 
@@ -157,8 +154,23 @@ public class Client {
         return header;
     }
 
-    public Object post(String path, Map<String, String> values) {
-        return null;
+    public Object post(String path, MultiValueMap<String, Object> values) {
+
+        RestTemplate restTemplate = new RestTemplate();
+        values = values == null ? new LinkedMultiValueMap<>() : values;
+        
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
+
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/" + path,
+                    HttpMethod.POST,
+                    requestEntity, String.class);
+        } catch (RestClientException rce) {
+            System.out.println("rce: " + rce.getMessage());
+        }
+
+        return response;
     }
 
     public Object put(String path, Map<String, String> values) {
