@@ -12,9 +12,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-import org.hibernate.annotations.Type;
 import org.springframework.lang.Nullable;
 
 
@@ -39,6 +40,7 @@ public class Report {
     @Column(nullable = true)
     private Float averageDuplicateCount;
     
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
     private AuthenticationDetails user;

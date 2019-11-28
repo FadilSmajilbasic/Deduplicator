@@ -52,6 +52,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     private boolean paused = false;
 
+    private ScanListener listener;
+
     /**
      * Default timeout for the scanning thread pool given in seconds
      */
@@ -110,6 +112,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
                 }
             }
 
+
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
             report.setFilesScanned(filesScanned);
@@ -118,6 +121,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             reportRepository.save(report);
 
             System.out.println("[INFO] Scan manager Finished");
+            if(listener != null)
+                listener.scanFinished();
         }
     }
 
@@ -143,8 +148,6 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     public void stopScan() {
         pool.shutdownNow();
         rootThreads.forEach(rootThread -> rootThread.stopScan());
-
-        
     }
 
     /**
@@ -219,6 +222,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
      */
     public Iterator<GlobalPath> getPaths() {
         return paths;
+    }
+
+    /**
+     * @param listener the listener to set
+     */
+    public void setListener(ScanListener listener) {
+        this.listener = listener;
     }
 
 }

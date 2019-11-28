@@ -78,7 +78,6 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
 
     @Override
     public void userConnected(Client client) {
-        System.out.println("frame");
         changeTabsAccessibility(menu, true);
         this.client = client;
 

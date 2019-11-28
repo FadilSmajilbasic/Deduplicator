@@ -23,7 +23,7 @@ public class File {
 
     private String hash;
     
-    private Integer size;
+    private Long size;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="report")
@@ -34,7 +34,7 @@ public class File {
     public File() {
     }
 
-    public File(String path,Long lastModified,String hash,Integer size,Report report) {
+    public File(String path,Long lastModified,String hash,Long size,Report report) {
         setPath(path);
         setLastModified(lastModified);
         setHash(hash);
@@ -94,7 +94,7 @@ public class File {
     /**
      * @return the size
      */
-    public Integer getSize() {
+    public Long getSize() {
         return size;
     }
 
@@ -102,7 +102,7 @@ public class File {
     /**
      * @param size the size to set
      */
-    private void setSize(Integer size) {
+    private void setSize(Long size) {
         this.size = size;
     }
 

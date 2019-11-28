@@ -140,7 +140,7 @@ public class ScanJPanel extends BaseJPanel {
         }
 
         private void refreshButtonActionPerformed(java.awt.event.ActionEvent evt) {
-                Object response = getClient().get("/status");
+                Object response = getClient().get("scan/status");
 
                 JSONObject respJson = ((JSONObject) response);
                 scanInProgressLabel.setText(scanInProgressLabel.getText() + ": " + respJson.get("status").toString());
