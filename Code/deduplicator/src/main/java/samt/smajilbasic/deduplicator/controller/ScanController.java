@@ -1,11 +1,12 @@
 package samt.smajilbasic.deduplicator.controller;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,10 +14,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.Message;
+import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
+import samt.smajilbasic.deduplicator.scanner.ScanListener;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
 
 /**
@@ -24,11 +28,13 @@ import samt.smajilbasic.deduplicator.scanner.ScanManager;
  */
 @RestController
 @RequestMapping(path = "/scan")
-public class ScanController {
+public class ScanController implements ScanListener{
 
     @Autowired
     ReportRepository reportRepository;
 
+    @Autowired
+    AuthenticationDetailsRepository adr;
 
     ScanManager currentScan;
 
@@ -40,19 +46,24 @@ public class ScanController {
 
     @PostMapping("/start")
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
-
+        
         if (gpr.count() > 0) {
 
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String authenticatedUser = authentication.getName();
+
+            AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
+            System.out.println("user: " + authenticatedUser);
             currentScan = (ScanManager) context.getBean("scanManager");
-            Report report = new Report();
+            Report report = new Report(internalUser);
             report.setStart(System.currentTimeMillis());
             reportRepository.save(report);
 
             currentScan.setReportRepository(reportRepository);
             currentScan.setReportId(report.getId());
             currentScan.setThreadCount(threadCount);
+            currentScan.setListener(this);
             currentScan.start();
-
             return report;
         } else {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
@@ -74,10 +85,7 @@ public class ScanController {
 
             Report report = currentScan.getReport();
 
-            BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
-
-            ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
-
+            destroyScanManager();
 
             return report;
         } else {
@@ -111,16 +119,26 @@ public class ScanController {
     }
 
     @GetMapping("/status")
-    public @ResponseBody Object getStatus(){
-        Object response = new Object(){
-            public String status = currentScan==null ? "Scan stopped" : (currentScan.isPaused()?"Scan paused" : "Scan running")  ;
-            public Long timeStart = currentScan.getReport().getStart();
-            public int objectsScanned = currentScan.getReport().getFilesScanned();
+    public @ResponseBody Object getStatus() {
+        Object response = new Object() {
+            public String status = currentScan == null ? "Scan stopped"
+                    : (currentScan.isPaused() ? "Scan paused" : "Scan running");
+            public Long timeStart = currentScan == null ? -1 :currentScan.getReport().getStart();
+            public int objectsScanned = currentScan == null ? -1 :currentScan.getReport().getFilesScanned();
         };
 
         return response;
 
-
     }
 
+    @Override
+    public void scanFinished() {
+        destroyScanManager();
+    }
+
+    private void destroyScanManager(){
+        BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+        ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
+
+    }
 }
