@@ -1,13 +1,18 @@
 package samt.smajilbasic.deduplicator.scanner;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigInteger;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
+import java.util.Scanner;
+
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.entity.File;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
@@ -15,8 +20,7 @@ import samt.smajilbasic.deduplicator.repository.FileRepository;
 /**
  * Hasher
  */
-public class Hasher extends Thread{
-
+public class Hasher extends Thread {
 
     private LinkedList<java.io.File> files;
     ScannerThreadListener stl;
@@ -24,44 +28,69 @@ public class Hasher extends Thread{
 
     private FileRepository fileRepository;
 
-    public Hasher(LinkedList<java.io.File> files,Report report,ScannerThreadListener stl,FileRepository fileRepository) {
+    public Hasher(LinkedList<java.io.File> files, Report report, ScannerThreadListener stl,
+            FileRepository fileRepository) {
         this.files = files;
         this.report = report;
         this.stl = stl;
         this.fileRepository = fileRepository;
     }
-    public static String getHash(byte[] bytes, String mode) throws NoSuchAlgorithmException {
-        String hashtext;
 
-        MessageDigest method = MessageDigest.getInstance(mode);
+    public static String getHash(RandomAccessFile file, String mode) throws NoSuchAlgorithmException {
 
-        byte[] messageDigest = method.digest(bytes);
+        MessageDigest messageDigest = MessageDigest.getInstance(mode);
 
-        BigInteger no = new BigInteger(1, messageDigest);
+        int buff = 16384;
+        try {
 
-        hashtext = no.toString(16);
-        while (hashtext.length() < 32) {
-            hashtext = "0" + hashtext;
+            byte[] buffer = new byte[buff];
+
+            long read = 0;
+
+            long end = file.length();
+            int unitsize;
+            long start = System.currentTimeMillis();
+            while (read < end) {
+                unitsize = (int) (((end - read) >= buff) ? buff : (end - read));
+                file.read(buffer, 0, unitsize);
+                messageDigest.update(buffer, 0, unitsize);
+                read += unitsize;
+            }
+            System.out.println("Hash duration: "+(System.currentTimeMillis()-start) + "ms");
+
+        } catch (FileNotFoundException fnfE) {
+            System.out.println("[ERROR] Hasher: Item not found");
+        
+        } catch (IOException ioE) {
+            System.out.println("[ERROR] Hasher: IO Exception");
         }
 
-        return hashtext;
-    }
+        byte[] digest = messageDigest.digest();
 
-    public static String getFileHash(Path file) throws NoSuchAlgorithmException, IOException,OutOfMemoryError {
-        return Hasher.getHash(Files.readAllBytes(file), "MD5");
+        StringBuffer hexString = new StringBuffer();
+
+        for (int i = 0; i < digest.length; i++) {
+            hexString.append(Integer.toHexString(0xFF & digest[i]));
+        }
+
+        return hexString.toString();
     }
 
     @Override
     public void run() {
-        
+
         while (files.peek() != null) {
             java.io.File file = files.poll();
             Long lastModified = file.lastModified();
 
             try {
-                String hash = Hasher.getFileHash(Paths.get(file.getAbsolutePath()));
-                int size = (Files.readAllBytes(Paths.get(file.getAbsolutePath().toString()))).length;
-                File record = new File(file.getAbsolutePath(), lastModified, hash, size,report);
+                RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
+                String hash = Hasher.getHash(fileRAF, "MD5");
+                long size = fileRAF.length();
+
+                fileRAF.close();
+
+                File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
                 fileRepository.save(record);
                 stl.addFilesScanned();
 
@@ -72,8 +101,9 @@ public class Hasher extends Thread{
                 System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
             } catch (NullPointerException npe) {
                 System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
-            } catch (OutOfMemoryError ex){
+            } catch (OutOfMemoryError ex) {
                 System.out.println("[ERROR] File too big to calculate hash: " + file.getAbsolutePath());
+                System.out.println(ex.getMessage());
             }
         }
     }
