@@ -5,6 +5,8 @@ import java.net.UnknownHostException;
 
 import javax.swing.JOptionPane;
 
+import org.springframework.web.client.RestClientException;
+
 import deduplicatorGUI.communication.Client;
 import deduplicatorGUI.listeners.UserConnectedListener;
 
@@ -109,6 +111,8 @@ public class ConnectionJPanel extends BaseJPanel {
 
         } catch (UnknownHostException | NumberFormatException exception) {
             JOptionPane.showMessageDialog(this, "Ip invalid ", "Login error", JOptionPane.ERROR_MESSAGE);
+        }catch(RestClientException rce){
+            JOptionPane.showMessageDialog(this, "Server not reachable", "Connection error", JOptionPane.ERROR_MESSAGE);
         }
 
 
