@@ -143,6 +143,8 @@ public class ScanJPanel extends BaseJPanel {
                 Object response = getClient().get("scan/status");
 
                 JSONObject respJson = ((JSONObject) response);
+                System.out.println("respJson: " + respJson.toString());
+                
                 scanInProgressLabel.setText(scanInProgressLabel.getText() + ": " + respJson.get("status").toString());
                 objectsScannedLabel.setText(
                                 objectsScannedLabel.getText() + ": " + respJson.get("objectsScanned").toString());
@@ -153,9 +155,7 @@ public class ScanJPanel extends BaseJPanel {
 
         private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {
                 Object resp = getClient().post("scan/start", null);
-                if (resp != null) {
-                        refreshButtonActionPerformed(evt);
-                } else {
+                if (resp == null) {
                         JOptionPane.showMessageDialog(this, "Unable to get start scan", "Scan Error",
                                         JOptionPane.INFORMATION_MESSAGE);
                 }
