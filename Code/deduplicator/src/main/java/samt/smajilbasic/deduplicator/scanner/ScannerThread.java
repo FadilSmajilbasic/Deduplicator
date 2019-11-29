@@ -6,6 +6,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
@@ -23,10 +26,19 @@ public class ScannerThread extends Thread {
     private List<String> ignorePaths;
 
     private List<ScannerThread> children = new ArrayList<ScannerThread>();
+    LinkedList<Hasher> hashers = new LinkedList<Hasher>();
+
 
     private Boolean paused = false;
     private boolean ignoreFound = false;
     Object monitor;
+    private ExecutorService pool;
+    /**
+     * Default timeout for the scanning thread pool given in seconds
+     */
+    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 1800;
+
+    private static final Integer DEFAULT_THREAD_COUNT = 10;
 
     public ScannerThread(Path rootPath, ScannerThreadListener listener, Report report, FileRepository fileRepository,
             List<String> ignorePaths, Object monitor) {
@@ -42,9 +54,10 @@ public class ScannerThread extends Thread {
             }
 
         }
+        pool = Executors.newFixedThreadPool(DEFAULT_THREAD_COUNT);
     }
 
-    public synchronized void look() {
+    public synchronized void checkPaused() {
         synchronized (monitor) {
             while (isPaused()) {
                 try {
@@ -69,7 +82,7 @@ public class ScannerThread extends Thread {
 
                 for (File file : list) {
                     if (!Thread.interrupted()) {
-                        look();
+                        checkPaused();
 
                         if (file.isFile()) {
                             files.add(file);
@@ -83,32 +96,35 @@ public class ScannerThread extends Thread {
                                 thread.join();
                             }
                         }
-                    }else{
+                    } else {
                         stopScan();
                     }
                 }
 
             } else {
-                System.out.println("[INFO] Path not scanned, set to ignore: " +
-                rootPath.toString());
+                System.out.println("[INFO] Path not scanned, set to ignore: " + rootPath.toString());
             }
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Scan thread interrupted: " + ie.getStackTrace().toString());
         } finally {
 
             if (files.size() > 0) {
-                Hasher hasher = new Hasher(files, report, listener, fileRepository);
-                hasher.start();
-                try {
-                    hasher.join();
-                } catch (InterruptedException e) {
-                    System.err.println("[ERROR] Interrupted exception on join hasher " + e.getMessage());
+                while (files.peek() != null) {
+
+                    Hasher hasher = new Hasher(files.poll(), report, listener, fileRepository,monitor);
+                    hashers.add(hasher);
+                    pool.execute(hasher);
                 }
-            }else{
+                pool.shutdown();
+                try {
+                    pool.awaitTermination(DEFAULT_TERMINATION_TIMEOUT, TimeUnit.SECONDS);
+                } catch (InterruptedException ie) {
+                    System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
+                    pool.shutdownNow();
+                }finally{
+                    pool.shutdownNow();
+                }
             }
-            this.paused = null;
-
-
         }
     }
 
@@ -119,6 +135,9 @@ public class ScannerThread extends Thread {
         }
         children.forEach(child -> {
             child.pause();
+        });
+        hashers.forEach(hasher ->{
+            hasher.pause();
         });
     }
 
@@ -138,7 +157,8 @@ public class ScannerThread extends Thread {
 
     public synchronized void stopScan() {
         System.out.println("[INFO] Stopped thread" + getId());
-        if(!Thread.interrupted())
+        pool.shutdownNow();
+        if (!Thread.interrupted())
             interrupt();
         children.forEach(child -> child.stopScan());
     }
