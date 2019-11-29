@@ -51,14 +51,10 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
 
         changeTabsAccessibility(menu, false);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(menu, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE));
-        layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(menu,
-                javax.swing.GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE));
+        this.add(menu);        
 
         pack();
+        this.setSize(500, 500);
     }
 
     private void changeTabsAccessibility(JTabbedPane menu, boolean state) {
