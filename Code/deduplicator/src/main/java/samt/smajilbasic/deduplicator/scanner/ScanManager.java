@@ -98,23 +98,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
             pool.shutdown();
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
-
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
             pool.shutdownNow();
         } finally {
             pool.shutdownNow();
-            long time = System.currentTimeMillis();
-            while (!pool.isTerminated()) {
-                if (System.currentTimeMillis() - time > 50) {
-                    System.out.print(".");
-                    time = System.currentTimeMillis();
-                }
-            }
-
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
-
             report.setFilesScanned(filesScanned);
             report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
             report.setDuration((System.currentTimeMillis() - report.getStart()));
