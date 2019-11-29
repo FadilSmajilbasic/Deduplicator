@@ -1,7 +1,6 @@
 
 package deduplicatorGUI.communication;
 
-
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpEntity;
@@ -15,14 +14,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.JTextField;
 
 /**
  *
@@ -38,8 +33,6 @@ public class Client {
     private InetAddress addr;
 
     private int port;
-
-    private final JSONParser parser = new JSONParser();
 
     /**
      * @param port the port to set
@@ -57,26 +50,20 @@ public class Client {
         this.password = password;
     }
 
-    public boolean isAuthenticated(InetAddress addr, int port) {
+    public boolean isAuthenticated(InetAddress addr, int port) throws RestClientException {
 
         RestTemplate restTemplate = new RestTemplate();
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    "http://" + addr.getHostName() + ":" + port + "/login/", HttpMethod.GET, requestEntity,
-                    String.class);
+        ResponseEntity<String> response = restTemplate.exchange("http://" + addr.getHostName() + ":" + port + "/login/",
+                HttpMethod.GET, requestEntity, String.class);
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                this.addr = addr;
-                setPort(port);
-                return true;
+        if (response.getStatusCode() == HttpStatus.OK) {
+            this.addr = addr;
+            setPort(port);
+            return true;
 
-            } else {
-                return false;
-            }
-        } catch (RestClientException rce) {
-            System.out.println(rce);
+        } else {
             return false;
         }
 
@@ -89,7 +76,7 @@ public class Client {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    "http://" + addr.getHostName() + ":" + port + "/" + path , HttpMethod.GET, requestEntity,
+                    "http://" + addr.getHostName() + ":" + port + "/" + path, HttpMethod.GET, requestEntity,
                     String.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
@@ -118,13 +105,12 @@ public class Client {
 
         RestTemplate restTemplate = new RestTemplate();
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/path/",
-                    HttpMethod.DELETE, 
-                    requestEntity, String.class);
+                    HttpMethod.DELETE, requestEntity, String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
         }
@@ -134,21 +120,19 @@ public class Client {
         } else {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        
+
     }
 
     private HttpHeaders createHeaders(boolean hasFormData) {
-        HttpHeaders header =  new HttpHeaders();
-        
+        HttpHeaders header = new HttpHeaders();
+
         String auth = username + ":" + password;
         byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(Charset.forName("US-ASCII")));
         String authHeader = "Basic " + new String(encodedAuth);
 
         header.add("Authorization", authHeader);
 
-        
-        if(hasFormData)
-        {
+        if (hasFormData) {
             header.setContentType(MediaType.MULTIPART_FORM_DATA);
         }
         return header;
@@ -158,14 +142,13 @@ public class Client {
 
         RestTemplate restTemplate = new RestTemplate();
         values = values == null ? new LinkedMultiValueMap<>() : values;
-        
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/" + path,
-                    HttpMethod.POST,
-                    requestEntity, String.class);
+                    HttpMethod.POST, requestEntity, String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
         }
@@ -177,21 +160,19 @@ public class Client {
         return null;
     }
 
-	public ResponseEntity<String> insertPath(String pathText, boolean ignored) {
+    public ResponseEntity<String> insertPath(String pathText, boolean ignored) {
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", pathText);
-        values.add("ignorePath",ignored);
-
+        values.add("ignorePath", ignored);
 
         RestTemplate restTemplate = new RestTemplate();
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values,createHeaders(true));
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/path/",
-                    HttpMethod.PUT, 
+            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/path/", HttpMethod.PUT,
                     requestEntity, String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
@@ -202,6 +183,6 @@ public class Client {
         } else {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-	}
+    }
 
 }
