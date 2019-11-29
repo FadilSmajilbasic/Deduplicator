@@ -35,9 +35,14 @@ public class ReportController {
     @Autowired
     FileRepository fileRepository;
 
-    @GetMapping()
-    public @ResponseBody Iterable<Report> getReports() {
+    @GetMapping(value = "/all")
+    public @ResponseBody Iterable<Report> getAllReports() {
         return reportRepository.findAll();
+    }
+
+    @GetMapping()
+    public @ResponseBody Report getLastReport() {
+        return reportRepository.getLastReport();
     }
 
     @GetMapping(value = "/{id}")
