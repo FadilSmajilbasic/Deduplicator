@@ -66,8 +66,9 @@ public class ReportController {
     @GetMapping(value = "/duplicate/{id}/{hash}")
     public @ResponseBody Object getFileByHash(@PathVariable String id, @PathVariable String hash) {
         Integer intId = Validator.isInt(id);
-        if (hash != null && fileRepository.existsByHash(hash) && hash.length() == 32 && intId != null
-                && reportRepository.existsById(intId)) {
+        hash = Validator.isHex(hash);
+        if (hash != null && fileRepository.existsByHash(hash) && hash.length() == 30 && intId != null
+                && reportRepository.existsById(intId) ) {
             return fileRepository.findFilesFromHashAndReport(reportRepository.findById(intId).get(), hash);
         } else {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid file path");
