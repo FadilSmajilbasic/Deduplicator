@@ -50,4 +50,16 @@ public class Validator {
 		}
 			
 	}
+
+	/**
+	 * 
+	 * @param input input to validate (usually file hash)
+	 * @return value of input is a valid hexadecimal string, null otherwise
+	 */
+	public static String isHex(String input) {
+			return input.matches("-?[0-9a-fA-F]+") ? input : null;
+			
+	}
+
+
 }
