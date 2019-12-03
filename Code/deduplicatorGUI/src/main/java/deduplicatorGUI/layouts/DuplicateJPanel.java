@@ -4,13 +4,10 @@ package deduplicatorGUI.layouts;
 import java.awt.event.ActionEvent;
 import java.util.Calendar;
 
-import javax.swing.AbstractListModel;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
 
 /**
  *
@@ -31,45 +28,19 @@ public class DuplicateJPanel extends BaseJPanel {
         }
 
         private void initComponents() {
+                java.awt.GridBagConstraints gridBagConstraints;
 
-                reportsComboBox = new javax.swing.JComboBox<>();
-                infoButton = new javax.swing.JButton();
-                jScrollPane1 = new javax.swing.JScrollPane();
-                filesScannedList = new javax.swing.JList<>();
-                applyDateLabel = new javax.swing.JLabel();
-                dateTextField = new javax.swing.JFormattedTextField();
-                timeSpiner = new javax.swing.JSpinner();
-                jLabel1 = new javax.swing.JLabel();
-                applyButton = new javax.swing.JButton();
-
-                infoButton.setText("Info");
-
-                filesScannedList.setModel(new AbstractListModel<String>() {
-                        private static final long serialVersionUID = 1L;
-                        String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-
-                        public int getSize() {
-                                return strings.length;
-                        }
-
-                        public String getElementAt(int i) {
-                                return strings[i];
-                        }
-                });
-                jScrollPane1.setViewportView(filesScannedList);
-
-                applyDateLabel.setText("Apply date:");
-
-                dateTextField.setText("date");
-
-                jLabel1.setText("Apply time:");
-
-                applyButton.setText("Apply");
-                applyButton.addActionListener(new java.awt.event.ActionListener() {
-                        public void actionPerformed(java.awt.event.ActionEvent evt) {
-                                applyButtonActionPerformed(evt);
-                        }
-                });
+                reportsComboBox = new JComboBox<>();
+                infoButton = new JButton();
+                duplicatesComboBox = new JComboBox<String>();
+                filesScannedJScrollPane = new JScrollPane();
+                filesScannedJList = new JList<>();
+                applyButton = new JButton();
+                dateTextField = new JFormattedTextField();
+                timeSpinner = new JSpinner();
+                applyDateLabel = new JLabel();
+                applyTimeLabel = new JLabel();
+                fileScrollPane = new JScrollPane();
 
                 reportsComboBox.addActionListener(new java.awt.event.ActionListener() {
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -77,114 +48,123 @@ public class DuplicateJPanel extends BaseJPanel {
                         }
                 });
 
-                javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-                this.setLayout(layout);
-                layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(layout.createSequentialGroup().addContainerGap().addGroup(layout
-                                                .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                .addComponent(jScrollPane1)
-                                                .addGroup(layout.createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.LEADING)
-                                                                .addGroup(layout.createSequentialGroup().addComponent(
-                                                                                reportsComboBox,
-                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                200,
-                                                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                                .addGap(18, 18, 18)
-                                                                                .addComponent(infoButton))
-                                                                .addGroup(layout.createSequentialGroup().addGroup(layout
-                                                                                .createParallelGroup(
-                                                                                                javax.swing.GroupLayout.Alignment.LEADING,
-                                                                                                false)
-                                                                                .addComponent(applyDateLabel)
-                                                                                .addComponent(dateTextField,
-                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                80, Short.MAX_VALUE))
-                                                                                .addPreferredGap(
-                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                                                .addGroup(layout.createParallelGroup(
-                                                                                                javax.swing.GroupLayout.Alignment.LEADING)
-                                                                                                .addGroup(layout.createSequentialGroup()
-                                                                                                                .addComponent(jLabel1)
-                                                                                                                .addGap(0, 0, Short.MAX_VALUE))
-                                                                                                .addGroup(layout.createSequentialGroup()
-                                                                                                                .addComponent(timeSpiner,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                                66,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                                                                .addPreferredGap(
-                                                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                                                                                                                                167,
-                                                                                                                                Short.MAX_VALUE)
-                                                                                                                .addComponent(applyButton))))))
-                                                .addContainerGap()));
-                layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(layout.createSequentialGroup().addContainerGap().addGroup(layout
-                                                .createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                                .addComponent(reportsComboBox, javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addComponent(infoButton)).addGap(18, 18, 18)
-                                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 245,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addGroup(layout.createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.LEADING)
-                                                                .addGroup(layout.createSequentialGroup()
-                                                                                .addPreferredGap(
-                                                                                                javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                                                                .addGroup(layout.createParallelGroup(
-                                                                                                javax.swing.GroupLayout.Alignment.BASELINE)
-                                                                                                .addComponent(applyDateLabel)
-                                                                                                .addComponent(jLabel1))
-                                                                                .addPreferredGap(
-                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                Short.MAX_VALUE)
-                                                                                .addGroup(layout.createParallelGroup(
-                                                                                                javax.swing.GroupLayout.Alignment.BASELINE)
-                                                                                                .addComponent(dateTextField,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                                                                .addComponent(timeSpiner,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
-                                                                                layout.createSequentialGroup()
-                                                                                                .addPreferredGap(
-                                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                                Short.MAX_VALUE)
-                                                                                                .addComponent(applyButton)
-                                                                                                .addContainerGap()))));
+                duplicatesComboBox.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                duplicatesComboBoxActionPerformed(evt);
+                        }
+                });
+
+                java.awt.GridBagLayout layout = new java.awt.GridBagLayout();
+                layout.columnWidths = new int[] { 0, 31, 0, 31, 0 };
+                layout.rowHeights = new int[] { 0, 14, 0, 14, 0, 14, 0 };
+                setLayout(layout);
+
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 0;
+                gridBagConstraints.gridy = 0;
+                gridBagConstraints.ipadx = 60;
+                add(reportsComboBox, gridBagConstraints);
+
+                infoButton.setText("info");
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 4;
+                gridBagConstraints.gridy = 0;
+                gridBagConstraints.ipadx = 30;
+                gridBagConstraints.ipady = 14;
+                add(infoButton, gridBagConstraints);
+
+                filesScannedJScrollPane.setViewportView(filesScannedJList);
+
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 2;
+                gridBagConstraints.gridy = 0;
+                // gridBagConstraints.ipady = 150;
+                gridBagConstraints.gridwidth = 5;
+                // gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+                gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+                gridBagConstraints.weightx = 1.0;
+                gridBagConstraints.insets = new java.awt.Insets(0, 0, 1, 0);
+                add(duplicatesComboBox, gridBagConstraints);
+
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 0;
+                gridBagConstraints.gridy = 2;
+                gridBagConstraints.ipady = 150;
+                gridBagConstraints.gridwidth = 5;
+                gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+                gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+                gridBagConstraints.weightx = 1.0;
+                gridBagConstraints.insets = new java.awt.Insets(0, 0, 1, 0);
+                add(new JPanel(), gridBagConstraints);
+
+                applyButton.setText("Apply");
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 4;
+                gridBagConstraints.gridy = 6;
+                gridBagConstraints.ipadx = 30;
+                gridBagConstraints.ipady = 14;
+                add(applyButton, gridBagConstraints);
+
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 0;
+                gridBagConstraints.gridy = 6;
+                gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+                add(dateTextField, gridBagConstraints);
+
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 2;
+                gridBagConstraints.gridy = 6;
+                gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+                add(timeSpinner, gridBagConstraints);
+
+                applyDateLabel.setText("Apply date:");
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 0;
+                gridBagConstraints.gridy = 4;
+                add(applyDateLabel, gridBagConstraints);
+
+                applyTimeLabel.setText("Apply time:");
+                gridBagConstraints = new java.awt.GridBagConstraints();
+                gridBagConstraints.gridx = 2;
+                gridBagConstraints.gridy = 4;
+                add(applyTimeLabel, gridBagConstraints);
         }
 
         protected void reportsComboBoxActionPerformed(ActionEvent evt) {
                 String selected = reportsComboBox.getSelectedItem().toString();
-
-                updateFilesScannedList(selected.split(":")[0]);
+                updateDuplicatesComboBox(selected.split(":")[0]);
         }
 
-        public void updateFilesScannedList(String id) {
-                Object response = getClient().get("report/" + id);
+        public void updateDuplicatesComboBox(String id) {
+                Object response = getClient().get("report/duplicate/" + id);
 
                 if (response != null) {
-                        JSONObject[] array = getArray((JSONArray)((JSONObject) response).get("file"));
-
-                        filesScannedList.setModel(new DefaultComboBoxModel() {
+                        JSONObject[] array = getArray((JSONArray) response);
+                        duplicatesComboBox.setModel(new DefaultComboBoxModel() {
                                 public int getSize() {
                                         return array.length;
                                 }
-
                                 public String getElementAt(int i) {
-                                        return array[i].get("path").toString();       
+                                        return "Count: " + array[i].get("count").toString();
                                 }
                         });
                 } else {
-                        JOptionPane.showMessageDialog(this, "Unable to get retrieve files", "Get error ",
+                        JOptionPane.showMessageDialog(this, "Unable to retireve duplicates", "Get error ",
                                         JOptionPane.INFORMATION_MESSAGE);
                 }
+
+
+                
+        }
+
+        protected void duplicatesComboBoxActionPerformed(ActionEvent evt) {
+                //TODO get hash from duplciates combo box
+                updateDuplicates("asdsd");
+        }
+
+        private void updateDuplicates(String hash) {
+
+                Object response = getClient().get("report/duplicate/" + id);
 
         }
 
@@ -198,7 +178,7 @@ public class DuplicateJPanel extends BaseJPanel {
         }
 
         private void updateScansCheckBox() {
-                Object response = getClient().get("report/");
+                Object response = getClient().get("report/all");
 
                 if (response != null) {
                         JSONObject[] array = getArray((JSONArray) response);
@@ -211,7 +191,7 @@ public class DuplicateJPanel extends BaseJPanel {
 
                                 public String getElementAt(int i) {
                                         cal.setTimeInMillis(Long.parseLong(array[i].get("start").toString()));
-                                        return array[i].get("id").toString() + ": " + cal.getTime().toString();
+                                        return array[i].get("id") + ":" + cal.getTime().toString();
                                 }
                         });
                 } else {
@@ -223,14 +203,16 @@ public class DuplicateJPanel extends BaseJPanel {
                 reportsComboBox.repaint();
         }
 
-        private javax.swing.JButton applyButton;
-        private javax.swing.JLabel applyDateLabel;
-        private javax.swing.JFormattedTextField dateTextField;
-        private javax.swing.JButton infoButton;
-        private javax.swing.JLabel jLabel1;
-        private javax.swing.JList<String> filesScannedList;
-        private javax.swing.JScrollPane jScrollPane1;
-        private javax.swing.JComboBox<String> reportsComboBox;
-        private javax.swing.JSpinner timeSpiner;
+        private JButton applyButton;
+        private JLabel applyDateLabel;
+        private JFormattedTextField dateTextField;
+        private JButton infoButton;
+        private JLabel applyTimeLabel;
+        private JScrollPane filesScannedJScrollPane;
+        private JList<String> filesScannedJList;
+        private JScrollPane fileScrollPane;
+        private JComboBox<String> duplicatesComboBox;
+        private JComboBox<String> reportsComboBox;
+        private JSpinner timeSpinner;
 
 }
