@@ -43,6 +43,7 @@ public class ScanController implements ScanListener{
 
     @Autowired
     ApplicationContext context;
+    private Report report = null; 
 
     @PostMapping("/start")
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
@@ -55,7 +56,7 @@ public class ScanController implements ScanListener{
             AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
             System.out.println("user: " + authenticatedUser);
             currentScan = (ScanManager) context.getBean("scanManager");
-            Report report = new Report(internalUser);
+            report = new Report(internalUser);
             report.setStart(System.currentTimeMillis());
             reportRepository.save(report);
 
@@ -120,11 +121,15 @@ public class ScanController implements ScanListener{
 
     @GetMapping("/status")
     public @ResponseBody Object getStatus() {
+        
+        System.out.println("Report id " + report.getId());
+        
+        report = report != null? report : new Report();
+        
         Object response = new Object() {
-            public String status = currentScan == null ? "Scan stopped"
-                    : (currentScan.isPaused() ? "Scan paused" : "Scan running");
-            public Long timeStart = currentScan == null ? -1 :currentScan.getReport().getStart();
-            public int objectsScanned = currentScan == null ? -1 :currentScan.getReport().getFilesScanned();
+            public String status = currentScan == null ? "Scan stopped" : (currentScan.isPaused() ? "Scan paused" : "Scan running");
+            public Long timeStart = report.getStart() == null ? -1 : report.getStart();
+            public int objectsScanned = report.getFilesScanned() == null ? -1 : report.getFilesScanned();
         };
 
         return response;
