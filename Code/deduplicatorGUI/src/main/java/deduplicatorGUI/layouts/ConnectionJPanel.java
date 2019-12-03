@@ -3,7 +3,7 @@ package deduplicatorGUI.layouts;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 import org.springframework.web.client.RestClientException;
 
@@ -30,13 +30,13 @@ public class ConnectionJPanel extends BaseJPanel {
 
     private void initComponents() {
 
-        usernameTextField = new javax.swing.JTextField();
-        ipTextField1 = new javax.swing.JTextField();
-        passwordTextField = new javax.swing.JTextField();
-        connectButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
+        usernameTextField = new JTextField();
+        ipTextField1 = new JTextField();
+        passwordTextField = new JTextField();
+        connectButton = new JButton();
+        jLabel1 = new JLabel();
+        jLabel2 = new JLabel();
+        jLabel3 = new JLabel();
 
 
         ipTextField1.setText("localhost:8080");
@@ -56,33 +56,33 @@ public class ConnectionJPanel extends BaseJPanel {
 
         jLabel3.setText("Password:");
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        GroupLayout layout = new GroupLayout(this);
         this.setLayout(layout);
-        layout.setHorizontalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
+        layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(GroupLayout.Alignment.TRAILING,
                         layout.createSequentialGroup().addContainerGap(321, Short.MAX_VALUE).addComponent(connectButton)
                                 .addContainerGap())
                 .addGroup(layout.createSequentialGroup().addGap(25, 25, 25).addGroup(layout
-                        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jLabel3)
+                        .createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(jLabel3)
                         .addComponent(jLabel2).addComponent(jLabel1)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(ipTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addComponent(ipTextField1, GroupLayout.DEFAULT_SIZE, 197, Short.MAX_VALUE)
                                 .addComponent(usernameTextField).addComponent(passwordTextField)))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
-        layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(layout
+                        .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+        layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout
                 .createSequentialGroup().addContainerGap().addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ipTextField1, javax.swing.GroupLayout.PREFERRED_SIZE,
-                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ipTextField1, GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(3, 3, 3).addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(usernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE,
-                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(usernameTextField, GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(2, 2, 2).addComponent(jLabel3)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(passwordTextField, javax.swing.GroupLayout.PREFERRED_SIZE,
-                        javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(passwordTextField, GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
                 .addComponent(connectButton).addContainerGap()));
     }
 
@@ -118,13 +118,13 @@ public class ConnectionJPanel extends BaseJPanel {
 
     }
 
-    private javax.swing.JTextField ipTextField1;
-    private javax.swing.JButton connectButton;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JTextField passwordTextField;
-    private javax.swing.JTextField usernameTextField;
+    private JTextField ipTextField1;
+    private JButton connectButton;
+    private JLabel jLabel1;
+    private JLabel jLabel2;
+    private JLabel jLabel3;
+    private JTextField passwordTextField;
+    private JTextField usernameTextField;
     private UserConnectedListener listener;
 
     public void setListener(UserConnectedListener listener) {

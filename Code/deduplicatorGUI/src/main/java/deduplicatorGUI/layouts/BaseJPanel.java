@@ -1,6 +1,6 @@
 package deduplicatorGUI.layouts;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

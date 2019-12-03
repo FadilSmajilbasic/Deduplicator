@@ -3,9 +3,7 @@ package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractListModel;
-import javax.swing.BorderFactory;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -32,16 +30,16 @@ public class PathJPanel extends BaseJPanel {
 
         java.awt.GridBagConstraints gridBagConstraints;
 
-        pathTextField = new javax.swing.JTextField();
-        typeComboBox = new javax.swing.JComboBox<>();
-        pathJScrollPane = new javax.swing.JScrollPane();
-        pathJList = new javax.swing.JList<>();
-        typeJScrollPane = new javax.swing.JScrollPane();
-        typeJList = new javax.swing.JList<>();
-        insertButton = new javax.swing.JButton();
-        deleteButton = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
+        pathTextField = new JTextField();
+        typeComboBox = new JComboBox<>();
+        pathJScrollPane = new JScrollPane();
+        pathJList = new JList<>();
+        typeJScrollPane = new JScrollPane();
+        typeJList = new JList<>();
+        insertButton = new JButton();
+        deleteButton = new JButton();
+        jLabel1 = new JLabel();
+        jLabel2 = new JLabel();
 
         java.awt.GridBagLayout layout = new java.awt.GridBagLayout();
         layout.columnWidths = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -69,13 +67,14 @@ public class PathJPanel extends BaseJPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         add(pathTextField, gridBagConstraints);
 
-        typeComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Scan", "Ignore" }));
+        typeComboBox.setModel(new DefaultComboBoxModel<>(new String[] { "Scan", "Ignore" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 0;
         add(typeComboBox, gridBagConstraints);
 
         pathJScrollPane.setViewportView(pathJList);
+        
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -86,6 +85,7 @@ public class PathJPanel extends BaseJPanel {
         add(pathJScrollPane, gridBagConstraints);
 
         typeJScrollPane.setViewportView(typeJList);
+        typeJScrollPane.setFocusable(false);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
@@ -199,15 +199,15 @@ public class PathJPanel extends BaseJPanel {
         pathJScrollPane.repaint();
     }
 
-    private javax.swing.JTextField pathTextField;
-    private javax.swing.JButton deleteButton;
-    private javax.swing.JButton insertButton;
-    private javax.swing.JList<String> pathJList;
-    private javax.swing.JList<String> typeJList;
-    private javax.swing.JScrollPane pathJScrollPane;
-    private javax.swing.JScrollPane typeJScrollPane;
-    private javax.swing.JComboBox<String> typeComboBox;
+    private JTextField pathTextField;
+    private JButton deleteButton;
+    private JButton insertButton;
+    private JList<String> pathJList;
+    private JList<String> typeJList;
+    private JScrollPane pathJScrollPane;
+    private JScrollPane typeJScrollPane;
+    private JComboBox<String> typeComboBox;
 
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
+    private JLabel jLabel1;
+    private JLabel jLabel2;
 }

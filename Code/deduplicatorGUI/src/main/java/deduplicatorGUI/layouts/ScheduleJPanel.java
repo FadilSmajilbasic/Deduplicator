@@ -1,6 +1,8 @@
 
 package deduplicatorGUI.layouts;
 
+import javax.swing.*;
+
 /**
  *
  * @author Fadil Smajilbasic
@@ -17,23 +19,23 @@ public class ScheduleJPanel extends BaseJPanel {
 
     private void initComponents() {
 
-        typeButtonGroup = new javax.swing.ButtonGroup();
-        dayButtonGroup = new javax.swing.ButtonGroup();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        dateTextField = new javax.swing.JFormattedTextField();
-        timeSpinner = new javax.swing.JSpinner();
-        oneOffRadioButton = new javax.swing.JRadioButton();
-        dailyRadioButton = new javax.swing.JRadioButton();
-        weeklyRadioButton = new javax.swing.JRadioButton();
-        monthlyradioButton = new javax.swing.JRadioButton();
-        mondayRadioButton = new javax.swing.JRadioButton();
-        tuesdayRadioButton = new javax.swing.JRadioButton();
-        wednesdayRadioButton = new javax.swing.JRadioButton();
-        thursdayRadioButton = new javax.swing.JRadioButton();
-        fridayRadioButton = new javax.swing.JRadioButton();
-        saturdayRadioButton = new javax.swing.JRadioButton();
-        sundayRadioButton = new javax.swing.JRadioButton();
+        typeButtonGroup = new ButtonGroup();
+        dayButtonGroup = new ButtonGroup();
+        jLabel1 = new JLabel();
+        jLabel2 = new JLabel();
+        dateTextField = new JFormattedTextField();
+        timeSpinner = new JSpinner();
+        oneOffRadioButton = new JRadioButton();
+        dailyRadioButton = new JRadioButton();
+        weeklyRadioButton = new JRadioButton();
+        monthlyradioButton = new JRadioButton();
+        mondayRadioButton = new JRadioButton();
+        tuesdayRadioButton = new JRadioButton();
+        wednesdayRadioButton = new JRadioButton();
+        thursdayRadioButton = new JRadioButton();
+        fridayRadioButton = new JRadioButton();
+        saturdayRadioButton = new JRadioButton();
+        sundayRadioButton = new JRadioButton();
 
         jLabel1.setText("Plan new scan:");
 
@@ -100,34 +102,34 @@ public class ScheduleJPanel extends BaseJPanel {
 
 
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        GroupLayout layout = new GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jLabel1, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jLabel2)
                             .addComponent(dateTextField))
                         .addGap(18, 18, 18)
-                        .addComponent(timeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(timeSpinner, GroupLayout.PREFERRED_SIZE, 66, GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(GroupLayout.Alignment.TRAILING, layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                             .addComponent(mondayRadioButton)
                             .addComponent(tuesdayRadioButton)
                             .addComponent(wednesdayRadioButton))
                         .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                 .addComponent(thursdayRadioButton)
                                 .addComponent(saturdayRadioButton)
                                 .addComponent(fridayRadioButton)
                                 .addComponent(sundayRadioButton))
                             .addGap(16, 16, 16))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 109, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 109, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addComponent(monthlyradioButton)
                     .addComponent(weeklyRadioButton)
                     .addComponent(dailyRadioButton)
@@ -135,39 +137,39 @@ public class ScheduleJPanel extends BaseJPanel {
                 .addContainerGap())
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addGap(18, 18, 18)
                 .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(dateTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(timeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(dateTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addComponent(timeSpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                     .addComponent(oneOffRadioButton))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(dailyRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(weeklyRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(monthlyradioButton)
                         .addContainerGap())
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(mondayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(tuesdayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(wednesdayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(thursdayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(fridayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(saturdayRadioButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(sundayRadioButton))))
         );
     }
@@ -190,22 +192,22 @@ public class ScheduleJPanel extends BaseJPanel {
 
 
     
-    private javax.swing.JRadioButton dailyRadioButton;
-    private javax.swing.JFormattedTextField dateTextField;
-    private javax.swing.ButtonGroup dayButtonGroup;
-    private javax.swing.JRadioButton fridayRadioButton;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JRadioButton mondayRadioButton;
-    private javax.swing.JRadioButton monthlyradioButton;
-    private javax.swing.JRadioButton oneOffRadioButton;
-    private javax.swing.JRadioButton saturdayRadioButton;
-    private javax.swing.JRadioButton sundayRadioButton;
-    private javax.swing.JRadioButton thursdayRadioButton;
-    private javax.swing.JSpinner timeSpinner;
-    private javax.swing.JRadioButton tuesdayRadioButton;
-    private javax.swing.ButtonGroup typeButtonGroup;
-    private javax.swing.JRadioButton wednesdayRadioButton;
-    private javax.swing.JRadioButton weeklyRadioButton;
+    private JRadioButton dailyRadioButton;
+    private JFormattedTextField dateTextField;
+    private ButtonGroup dayButtonGroup;
+    private JRadioButton fridayRadioButton;
+    private JLabel jLabel1;
+    private JLabel jLabel2;
+    private JRadioButton mondayRadioButton;
+    private JRadioButton monthlyradioButton;
+    private JRadioButton oneOffRadioButton;
+    private JRadioButton saturdayRadioButton;
+    private JRadioButton sundayRadioButton;
+    private JRadioButton thursdayRadioButton;
+    private JSpinner timeSpinner;
+    private JRadioButton tuesdayRadioButton;
+    private ButtonGroup typeButtonGroup;
+    private JRadioButton wednesdayRadioButton;
+    private JRadioButton weeklyRadioButton;
     
 }

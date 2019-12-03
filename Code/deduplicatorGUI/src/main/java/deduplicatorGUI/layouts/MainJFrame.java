@@ -1,8 +1,7 @@
 
 package deduplicatorGUI.layouts;
 
-import javax.swing.JFrame;
-import javax.swing.JTabbedPane;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -29,9 +28,9 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
 
     private void initComponents() {
 
-        menu = new javax.swing.JTabbedPane();
+        menu = new JTabbedPane();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         connectionPanel = new ConnectionJPanel();
         duplicatePanel = new DuplicateJPanel();
@@ -69,7 +68,7 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
     private PathJPanel pathPanel;
     private ScheduleJPanel schedulePanel;
 
-    private javax.swing.JTabbedPane menu;
+    private JTabbedPane menu;
     private Client client;
 
     @Override
