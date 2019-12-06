@@ -53,7 +53,7 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
         this.add(menu);        
 
         pack();
-        this.setSize(500, 500);
+        this.setSize(700, 550);
     }
 
     private void changeTabsAccessibility(JTabbedPane menu, boolean state) {

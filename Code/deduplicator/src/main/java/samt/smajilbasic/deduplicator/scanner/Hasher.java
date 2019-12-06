@@ -55,8 +55,6 @@ public class Hasher extends Thread {
                 messageDigest.update(buffer, 0, unitsize);
                 read += unitsize;
             }
-            System.out.println("Hash duration: " + (System.currentTimeMillis() - start) + "ms");
-
         } catch (FileNotFoundException fnfE) {
             System.out.println("[ERROR] Hasher: Item not found");
 

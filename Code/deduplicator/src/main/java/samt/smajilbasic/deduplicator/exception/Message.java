@@ -46,4 +46,8 @@ public class Message {
     public String getMessage() {
         return message;
     }
+
+    public void setTimestamp(LocalDateTime time){
+        this.timestamp = time;
+    }
 }
