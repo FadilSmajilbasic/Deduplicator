@@ -3,9 +3,9 @@ package deduplicatorGUI.layouts;
 
 import javax.swing.*;
 
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.springframework.http.HttpStatus;
 
 /**
  *
@@ -77,90 +77,89 @@ public class ScanJPanel extends BaseJPanel {
 
                 GroupLayout layout = new GroupLayout(this);
                 this.setLayout(layout);
-                layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addGroup(layout.createSequentialGroup().addContainerGap().addGroup(layout
-                                                .createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout
+                                .createSequentialGroup().addContainerGap()
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                                 .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 376,
                                                                 Short.MAX_VALUE)
-                                                .addGroup(GroupLayout.Alignment.TRAILING, layout
-                                                                .createSequentialGroup()
+                                                .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                                 .addComponent(scanInProgressLabel)
-                                                                .addPreferredGap(
-                                                                                LayoutStyle.ComponentPlacement.RELATED,
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED,
                                                                                 GroupLayout.DEFAULT_SIZE,
                                                                                 Short.MAX_VALUE)
                                                                 .addComponent(refreshButton))
-                                                .addGroup(GroupLayout.Alignment.TRAILING, layout
-                                                                .createSequentialGroup().addComponent(detailsLabel)
-                                                                .addPreferredGap(
-                                                                                LayoutStyle.ComponentPlacement.RELATED,
+                                                .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                                .addComponent(detailsLabel)
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED,
                                                                                 GroupLayout.DEFAULT_SIZE,
                                                                                 Short.MAX_VALUE)
                                                                 .addComponent(stopScanButton))
-                                                .addGroup(GroupLayout.Alignment.TRAILING, layout
-                                                                .createSequentialGroup()
+                                                .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                                 .addComponent(objectsScannedLabel)
-                                                                .addPreferredGap(
-                                                                                LayoutStyle.ComponentPlacement.RELATED,
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED,
                                                                                 GroupLayout.DEFAULT_SIZE,
                                                                                 Short.MAX_VALUE)
                                                                 .addComponent(startScanButton))
-                                                .addGroup(GroupLayout.Alignment.TRAILING, layout
-                                                                .createSequentialGroup().addComponent(scanStartedLabel)
-                                                                .addPreferredGap(
-                                                                                LayoutStyle.ComponentPlacement.RELATED,
+                                                .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                                .addComponent(scanStartedLabel)
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED,
                                                                                 GroupLayout.DEFAULT_SIZE,
                                                                                 Short.MAX_VALUE)
                                                                 .addComponent(pauseScanButton)))
-                                                .addContainerGap()));
-                layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addGroup(layout.createSequentialGroup().addContainerGap().addGroup(layout
-                                                .createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                .addContainerGap()));
+                layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layout
+                                .createSequentialGroup().addContainerGap()
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                                 .addComponent(refreshButton).addComponent(scanInProgressLabel))
-                                                .addGap(18, 18, 18)
-                                                .addGroup(layout.createParallelGroup(
-                                                                GroupLayout.Alignment.BASELINE)
-                                                                .addComponent(startScanButton)
-                                                                .addComponent(objectsScannedLabel))
-                                                .addGap(18, 18, 18)
-                                                .addGroup(layout.createParallelGroup(
-                                                                GroupLayout.Alignment.BASELINE)
-                                                                .addComponent(pauseScanButton)
-                                                                .addComponent(scanStartedLabel))
-                                                .addGap(18, 18, 18)
-                                                .addGroup(layout.createParallelGroup(
-                                                                GroupLayout.Alignment.TRAILING)
-                                                                .addComponent(stopScanButton)
-                                                                .addComponent(detailsLabel))
-                                                .addGap(18, 18, 18)
-                                                .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE,
-                                                                GroupLayout.DEFAULT_SIZE,
-                                                                GroupLayout.PREFERRED_SIZE)
-                                                .addContainerGap(GroupLayout.DEFAULT_SIZE,
-                                                                Short.MAX_VALUE)));
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                                .addComponent(startScanButton).addComponent(objectsScannedLabel))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                                .addComponent(pauseScanButton).addComponent(scanStartedLabel))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                                                .addComponent(stopScanButton).addComponent(detailsLabel))
+                                .addGap(18, 18, 18)
+                                .addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
+                                                GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
         }
 
         private void refreshButtonActionPerformed(java.awt.event.ActionEvent evt) {
                 Object response = getClient().get("scan/status");
-                if(response != null ){
+                if (response != null) {
                         JSONObject respJson = ((JSONObject) response);
+
                         System.out.println("respJson: " + respJson.toString());
+                        String progress = respJson.get("status").toString();
+                        String count = respJson.get("message").toString();
+                        String startDate = respJson.get("timestamp").toString();
+
                         
-                        scanInProgressLabel.setText("Scan in progress: " + respJson.get("status").toString());
-                        objectsScannedLabel.setText(
-                                "Files scanned: " + respJson.get("objectsScanned").toString());
-                        scanStartedLabel.setText("Scan started: " + respJson.get("timeStart").toString());
-                }else{
-                        
+                        if (progress.equals(HttpStatus.OK.toString())) {
+                                scanInProgressLabel.setText("Scan in progress: yes");
+                                objectsScannedLabel.setText("Files scanned: " + count);
+                                scanStartedLabel.setText("Scan started: " + startDate);
+                        } else {
+                                scanInProgressLabel.setText("Scan in progress: no");
+                                objectsScannedLabel.setText("Files scanned: 0");
+                                scanStartedLabel.setText("Scan started: ");
+                                JOptionPane.showMessageDialog(this, "Scan is not running", "Status Error",
+                                        JOptionPane.INFORMATION_MESSAGE);
+                        }
+                } else {
+                        JOptionPane.showMessageDialog(this, "Unable to get scan status", "Status Error",
+                                        JOptionPane.INFORMATION_MESSAGE);
                 }
-                
 
         }
-        public void updateFilesScanned(int id){
+
+        public void updateFilesScanned(int id) {
                 Object response = getClient().get("report/" + id);
 
                 if (response != null) {
-                        JSONObject[] array = getArray((JSONArray)((JSONObject) response).get("file"));
+                        JSONObject[] array = getArray((JSONArray) ((JSONObject) response).get("file"));
 
                         fileScannedList.setModel(new DefaultComboBoxModel<>() {
                                 public int getSize() {
@@ -168,7 +167,7 @@ public class ScanJPanel extends BaseJPanel {
                                 }
 
                                 public String getElementAt(int i) {
-                                        return array[i].get("path").toString();       
+                                        return array[i].get("path").toString();
                                 }
                         });
                         filesScannedJScrollPane.update(getGraphics());
