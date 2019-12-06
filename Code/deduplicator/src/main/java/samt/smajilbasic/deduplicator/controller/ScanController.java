@@ -1,5 +1,9 @@
 package samt.smajilbasic.deduplicator.controller;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -122,16 +126,12 @@ public class ScanController implements ScanListener{
     @GetMapping("/status")
     public @ResponseBody Object getStatus() {
         
-        System.out.println("Report id " + report.getId());
         
         report = report != null? report : new Report();
-        
-        Object response = new Object() {
-            public String status = currentScan == null ? "Scan stopped" : (currentScan.isPaused() ? "Scan paused" : "Scan running");
-            public Long timeStart = report.getStart() == null ? -1 : report.getStart();
-            public int objectsScanned = report.getFilesScanned() == null ? -1 : report.getFilesScanned();
-        };
-
+        int count = report.getFilesScanned() == null ? 0 : report.getFilesScanned();
+        Message response  = new Message(HttpStatus.OK, String.valueOf(count));
+        LocalDateTime time = Instant.ofEpochMilli(report.getStart() == null ? 0 : report.getStart()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+        response.setTimestamp(time);
         return response;
 
     }
