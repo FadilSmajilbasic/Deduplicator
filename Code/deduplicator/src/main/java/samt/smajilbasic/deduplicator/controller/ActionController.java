@@ -141,4 +141,13 @@ public class ActionController {
         }
     }
 
+    @PostMapping("/path")
+    public @ResponseBody boolean checkPath(@RequestParam String path){
+        if(Validator.getPathType(path).equals(PathType.Directory)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
 }
