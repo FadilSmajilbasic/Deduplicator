@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
 
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.entity.File;
@@ -26,6 +25,8 @@ public class Hasher extends Thread {
 
     boolean paused;
 
+    private final static int BUFFER_SIZE = 32768;
+
     public Hasher(java.io.File file, Report report, ScannerThreadListener stl, FileRepository fileRepository,
             Object monitor) {
         this.file = file;
@@ -39,18 +40,17 @@ public class Hasher extends Thread {
 
         MessageDigest messageDigest = MessageDigest.getInstance(mode);
 
-        int buff = 32768;
+        
         try {
             
-            byte[] buffer = new byte[buff];
+            byte[] buffer = new byte[BUFFER_SIZE];
             long read = 0;
 
             long end = file.length();
             int unitsize;
-            long start = System.currentTimeMillis();
             while (read < end) {
                 checkPaused();
-                unitsize = (int) (((end - read) >= buff) ? buff : (end - read));
+                unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read));
                 file.read(buffer, 0, unitsize);
                 messageDigest.update(buffer, 0, unitsize);
                 read += unitsize;

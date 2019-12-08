@@ -2,13 +2,10 @@ package samt.smajilbasic.deduplicator.controller;
 
 import samt.smajilbasic.deduplicator.exception.*;
 import java.io.File;
-import java.io.IOException;
-import java.util.NoSuchElementException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,52 +17,98 @@ import samt.smajilbasic.deduplicator.entity.GlobalPath;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 
 /**
- * PathController
+ * PathController si occupa di gestire le richieste in entrata che hanno come
+ * primo pezzo del percorso "/path". Usa l'annotazione @RestController per
+ * indicare a spring che questa classe è un controller e che dovrà essere
+ * inizializzata all'avvio dell'applicazione.
+ * 
+ * @author Fadil Smajilbasic
  */
-
 @RestController
 @RequestMapping(path = "/path")
 public class PathController {
 
+    /**
+     * L'attributo gpr serve al controller per interfacciarsi con la tabella
+     * GlobalPath del database. Usa l'annotazione @Autowired per indicare a spring
+     * che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
     GlobalPathRepository gpr;
 
+    /**
+     * Il metodo getPaths risponde alla richiesta di tipo GET sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/).
+     * 
+     * @return tutti {@link GlobalPath} contenuti nella tabella GlobalPath del database.
+     */
     @GetMapping()
     public @ResponseBody Iterable<GlobalPath> getPaths() {
         return gpr.findAll();
     }
 
+    /**
+     * Il metodo getValueByPath risponde alla richiesta di tipo GET sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/path/&lt;percorso&gt;</b>
+     * (localhost:8080/path/&#47;home&#47;user&#47;Desktop&#47;).
+     * 
+     * @param path il percorso con il quale verrà cercaro il valore nella tabella
+     *             GlobalPath.
+     * @return l'elemento richiesto della tabella GlobalPath, messaggio d'errore
+     *         altrimenti.
+     */
     @GetMapping(value = "/{path}")
-    public @ResponseBody Object getValueByPath(@PathVariable String path) {
-        try {
-            if (Validator.getPathType(path) != PathType.Invalid) {
-                return gpr.findById(path.replaceAll("&#47;", File.separator).trim()).get();
-            } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Path invalid format (GET): " + path.replaceAll("&#47;", File.separator).trim());
+    public @ResponseBody Object getValueByPath(@RequestParam String path) {
+
+        path = path.replaceAll("&#47;", File.separator).trim();
+        if (Validator.getPathType(path) != PathType.Invalid) {
+            if (gpr.existsById(path))
+                return gpr.findById(path).get();
+            else {
+                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Path doesn't exist: " + path);
             }
-        } catch (NoSuchElementException nsee) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Path invalid format (GET): " + path.replaceAll("&#47;", File.separator).trim());
+        } else {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
         }
     }
 
+    /**
+     * Il metodo insert risponde alla richiesta di tipo PUT sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo inserisce una
+     * nuova azione nel database GlobalPath.
+     * 
+     * @param path       il percorso del oggetto, passato come parametro del body
+     *                   della richiesta.
+     * @param ignorePath se è da ignorare oppure da scansionare, passato come
+     *                   parametro del body della richiesta.
+     * @return l'oggetto inserito oppure un messaggio d'errore in base al errore.
+     */
     @PutMapping()
-    public @ResponseBody Object insert(@RequestParam String path, @RequestParam String ignorePath) throws IOException {
-        try {
+    public @ResponseBody Object insert(@RequestParam String path, @RequestParam String ignorePath) {
+        path = path.replaceAll("&#47;", File.separator).trim();
+
+        if (!gpr.existsById(path)) {
             if (Validator.getPathType(path) != PathType.Invalid) {
-                gpr.save(new GlobalPath(path.replaceAll("&#47;", File.separator).trim(), (ignorePath.equals("true"))));
+                gpr.save(new GlobalPath(path, (ignorePath.equals("true"))));
                 return getValueByPath(path);
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Path invalid format (PUT): " + path.replaceAll("&#47;", File.separator).trim());
+                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
             }
-        } catch (NoSuchElementException nsee) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Path invalid format (PUT): " + path.replaceAll("&#47;", File.separator).trim());
+        } else {
+            return new Message(HttpStatus.BAD_REQUEST, "Path already present in database: " + path);
         }
     }
 
+    /**
+     * Il metodo remove risponde alla richiesta di tipo DELETE sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo rimuove un
+     * oggetto dalla tabella GlobalPath in base al percorso passato come parametro
+     * nel body della richiesta.
+     * 
+     * @param path il precorso dell'oggetto da rimuovere
+     * @return l'oggetto eliminato oppure il messaggio d'errore
+     */
     @DeleteMapping()
     public @ResponseBody Object remove(@RequestParam String path) {
 
@@ -77,8 +120,7 @@ public class PathController {
             gpr.delete(entry);
             return entry;
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Invalid path to remove set (DELETE): " + path.replaceAll("&#47;", File.separator).trim());
+            return new Message(HttpStatus.BAD_REQUEST, "Invalid path: " + path);
         }
     }
 }

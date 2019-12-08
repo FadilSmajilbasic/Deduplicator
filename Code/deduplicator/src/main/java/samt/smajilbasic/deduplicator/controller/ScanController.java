@@ -28,27 +28,73 @@ import samt.smajilbasic.deduplicator.scanner.ScanListener;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
 
 /**
- * ScanController
+ * ScanController si occupa di gestire le richieste in entrata che hanno come
+ * primo pezzo del percorso "/scan". Usa l'annotazione @RestController per
+ * indicare a spring che questa classe è un controller e che dovrà essere
+ * inizializzata all'avvio dell'applicazione.
+ * 
+ * @author Fadil Smajilbasic
  */
 @RestController
 @RequestMapping(path = "/scan")
 public class ScanController implements ScanListener{
 
+    /**
+     * L'attributo reportRepository serve al controller per interfacciarsi con la
+     * tabella {@link Report} del database. Usa l'annotazione @Autowired per indicare a
+     * spring che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
-    ReportRepository reportRepository;
+    private ReportRepository reportRepository;
 
+    /**
+     * L'attributo adr serve al controller per interfacciarsi con la tabella
+     * {@link AuthenticationDetails} del database. Usa l'annotazione @Autowired per indicare
+     * a spring che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
-    AuthenticationDetailsRepository adr;
+    private AuthenticationDetailsRepository adr;
 
-    ScanManager currentScan;
-
+    /**
+     * L'attributo gpr serve al controller per interfacciarsi con la tabella
+     * {@link samt.smajilbasic.deduplicator.entity.GlobalPath} del database. Usa l'annotazione @Autowired per indicare a spring
+     * che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
-    GlobalPathRepository gpr;
+    private GlobalPathRepository gpr;
 
+
+    /**
+     * L'attributo currentScan contiene lo stato dell'ultima scansione.
+     * Viene inizializzato alla chiamata del metodo start.
+     */
+    private ScanManager currentScan;
+
+     /**
+     * L'attributo context contiene il contesto dell'applicazione. Viene usato per
+     * trovare l'utente attualmente collegato.
+     * 
+     */
     @Autowired
-    ApplicationContext context;
+    private ApplicationContext context;
+
+    /**
+     * L'attributro report contiene il riferimento al {@link Report} dell'ultima scansione inizializzata
+     */
     private Report report = null; 
 
+    /**
+     * Il metodo start risponde alla richiesta di tipo POST sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scan/start</b>(localhost:8080/scan/start).
+     * Il metodo avvia una nuova scansione inizializzando l'attributo currentScan e report.
+     * @see #currentScan
+     * @see #report
+     * @param threadCount il numero di thread da avviare durante la scansione, di default 10, parametro opzionale
+     * @return il rapporto creato all'avvio della scansione.
+     */
     @PostMapping("/start")
     public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
         
@@ -56,9 +102,8 @@ public class ScanController implements ScanListener{
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String authenticatedUser = authentication.getName();
-
             AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
-            System.out.println("user: " + authenticatedUser);
+
             currentScan = (ScanManager) context.getBean("scanManager");
             report = new Report(internalUser);
             report.setStart(System.currentTimeMillis());
@@ -75,6 +120,15 @@ public class ScanController implements ScanListener{
         }
     }
 
+    /**
+     * Il metodo stop risponde alla richiesta di tipo POST sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scan/stop</b>(localhost:8080/scan/stop).
+     * 
+     * Il stop metodo ferma la scansione distrugendo l'attributo currentScan e report.
+     * @see #currentScan
+     * @see #report
+     * @return il rapporto dell'ultima scansione oppure messaggio d'errore se la scansione non è attiva. 
+     */
     @PostMapping("/stop")
     public @ResponseBody Object stop() {
         if (currentScan != null) {
@@ -87,17 +141,21 @@ public class ScanController implements ScanListener{
                     System.out.print(".");
                 }
             }
-
             Report report = currentScan.getReport();
-
             destroyScanManager();
-
             return report;
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently running");
         }
     }
 
+    /**
+     * Il metodo pause risponde alla richiesta di tipo POST sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scan/pause</b>(localhost:8080/scan/pause).
+     * 
+     * Il metodo pause mette in pausa la scansione.
+     * @return Messaggio che la scansione è in pause oppore messaggio d'errore se la scansione nom è attiva.
+     */
     @PostMapping("/pause")
     public @ResponseBody Message pause() {
         if (currentScan != null) {
@@ -112,6 +170,14 @@ public class ScanController implements ScanListener{
         }
     }
 
+    /**
+     * Il metodo resume risponde alla richiesta di tipo POST sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scan/resume</b>(localhost:8080/scan/resume).
+     * 
+     * Il metodo resume prosegue con l'esecuzione dell'ultima scansione nel caso che sia stata messa in pausa.
+     * @return Messaggio che la scansione è in pause oppore messaggio d'errore se la scansione non è attiva.
+     * @see Message
+     */
     @PostMapping("/resume")
     public @ResponseBody Message resume() {
         if (currentScan != null) {
@@ -123,24 +189,42 @@ public class ScanController implements ScanListener{
         }
     }
 
+    /**
+     * Il metodo getStatus risponde alla richiesta di tipo GET sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scan/status</b>(localhost:8080/scan/status).
+     * 
+     * Il metodo getStatus restituisce lo stato della scansione.
+     * @return Messaggio che in base al campo status indica che una scansione è in esecuzione o no, grazie al campo message indica quanti file sono stati scansionati e grazie al campo timestamp indica la data d'esecuzione della scansione.
+     * @see Message
+     */
     @GetMapping("/status")
     public @ResponseBody Object getStatus() {
-        
-        
-        report = report != null? report : new Report();
         int count = report.getFilesScanned() == null ? 0 : report.getFilesScanned();
-        Message response  = new Message(HttpStatus.OK, String.valueOf(count));
+
+        Message response;
+        if(report != null){
+            response = new Message(HttpStatus.OK, String.valueOf(count));
+        }else{
+            response = new Message(HttpStatus.NOT_FOUND, String.valueOf(count));
+        }
         LocalDateTime time = Instant.ofEpochMilli(report.getStart() == null ? 0 : report.getStart()).atZone(ZoneId.systemDefault()).toLocalDateTime();
         response.setTimestamp(time);
         return response;
 
     }
 
+    /**
+     * Metodo che viene chiamato quando una scansione viene finita.
+     */
     @Override
     public void scanFinished() {
         destroyScanManager();
     }
 
+    /**
+     * Questo metodo distrugge il parametro currentScan di tipo ScanManager grazie al contesto dell'applicazione.
+     * {@link ScanController#context}
+     */
     private void destroyScanManager(){
         BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
         ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
