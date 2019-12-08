@@ -1,2 +1,2 @@
 # Deduplicator
-A program to eliminate duplicate files
+A program to manage duplicate files
