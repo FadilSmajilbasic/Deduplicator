@@ -136,7 +136,6 @@ public class ScanJPanel extends BaseJPanel {
                         String count = respJson.get("message").toString();
                         String startDate = respJson.get("timestamp").toString();
 
-                        
                         if (progress.equals(HttpStatus.OK.toString())) {
                                 scanInProgressLabel.setText("Scan in progress: yes");
                                 objectsScannedLabel.setText("Files scanned: " + count);
@@ -146,7 +145,7 @@ public class ScanJPanel extends BaseJPanel {
                                 objectsScannedLabel.setText("Files scanned: 0");
                                 scanStartedLabel.setText("Scan started: ");
                                 JOptionPane.showMessageDialog(this, "Scan is not running", "Status Error",
-                                        JOptionPane.INFORMATION_MESSAGE);
+                                                JOptionPane.INFORMATION_MESSAGE);
                         }
                 } else {
                         JOptionPane.showMessageDialog(this, "Unable to get scan status", "Status Error",
@@ -182,6 +181,15 @@ public class ScanJPanel extends BaseJPanel {
                 if (resp == null) {
                         JOptionPane.showMessageDialog(this, "Unable to get start scan", "Scan Error",
                                         JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                        try {
+                                JSONObject report = (JSONObject) resp;
+                                scanInProgressLabel.setText("Scan in progress: yes");
+                                objectsScannedLabel.setText("Files scanned: " + 0);
+                                scanStartedLabel.setText("Scan started: " + report.get("timestamp"));
+                        } catch (ClassCastException cce) {
+                                System.out.println("Cast exception: " + resp.toString());
+                        }
                 }
         }
 
