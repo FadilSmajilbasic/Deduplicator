@@ -1,6 +1,7 @@
 
 package deduplicatorGUI.communication;
 
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpEntity;
@@ -17,7 +18,6 @@ import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Map;
-
 
 /**
  *
@@ -156,8 +156,21 @@ public class Client {
         return response;
     }
 
-    public Object put(String path, Map<String, String> values) {
-        return null;
+    public Object put(String path, MultiValueMap<String, Object> values) {
+        RestTemplate restTemplate = new RestTemplate();
+        values = values == null ? new LinkedMultiValueMap<>() : values;
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
+
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/" + path,
+                    HttpMethod.PUT, requestEntity, String.class);
+        } catch (RestClientException rce) {
+            System.out.println("rce: " + rce.getMessage());
+        }
+
+        return response;
     }
 
     public ResponseEntity<String> insertPath(String pathText, boolean ignored) {
@@ -184,5 +197,6 @@ public class Client {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+
 
 }
