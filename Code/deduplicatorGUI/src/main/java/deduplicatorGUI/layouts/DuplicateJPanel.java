@@ -2,7 +2,7 @@
 package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -13,9 +13,14 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import java.awt.Dimension;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import deduplicatorGUI.ActionType;
 
@@ -43,11 +48,11 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 reportsComboBox = new JComboBox<>();
                 infoButton = new JButton();
                 duplicatesComboBox = new JComboBox<String>();
-                filesScannedJScrollPane = new JScrollPane();
-                filesScannedJList = new JList<>();
+                duplicatesScrollPane = new JScrollPane();
+                duplicatesJList = new JList<>();
                 applyButton = new JButton();
-                dateTextField = new JFormattedTextField();
-                timeSpinner = new JSpinner();
+                dateTextField = new JFormattedTextField(new SimpleDateFormat("dd.MM.yyyy"));
+                timeTextField = new JFormattedTextField(new SimpleDateFormat("HH:mm"));
                 applyDateLabel = new JLabel();
                 applyTimeLabel = new JLabel();
 
@@ -62,8 +67,14 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                 duplicatesComboBoxActionPerformed(evt);
                         }
                 });
+                applyButton.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                applyButtonActionPerformed(evt);
+                        }
+                });
 
-                filesScannedJList.addListSelectionListener(this);
+                duplicatesJList.addListSelectionListener(this);
+                duplicatesJList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
                 java.awt.GridBagLayout layout = new java.awt.GridBagLayout();
                 layout.columnWidths = new int[] { 0, 31, 0, 31, 0 };
@@ -84,7 +95,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.ipady = 14;
                 add(infoButton, gridBagConstraints);
 
-                filesScannedJScrollPane.setViewportView(filesScannedJList);
+                duplicatesScrollPane.setViewportView(duplicatesJList);
 
                 gridBagConstraints = new java.awt.GridBagConstraints();
                 gridBagConstraints.gridx = 0;
@@ -95,7 +106,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
                 gridBagConstraints.weightx = 1.0;
                 gridBagConstraints.insets = new java.awt.Insets(0, 0, 1, 0);
-                add(filesScannedJScrollPane, gridBagConstraints);
+                add(duplicatesScrollPane, gridBagConstraints);
 
                 gridBagConstraints = new java.awt.GridBagConstraints();
                 gridBagConstraints.gridx = 2;
@@ -137,7 +148,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.gridx = 2;
                 gridBagConstraints.gridy = 6;
                 gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-                add(timeSpinner, gridBagConstraints);
+                add(timeTextField, gridBagConstraints);
 
                 applyDateLabel.setText("Apply date:");
                 gridBagConstraints = new java.awt.GridBagConstraints();
@@ -150,6 +161,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.gridx = 2;
                 gridBagConstraints.gridy = 4;
                 add(applyTimeLabel, gridBagConstraints);
+
         }
 
         protected void reportsComboBoxActionPerformed(ActionEvent evt) {
@@ -181,30 +193,60 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 String selected = reportsComboBox.getSelectedItem().toString();
 
                 Object response = getClient().get("report/duplicate/" + selected.split(":")[0] + "/" + hash);
-                
+
                 if (response != null && response != "[]") {
-                        JSONObject[] array = getArray((JSONArray) response);                
-                        System.out.println("I'm here");
-                        filesScannedJList.setModel(new AbstractListModel<String>() {
-                                public int getSize() {
-                                        return array.length;
+                        try {
+                                JSONObject[] array = getArray((JSONArray) response);
+
+                                List<JSONObject> list = new ArrayList<JSONObject>();
+                                for (JSONObject jsonObject : array) {
+                                        list.add(jsonObject);
                                 }
 
-                                public String getElementAt(int i) {
-                                        return array[i].get("path").toString();
-                                }
-                        });
+                                duplicatesJList.setModel(new DefaultListModel<String>() {
+                                        public int getSize() {
+                                                return list.size();
+                                        }
+
+                                        public String getElementAt(int i) {
+                                                return list.get(i).get("path").toString();
+                                        }
+
+                                        @Override
+                                        public String remove(int index) {
+                                                JSONObject obj = list.get(index);
+                                                list.remove(obj);
+                                                return obj.toString();
+                                        }
+                                });
+                        } catch (ClassCastException e) {
+                                System.out.println("Unable to cast: " + response.toString());
+                        }
 
                 }
-                filesScannedJScrollPane.revalidate();
-                filesScannedJScrollPane.repaint();
+                duplicatesScrollPane.revalidate();
+                duplicatesScrollPane.repaint();
 
         }
 
         private void applyButtonActionPerformed(ActionEvent evt) {
-                actions.values().forEach(action -> {
-                        System.out.println("actions: " + action);
-                });
+                if (dateTextField.isValid()) {
+                        if (timeTextField.isValid()) {
+                                actions.values().forEach(action -> {
+                                        System.out.println("actions: " + action);
+                                        
+                                });
+                                getClient().put("action", actions);
+                                
+                        } else {
+                                JOptionPane.showMessageDialog(this, "Time format invalid: please use HH:mm",
+                                                "Time invalid", JOptionPane.ERROR_MESSAGE);
+                        }
+                } else {
+                        JOptionPane.showMessageDialog(this, "Date format invalid: please use dd.MM.yyyy",
+                                        "Date invalid", JOptionPane.ERROR_MESSAGE);
+                }
+
         }
 
         @Override
@@ -217,7 +259,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
 
                 if (response != null) {
                         JSONObject[] array = getArray((JSONArray) response);
-                        reportsComboBox.setModel(new DefaultComboBoxModel() {
+                        reportsComboBox.setModel(new DefaultComboBoxModel<String>() {
                                 public int getSize() {
                                         return array.length;
                                 }
@@ -240,66 +282,111 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
 
         @Override
         public void valueChanged(ListSelectionEvent arg0) {
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("What action would you like to apply"));
-                int result = JOptionPane.showOptionDialog(null, panel, "Action", JOptionPane.YES_NO_CANCEL_OPTION,
-                                JOptionPane.PLAIN_MESSAGE, null, popupOptions, null);
-                switch (result) {
-                case 0:
-                        actions.put(ActionType.DELETE, filesScannedJList.getSelectedValue());
-                        filesScannedJList.remove(filesScannedJList.getSelectedIndex());
-                        break;
-                case 1:
-                        panel = new JPanel();
-                        panel.add(new JLabel("Insert new path:"));
-                        JTextField textField = new JTextField(10);
-                        panel.add(textField);
-                        int nestedResult = JOptionPane.showOptionDialog(null, panel, "Move",
-                                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
-                        actions.put(ActionType.DELETE, filesScannedJList.getSelectedValue());
-                        if (nestedResult == 0) {
-                                boolean valid = false;
-                                do {
-                                        LinkedMultiValueMap<String, Object> validationData = new LinkedMultiValueMap<String, Object>();
+                if (!arg0.getValueIsAdjusting()) {
+                        int selectedIndex = arg0.getFirstIndex();
+                        if (selectedIndex != -1) {
+                                boolean deleteFromList = true;
+                                JPanel panel = new JPanel();
+                                panel.setPreferredSize(new Dimension(100, 100));
+                                panel.add(new JLabel("What action would you like to apply"));
+                                int result = JOptionPane.showOptionDialog(null, panel, "Action",
+                                                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+                                                popupOptions, null);
 
-                                        validationData.add("path", textField.getText());
+                                switch (result) {
+                                case 0:
+                                        actions.add(ActionType.DELETE, duplicatesJList.getSelectedValue());
+                                        break;
+                                case 1:
 
-                                        valid = (getClient().post("/action/path", validationData).toString()
-                                                        .equals("true"));
+                                        panel = new JPanel();
+                                        panel.add(new JLabel("Insert new path:"));
+                                        panel.setSize(new Dimension(500, 120));
+                                        JTextField textField = new JTextField(50);
+                                        textField.setText(duplicatesJList.getSelectedValue());
+                                        panel.add(textField);
 
-                                        filesScannedJList.remove(filesScannedJList.getSelectedIndex());
-                                } while (!valid);
+                                        boolean valid = false;
+                                        do {
 
-                                actions.put(ActionType.MOVE, filesScannedJList.getSelectedValue() + PATH_SEPARATOR
-                                                + textField.getText());
+                                                int nestedResult = JOptionPane.showOptionDialog(null, panel, "Move",
+                                                                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+                                                                null, null, null);
 
+                                                if (nestedResult == 0) {
+
+                                                        LinkedMultiValueMap<String, Object> validationData = new LinkedMultiValueMap<String, Object>();
+
+                                                        validationData.add("path", textField.getText());
+
+                                                        ResponseEntity<String> response = (ResponseEntity<String>) getClient()
+                                                                        .post("/action/path", validationData);
+
+                                                        if (response != null) {
+                                                                if (response.getStatusCode() == HttpStatus.OK) {
+
+                                                                        if (response.getBody().toString()
+                                                                                        .equals("true")) {
+                                                                                valid = true;
+                                                                        }
+                                                                }
+                                                        }
+
+                                                        actions.add(ActionType.MOVE, duplicatesJList.getSelectedValue()
+                                                                        + PATH_SEPARATOR + textField.getText());
+
+                                                } else {
+                                                        valid = true;
+                                                        deleteFromList = false;
+                                                }
+                                        } while (!valid);
+
+                                        Map<String, String> values = new HashMap<String, String>();
+                                        values.put("old", duplicatesJList.getSelectedValue());
+                                        values.put("new", textField.getText());
+
+                                        actions.add(ActionType.MOVE, JSONObject.toJSONString(values));
+                                        break;
+                                case 2:
+                                        actions.add(ActionType.IGNORE, duplicatesJList.getSelectedValue());
+                                        break;
+                                default:
+                                        deleteFromList = false;
+                                        break;
+                                }
+                                if (deleteFromList) {
+                                        DefaultListModel<String> model = (DefaultListModel<String>) duplicatesJList
+                                                        .getModel();
+
+                                        System.out.println("selected " + selectedIndex);
+
+                                        model.remove(selectedIndex);
+
+                                }
                         }
-                        break;
-                case 2:
-                        actions.put(ActionType.IGNORE, filesScannedJList.getSelectedValue());
-                        filesScannedJList.remove(filesScannedJList.getSelectedIndex());
-                        break;
 
-                default:
-                        break;
                 }
 
-                filesScannedJScrollPane.revalidate();
-                filesScannedJScrollPane.repaint();
+                duplicatesJList.revalidate();
+                duplicatesJList.repaint();
+
+                duplicatesScrollPane.revalidate();
+                duplicatesScrollPane.repaint();
+
         }
 
-        private Map<String, Object> actions = new HashMap<String, Object>();
+        private MultiValueMap<String, Object> actions = new LinkedMultiValueMap<String, Object>();
         private Object[] popupOptions = { "Delete", "Move", "Ignore" };
         private JButton applyButton;
         private JLabel applyDateLabel;
         private JFormattedTextField dateTextField;
         private JButton infoButton;
         private JLabel applyTimeLabel;
-        private JScrollPane filesScannedJScrollPane;
-        private JList<String> filesScannedJList;
+        private JScrollPane duplicatesScrollPane;
+        private JList<String> duplicatesJList;
         private JComboBox<String> duplicatesComboBox;
         private JComboBox<String> reportsComboBox;
-        private JSpinner timeSpinner;
+        private JFormattedTextField timeTextField;
         private DuplicatesComboBoxModel model;
         private final static String PATH_SEPARATOR = "&#47;";
 
