@@ -30,10 +30,10 @@ import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.worker.ActionsManager;
 
 /**
- * ActionController si occupa di gestire le richieste in entrata
- * che hanno come primo pezzo del percorso "/path". Usa
- * l'annotazione @RestController per indicare a spring che questa classe è un
- * controller e che dovrà essere inizializzata all'avvio dell'applicazione.
+ * ActionController si occupa di gestire le richieste in entrata che hanno come
+ * primo pezzo del percorso "/path". Usa l'annotazione @RestController per
+ * indicare a spring che questa classe è un controller e che dovrà essere
+ * inizializzata all'avvio dell'applicazione.
  * 
  * @author Fadil Smajilbasic
  */
@@ -139,11 +139,12 @@ public class ActionController {
 
     /**
      * Il metodo executeActions risponde alla richiesta di tipo PUT sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/action</b> (localhost:8080/action/). Il metodo inserisce
-     * una nuova azione nel database Action.
+     * <b>&lt;indirizzo-server&gt;/action</b> (localhost:8080/action/). Il metodo
+     * inserisce una nuova azione nel database Action.
      * 
      * @param type      il tipo dell'azione (DELETE,MOVE,IGNORE o SCAN).
-     * @param path      il percorso del file nel caso che l'azione sia DELETE, MOVE o IGNORE.
+     * @param path      il percorso del file nel caso che l'azione sia DELETE, MOVE
+     *                  o IGNORE.
      * @param newPath   il nuovo percorso del file nel case che l'azione sia MOVE.
      * @param scheduler l'id dello scheduler al quale legare la azione.
      * @return l'azione inserita oppure un messaggio d'errore in base al errore
@@ -198,8 +199,8 @@ public class ActionController {
 
     /**
      * Il metodo deleteAction risponde alla richiesta di tipo DELETE sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/action/&lt;id&gt;</b> (localhost:8080/action/7). Il metodo elimina
-     * un'azione dal database Action in funzione nel id passato.
+     * <b>&lt;indirizzo-server&gt;/action/&lt;id&gt;</b> (localhost:8080/action/7).
+     * Il metodo elimina un'azione dal database Action in funzione nel id passato.
      * 
      * @param id l'id della azione da eliminare.
      * @return L'azione elimianta oppure un messaggio d'errore.
@@ -222,18 +223,19 @@ public class ActionController {
 
     /**
      * Il metodo checkPath risponde alla richiesta di tipo POST sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/action/path* (localhost:8080/action/path). Il metodo
-     * controlla se il path passato come parametro è valido oppure no. Il metodo
-     * veine usato dalla gui per verificare la validità di un percorso quando
+     * <b>&lt;indirizzo-server&gt;/action/path* (localhost:8080/action/path). Il
+     * metodo controlla se il path passato come parametro è valido oppure no. Il
+     * metodo veine usato dalla gui per verificare la validità di un percorso quando
      * l'utente sceglie di muovere un duplicato in una nuova posizione. Il percorso
      * passato deve essere una cartella che si trova sul disco.
      * 
-     * @param path il percorso da controllare, passato come parametro del body della richiesta.
+     * @param path il percorso da controllare, passato come parametro del body della
+     *             richiesta.
      * @return true se il percorso è valido, false altrimenti.
      */
     @PostMapping("/path")
-    public @ResponseBody boolean checkPath(@RequestParam String path) {
-        return Validator.getPathType(path).equals(PathType.Directory);
+    public @ResponseBody Message checkPath(@RequestParam String path) {
+        return new Message(HttpStatus.OK, String.valueOf(Validator.getPathType(path).equals(PathType.Directory)));
     }
 
 }

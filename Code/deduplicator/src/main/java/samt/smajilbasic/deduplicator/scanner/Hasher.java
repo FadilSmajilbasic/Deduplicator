@@ -55,6 +55,7 @@ public class Hasher extends Thread {
                 messageDigest.update(buffer, 0, unitsize);
                 read += unitsize;
             }
+
         } catch (FileNotFoundException fnfE) {
             System.out.println("[ERROR] Hasher: Item not found");
 
@@ -67,7 +68,7 @@ public class Hasher extends Thread {
         StringBuffer hexString = new StringBuffer();
 
         for (int i = 0; i < digest.length; i++) {
-            hexString.append(Integer.toHexString(0xFF & digest[i]));
+            hexString.append(String.format("%02x",digest[i]));
         }
 
         return hexString.toString();

@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.util.regex.Pattern;
 
 /**
  * Validator
@@ -48,7 +48,7 @@ public class Validator {
 		} catch (NumberFormatException nfe) {
 			return null;
 		}
-			
+
 	}
 
 	/**
@@ -57,9 +57,8 @@ public class Validator {
 	 * @return value of input is a valid hexadecimal string, null otherwise
 	 */
 	public static String isHex(String input) {
-			return input.matches("-?[0-9a-fA-F]+") ? input : null;
-			
-	}
+		return Pattern.matches("[0-9a-fA-F]+", input) ? input : null;
 
+	}
 
 }

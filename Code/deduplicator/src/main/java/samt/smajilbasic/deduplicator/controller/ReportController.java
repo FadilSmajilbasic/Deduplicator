@@ -120,11 +120,11 @@ public class ReportController {
     public @ResponseBody Object getFileByHash(@PathVariable String id, @PathVariable String hash) {
         Integer intId = Validator.isInt(id);
         hash = Validator.isHex(hash);
-        if (hash != null && fileRepository.existsByHash(hash) && hash.length() == 30 && intId != null
+        if (hash != null && fileRepository.existsByHash(hash) && hash.length() == 32 && intId != null
                 && reportRepository.existsById(intId) ) {
             return fileRepository.findFilesFromHashAndReport(reportRepository.findById(intId).get(), hash);
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid file path");
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid file hash id: " + id + "; hash: " + hash);
         }
     }
 }
