@@ -48,7 +48,7 @@ public class ScheduleChecker {
                     try {
                         actionsManager.setActionScheduler(schedule);
                         actionsManager.setTimer(timer);
-
+                        
                         timer.schedule(actionsManager, startDate);
                         System.out.println("Scheduled");
                     } catch (IllegalStateException ise) {

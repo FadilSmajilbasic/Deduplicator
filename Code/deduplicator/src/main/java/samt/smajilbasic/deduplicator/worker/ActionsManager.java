@@ -133,7 +133,7 @@ public class ActionsManager extends TimerTask {
 
                     }
 
-                    action.setExecuted(executed);
+                    action.setExecuted();
 
                     actionScheduler.executed();
 
