@@ -31,7 +31,7 @@ import samt.smajilbasic.deduplicator.worker.ActionsManager;
 
 /**
  * ActionController si occupa di gestire le richieste in entrata che hanno come
- * primo pezzo del percorso "/path". Usa l'annotazione @RestController per
+ * primo pezzo del percorso "/action". Usa l'annotazione @RestController per
  * indicare a spring che questa classe è un controller e che dovrà essere
  * inizializzata all'avvio dell'applicazione.
  * 
@@ -223,7 +223,7 @@ public class ActionController {
 
     /**
      * Il metodo checkPath risponde alla richiesta di tipo POST sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/action/path* (localhost:8080/action/path). Il
+     * <b>&lt;indirizzo-server&gt;/action/path&gt;</b> (localhost:8080/action/path). Il
      * metodo controlla se il path passato come parametro è valido oppure no. Il
      * metodo veine usato dalla gui per verificare la validità di un percorso quando
      * l'utente sceglie di muovere un duplicato in una nuova posizione. Il percorso
