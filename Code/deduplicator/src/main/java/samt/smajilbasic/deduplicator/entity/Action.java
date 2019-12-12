@@ -14,7 +14,8 @@ import samt.smajilbasic.deduplicator.ActionType;
 
 /**
  * La classe Action descrive un'azione da fare su un determinato file che è
- * stato rilevato come duplicato. Usa L'annotazione @Entity per segnalare a
+ * stato rilevato come duplicato.
+ * Usa L'annotazione @Entity per segnalare a
  * Spring che si tratta di una classe che descrive una Tabella del database.
  * 
  */
