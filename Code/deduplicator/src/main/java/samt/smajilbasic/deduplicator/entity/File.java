@@ -38,7 +38,7 @@ public class File {
     private String hash;
 
     /**
-     * L'attributo size specifica la grandeza del file in Byte.
+     * L'attributo size specifica la grandezza del file in Byte.
      */
     private Long size;
 
@@ -46,17 +46,32 @@ public class File {
      * L'attributo report specifica in quale report è stato trovato il file. Se più
      * report trovano lo stesso file verrà mantenuto quello dell'ultimo report. Usa
      * l'annotazione @ManyToOne per indicare che l'attributo è una foreign key e
-     * l'opzione FetchType.LAZY significa che l'inizializzazione deve essere ritardata più tempo possibile.
-     * Usa l'annotazione @JoinColumn per impostare il nome della colonna nel database.
+     * l'opzione FetchType.LAZY significa che l'inizializzazione deve essere
+     * ritardata al più lungo possibile. Usa l'annotazione {@link JoinColumn} per
+     * impostare il nome della colonna nel database. Usa l'annotazione
+     * {@link JsonBackReference} per indicare a Spring che {@link Report} contiene
+     * una referenza a questo oggetto e che quindi non deve risolvere tutto il json
+     * per evitare di creare un json infinito.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report")
     @JsonBackReference
     private Report report;
 
+    /**
+     * Costruttore vuoto
+     */
     public File() {
     }
 
+    /**
+     * Costruttore che accetta tutti i parametri
+     * @param path il percorso del file.
+     * @param lastModified la data in millisecondi dall'ultima modifica.
+     * @param hash il hash del contenuto del file.
+     * @param size la grandezza del file.
+     * @param report il rapporto al quale è assocciato.
+     */
     public File(String path, Long lastModified, String hash, Long size, Report report) {
         setPath(path);
         setLastModified(lastModified);
@@ -66,14 +81,16 @@ public class File {
     }
 
     /**
-     * @return the path
+     * Metodo getter per l'attributo path.
+     * @return il percorso del file.
      */
     public String getPath() {
         return path;
     }
 
     /**
-     * @param path the path to set
+     * Metodo setter per l'attributo path.
+     * @param path il percorso da impostare.
      */
     private void setPath(String path) {
         PathType type = Validator.getPathType(path);
@@ -87,56 +104,66 @@ public class File {
     }
 
     /**
-     * @return the lastModified
+     * Metodo getter per l'attributo lastModified.
+     * @return la data dell'ultima modifica del file.
      */
     public Long getLastModified() {
         return lastModified;
     }
 
     /**
-     * @param lastModified the lastModified to set
+     * Metodo setter per l'attributo lastModified.
+     * @param lastModified la data in millisecondi dell'ultima modifica da impostare.
      */
     private void setLastModified(Long lastModified) {
         this.lastModified = lastModified;
     }
 
     /**
-     * @return the hash
+     * Metodo getter per l'attributo hash.
+     * @return il hash del contenuto del file.
      */
     public String getHash() {
         return hash;
     }
 
     /**
-     * @param hash the hash to set
+     * Metodo setter per l'attributo hash.
+     * @param hash il hash del file da impostare.
      */
     private void setHash(String hash) {
         this.hash = hash;
     }
+    //TODO: Add check size of hash
 
     /**
-     * @return the size
+     * Metodo getter per l'attributo size.
+     * @return la grandezza del file in Byte.
      */
     public Long getSize() {
         return size;
     }
 
     /**
-     * @param size the size to set
+     * Metodo setter per l'attributo size.
+     * @param size la grandezza del file da impostare
      */
     private void setSize(Long size) {
         this.size = size;
     }
+    //TODO: Add check
 
     /**
-     * @return the report
+     * Metodo getter per l'attributo report.
+     * @return il rapporto al quale è assocciato il file.
      */
     public Report getReport() {
         return report;
     }
 
     /**
-     * @param report the report to set
+     * Metodo setter per l'attributo report.
+     * @param report il rapporto da impostare.
      */
     public void setReport(Report report) {
         this.report = report;
