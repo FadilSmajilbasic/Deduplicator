@@ -26,7 +26,7 @@ public class Scheduler {
     private Integer weekly;
 
     private Integer minutes;
-    private boolean repeated;
+    private Boolean repeated;
     private Date dateStart;
     private Integer executonCounter = 0;
 
