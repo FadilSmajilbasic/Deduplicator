@@ -62,6 +62,7 @@ public class ActionsManager extends TimerTask {
         } else {
             System.out.println("[INFO] Unable to find actions, actionScheduler not set");
         }
+        System.out.println("Actions: " + actions.size());
         if (actions != null) {
             for (Action action : actions) {
                 System.out.println("executing action: " + action.getActionType());
@@ -132,8 +133,8 @@ public class ActionsManager extends TimerTask {
                         executed = true;
 
                     }
-
-                    action.setExecuted();
+                    if(executed)
+                        action.setExecuted();
 
                     actionScheduler.executed();
 
