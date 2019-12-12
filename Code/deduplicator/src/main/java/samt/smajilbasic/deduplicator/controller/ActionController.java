@@ -152,7 +152,7 @@ public class ActionController {
      */
     @PutMapping("/")
     public @ResponseBody Object addAction(@RequestParam String type, @RequestParam(required = false) String path,
-            @RequestParam(required = false) String newPath, @RequestParam(required = true) String scheduler) {
+            @RequestParam(required = false) String newPath,String scheduler) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUser = authentication.getName();

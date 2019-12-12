@@ -163,11 +163,12 @@ public class Client {
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
         ResponseEntity<String> response = null;
+        
         try {
             response = restTemplate.exchange("http://" + addr.getHostAddress() + ":" + port + "/" + path,
                     HttpMethod.PUT, requestEntity, String.class);
         } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
+            System.out.println("Rest client exception: " + rce.getMessage());
         }
 
         return response;

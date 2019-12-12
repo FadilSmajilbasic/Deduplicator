@@ -121,9 +121,10 @@ public class SchedulerController implements TimerListener {
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);
         Integer minutes = Validator.isInt(hour);
-        boolean repeatedBool = (repeated.equals("true")) ? true : false;
+        Boolean repeatedBool = (repeated.equals("true")) ? true : false;
         Date date;
         Scheduler scheduler = new Scheduler();
+        
         try {
             date = new Date(Long.parseLong(dateStart));
         } catch (NumberFormatException e) {
