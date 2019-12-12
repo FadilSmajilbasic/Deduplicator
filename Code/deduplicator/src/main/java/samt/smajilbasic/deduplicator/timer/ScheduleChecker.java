@@ -46,11 +46,13 @@ public class ScheduleChecker {
             if (!(schedule.getExecutonCounter() < 1 && schedule.isRepeated())) {
                 synchronized (timer) {
                     try {
-                        actionsManager.setActionScheduler(schedule);
-                        actionsManager.setTimer(timer);
-                        
-                        timer.schedule(actionsManager, startDate);
-                        System.out.println("Scheduled");
+                        if (schedule.getExecutonCounter() == 0 || schedule.isRepeated() ) {
+                            actionsManager.setActionScheduler(schedule);
+                            actionsManager.setTimer(timer);
+
+                            timer.schedule(actionsManager, startDate);
+                            System.out.println("Action manager scheduled: ");
+                        }
                     } catch (IllegalStateException ise) {
                         System.out.println(
                                 "[INFO] Unable to set timer: " + ise.getMessage() + " >> " + schedule.getSchedulerId());
