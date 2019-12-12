@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,11 +13,16 @@ import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.MouseInputListener;
+import javax.swing.text.MaskFormatter;
 
 import java.awt.Dimension;
+import java.awt.Desktop.Action;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -51,10 +57,15 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 duplicatesScrollPane = new JScrollPane();
                 duplicatesJList = new JList<>();
                 applyButton = new JButton();
-                dateTextField = new JFormattedTextField(new SimpleDateFormat("dd.MM.yyyy"));
-                timeTextField = new JFormattedTextField(new SimpleDateFormat("HH:mm"));
+                dateTextField = new JFormattedTextField(getMaskFormatter("##.##.####"));
+                timeTextField = new JFormattedTextField(getMaskFormatter("##:##"));
                 applyDateLabel = new JLabel();
                 applyTimeLabel = new JLabel();
+
+
+                Calendar cal = Calendar.getInstance();
+                dateTextField.setText(cal.get(Calendar.DAY_OF_MONTH) +"."+cal.get(Calendar.MONTH) +"." + cal.get(Calendar.YEAR) );
+                timeTextField.setText(cal.get(Calendar.HOUR_OF_DAY)+":"+cal.get(Calendar.MINUTE));
 
                 reportsComboBox.addActionListener(new java.awt.event.ActionListener() {
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -111,9 +122,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints = new java.awt.GridBagConstraints();
                 gridBagConstraints.gridx = 2;
                 gridBagConstraints.gridy = 0;
-                // gridBagConstraints.ipady = 150;
                 gridBagConstraints.gridwidth = 5;
-                // gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
                 gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
                 gridBagConstraints.weightx = 1.0;
                 gridBagConstraints.insets = new java.awt.Insets(0, 0, 1, 0);
@@ -162,6 +171,16 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.gridy = 4;
                 add(applyTimeLabel, gridBagConstraints);
 
+        }
+
+        private MaskFormatter getMaskFormatter(String pattern) {
+                MaskFormatter form = null;
+                try {
+                        form = new MaskFormatter(pattern);
+                } catch (java.text.ParseException e) {
+                        System.out.println("Mask formatter parse exception: " + e.getMessage());
+                }
+                return form;
         }
 
         protected void reportsComboBoxActionPerformed(ActionEvent evt) {
@@ -230,23 +249,74 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         }
 
         private void applyButtonActionPerformed(ActionEvent evt) {
-                if (dateTextField.isValid()) {
-                        if (timeTextField.isValid()) {
-                                actions.values().forEach(action -> {
-                                        System.out.println("actions: " + action);
-                                        
-                                });
-                                getClient().put("action", actions);
-                                
+
+                Calendar calDate = Calendar.getInstance();
+                Calendar calTime = Calendar.getInstance();
+
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                SimpleDateFormat time = new SimpleDateFormat("HH:mm");
+
+                try {
+                        calDate.setTime(dateFormat.parse(dateTextField.getText()));
+                        calTime.setTime(time.parse(timeTextField.getText()));
+
+                        JPanel panel = new JPanel();
+                        panel.setPreferredSize(new Dimension(200, 150));
+                        Long schedulerId = createSchedudler(calDate.getTimeInMillis(),
+                                        calTime.get(Calendar.HOUR_OF_DAY) * 60 + calTime.get(Calendar.MINUTE));
+
+                        panel.add(new JLabel("Are you sure you want to execute the current changes?"));
+                        if (schedulerId != null) {
+                                for (Object object : actions.toArray()) {
+                                        JSONObject obj = (JSONObject) object;
+
+                                        MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+                                        obj.keySet().forEach(key -> {
+                                                values.add(key.toString(), obj.get(key));
+                                        });
+
+
+                                        Calendar test = Calendar.getInstance();
+                                        test.setTimeInMillis(calDate.getTimeInMillis());
+                                        values.add("scheduler", schedulerId);
+                                        getClient().put("action/", values);
+
+                                        actions.remove(object);
+
+                                }
                         } else {
-                                JOptionPane.showMessageDialog(this, "Time format invalid: please use HH:mm",
-                                                "Time invalid", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(this, "Scheduler not created", "Scheduler not created",
+                                                JOptionPane.ERROR_MESSAGE);
                         }
-                } else {
-                        JOptionPane.showMessageDialog(this, "Date format invalid: please use dd.MM.yyyy",
-                                        "Date invalid", JOptionPane.ERROR_MESSAGE);
+
+                } catch (java.text.ParseException pe) {
+                        JOptionPane.showMessageDialog(this,
+                                        "Time or date format invalid: please use HH:mm for time and dd.MM.yyyy for year",
+                                        "Time or date invalid", JOptionPane.ERROR_MESSAGE);
                 }
 
+        }
+
+        private Long createSchedudler(Long date, int hour) {
+                try {
+                        MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+                        values.add("dateStart", date);
+                        values.add("repeated", "false");
+                        values.add("monthly", "");
+                        values.add("weekly", "");
+                        values.add("hour", hour);
+                        ResponseEntity<String> response = (ResponseEntity<String>) getClient().put("scheduler/",
+                                        values);
+                        JSONObject resp = (JSONObject) parser.parse(response.getBody());
+                        System.out.println("resp: " + response.getBody());
+                        return (Long) resp.get("schedulerId");
+                } catch (NumberFormatException nfe) {
+                        System.out.println("nfe" + nfe.getMessage());
+                        return null;
+                } catch (ParseException pe) {
+                        System.out.println("parse" + pe.getMessage());
+                        return null;
+                }
         }
 
         @Override
@@ -288,14 +358,15 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                 boolean deleteFromList = true;
                                 JPanel panel = new JPanel();
                                 panel.setPreferredSize(new Dimension(100, 100));
-                                panel.add(new JLabel("What action would you like to apply"));
+                                panel.add(new JLabel("Which action would you like to apply"));
                                 int result = JOptionPane.showOptionDialog(null, panel, "Action",
                                                 JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null,
                                                 popupOptions, null);
-
+                                JSONObject values = new JSONObject();
                                 switch (result) {
                                 case 0:
-                                        actions.add(ActionType.DELETE, duplicatesJList.getSelectedValue());
+                                        values.put("type", ActionType.DELETE);
+                                        values.put("path", duplicatesJList.getSelectedValue());
                                         break;
                                 case 1:
 
@@ -322,18 +393,26 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                                         ResponseEntity<String> response = (ResponseEntity<String>) getClient()
                                                                         .post("/action/path", validationData);
 
+                                                        JSONObject obj = null;
+                                                        try {
+                                                                obj = (JSONObject) parser.parse(response.getBody());
+                                                        } catch (ParseException ex) {
+                                                                System.out.println("Unable to parse response");
+                                                        }
                                                         if (response != null) {
                                                                 if (response.getStatusCode() == HttpStatus.OK) {
 
-                                                                        if (response.getBody().toString()
+                                                                        if (obj.get("message").toString()
                                                                                         .equals("true")) {
                                                                                 valid = true;
                                                                         }
                                                                 }
                                                         }
-
-                                                        actions.add(ActionType.MOVE, duplicatesJList.getSelectedValue()
-                                                                        + PATH_SEPARATOR + textField.getText());
+                                                        JSONObject moveParams = new JSONObject();
+                                                        moveParams.put("path", duplicatesJList.getSelectedValue());
+                                                        moveParams.put("newPath", textField.getText());
+                                                        values.put("type", ActionType.MOVE);
+                                                        values.put("moveParams", moveParams);
 
                                                 } else {
                                                         valid = true;
@@ -341,41 +420,33 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                                 }
                                         } while (!valid);
 
-                                        Map<String, String> values = new HashMap<String, String>();
-                                        values.put("old", duplicatesJList.getSelectedValue());
-                                        values.put("new", textField.getText());
-
-                                        actions.add(ActionType.MOVE, JSONObject.toJSONString(values));
                                         break;
                                 case 2:
-                                        actions.add(ActionType.IGNORE, duplicatesJList.getSelectedValue());
+
+                                        values.put("type", ActionType.IGNORE);
+                                        values.put("path", duplicatesJList.getSelectedValue());
                                         break;
                                 default:
                                         deleteFromList = false;
                                         break;
                                 }
+                                actions.add(values);
                                 if (deleteFromList) {
                                         DefaultListModel<String> model = (DefaultListModel<String>) duplicatesJList
                                                         .getModel();
-
-                                        System.out.println("selected " + selectedIndex);
-
                                         model.remove(selectedIndex);
 
                                 }
                         }
 
                 }
-
-                duplicatesJList.revalidate();
-                duplicatesJList.repaint();
-
-                duplicatesScrollPane.revalidate();
+                
                 duplicatesScrollPane.repaint();
+                duplicatesJList.clearSelection();
 
         }
 
-        private MultiValueMap<String, Object> actions = new LinkedMultiValueMap<String, Object>();
+        private JSONArray actions = new JSONArray();
         private Object[] popupOptions = { "Delete", "Move", "Ignore" };
         private JButton applyButton;
         private JLabel applyDateLabel;
@@ -388,6 +459,6 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         private JComboBox<String> reportsComboBox;
         private JFormattedTextField timeTextField;
         private DuplicatesComboBoxModel model;
-        private final static String PATH_SEPARATOR = "&#47;";
+        JSONParser parser = new JSONParser();
 
 }
