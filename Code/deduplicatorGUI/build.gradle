@@ -1,7 +1,10 @@
-apply plugin: 'java'
-apply plugin: 'jacoco'
-apply plugin: 'application'
+plugins {
+	id 'application'
+	id 'jacoco'
+	id 'java'
+}
 
+sourceCompatibility = '11'
 
 mainClassName = 'deduplicatorGUI.Main'
 
