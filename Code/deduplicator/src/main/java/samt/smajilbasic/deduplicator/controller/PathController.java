@@ -2,6 +2,10 @@ package samt.smajilbasic.deduplicator.controller;
 
 import samt.smajilbasic.deduplicator.exception.*;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,7 +45,8 @@ public class PathController {
      * Il metodo getPaths risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/).
      * 
-     * @return tutti {@link GlobalPath} contenuti nella tabella GlobalPath del database.
+     * @return tutti {@link GlobalPath} contenuti nella tabella GlobalPath del
+     *         database.
      */
     @GetMapping()
     public @ResponseBody Iterable<GlobalPath> getPaths() {
@@ -75,8 +80,8 @@ public class PathController {
 
     /**
      * Il metodo insert risponde alla richiesta di tipo PUT sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo inserisce una
-     * nuova azione nel database GlobalPath.
+     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo
+     * inserisce una nuova azione nel database GlobalPath.
      * 
      * @param path       il percorso del oggetto, passato come parametro del body
      *                   della richiesta.
@@ -87,11 +92,15 @@ public class PathController {
     @PutMapping()
     public @ResponseBody Object insert(@RequestParam String path, @RequestParam String ignorePath) {
         path = path.replaceAll("&#47;", File.separator).trim();
-
-        if (!gpr.existsById(path)) {
-            if (Validator.getPathType(path) != PathType.Invalid) {
-                gpr.save(new GlobalPath(path, (ignorePath.equals("true"))));
-                return getValueByPath(path);
+        Path p = Paths.get(path);
+        if (!gpr.existsById(p.toAbsolutePath().toString())) {
+            if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
+                if (Files.isReadable(p)) {
+                    gpr.save(new GlobalPath(p.toAbsolutePath().toString(), (ignorePath.equals("true"))));
+                    return getValueByPath(path);
+                } else {
+                    return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
+                }
             } else {
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
             }
@@ -102,9 +111,9 @@ public class PathController {
 
     /**
      * Il metodo remove risponde alla richiesta di tipo DELETE sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo rimuove un
-     * oggetto dalla tabella GlobalPath in base al percorso passato come parametro
-     * nel body della richiesta.
+     * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo rimuove
+     * un oggetto dalla tabella GlobalPath in base al percorso passato come
+     * parametro nel body della richiesta.
      * 
      * @param path il precorso dell'oggetto da rimuovere
      * @return l'oggetto eliminato oppure il messaggio d'errore
