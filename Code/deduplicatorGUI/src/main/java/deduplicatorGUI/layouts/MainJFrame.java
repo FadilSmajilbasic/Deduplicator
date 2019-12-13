@@ -1,9 +1,11 @@
 
 package deduplicatorGUI.layouts;
 
+import java.awt.Dimension;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.plaf.DimensionUIResource;
 
 import deduplicatorGUI.communication.Client;
 import deduplicatorGUI.listeners.UserConnectedListener;
@@ -53,7 +55,9 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
         this.add(menu);        
 
         pack();
-        this.setSize(700, 550);
+        this.setSize(new Dimension(770, 560));
+
+        setResizable(false);
     }
 
     private void changeTabsAccessibility(JTabbedPane menu, boolean state) {
@@ -69,13 +73,10 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
     private ScheduleJPanel schedulePanel;
 
     private JTabbedPane menu;
-    private Client client;
 
     @Override
     public void userConnected(Client client) {
         changeTabsAccessibility(menu, true);
-        this.client = client;
-
         for (int i = 1; i < menu.getTabCount(); i++) {
             ((BaseJPanel) menu.getComponentAt(i)).setClient(client);
         }
