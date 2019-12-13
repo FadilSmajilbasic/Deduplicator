@@ -7,6 +7,8 @@ import javax.swing.*;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -74,7 +76,6 @@ public class PathJPanel extends BaseJPanel {
         add(typeComboBox, gridBagConstraints);
 
         pathJScrollPane.setViewportView(pathJList);
-        
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -127,7 +128,7 @@ public class PathJPanel extends BaseJPanel {
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {
         if (pathJList.getSelectedValue() != null) {
             int n = JOptionPane.showConfirmDialog(this,
-                    "Do you really want to delete this path:" + pathJList.getSelectedValue().toString(), "Login error",
+                    "Do you really want to delete this path: " + pathJList.getSelectedValue().toString(), "Login error",
                     JOptionPane.OK_CANCEL_OPTION);
             if (n == JOptionPane.YES_OPTION) {
                 ResponseEntity<String> response = getClient().delete("path", pathJList.getSelectedValue().toString());
@@ -148,14 +149,25 @@ public class PathJPanel extends BaseJPanel {
         ResponseEntity<String> response = getClient().insertPath(pathTextField.getText(),
                 !typeComboBox.getSelectedItem().toString().equals("Scan"));
 
-        if (response.getStatusCode() == HttpStatus.OK) {
-            updatePathsList();
+        System.out.println("response: " + response.getBody());
+        JSONParser parser = new JSONParser();
+        JSONObject resp = new JSONObject();
+        try {
+            resp = (JSONObject) parser.parse(response.getBody());
+        } catch (ParseException pe) {
 
+        }
+
+        if (resp.get("status") != null) {
+            updatePathsList();
         } else {
             JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
-                    "Insert error: " + response.getBody(), JOptionPane.INFORMATION_MESSAGE);
+                    "Insert error: " + resp.get("message") != null ? resp.get("message").toString() : "No message",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
+
         updatePathsList();
+
     }
 
     @Override
@@ -186,7 +198,7 @@ public class PathJPanel extends BaseJPanel {
                 }
 
                 public String getElementAt(int i) {
-                    return array[i].get("ignoreFile").toString() ;
+                    return array[i].get("ignoreFile").toString();
                 }
             });
 
