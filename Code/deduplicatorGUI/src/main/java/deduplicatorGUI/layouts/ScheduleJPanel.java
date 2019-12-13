@@ -175,19 +175,19 @@ public class ScheduleJPanel extends BaseJPanel {
     }
 
     private void dateTextFieldActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+       
     }
 
     private void oneOffRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        
     }
 
     private void mondayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        
     }
 
     private void fridayRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+       
     }
 
 
