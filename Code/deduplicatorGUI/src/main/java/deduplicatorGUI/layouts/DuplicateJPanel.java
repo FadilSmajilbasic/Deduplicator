@@ -2,22 +2,19 @@
 package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.MouseInputListener;
 import javax.swing.text.MaskFormatter;
 
 import java.awt.Dimension;
-import java.awt.Desktop.Action;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -62,10 +59,10 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 applyDateLabel = new JLabel();
                 applyTimeLabel = new JLabel();
 
-
                 Calendar cal = Calendar.getInstance();
-                dateTextField.setText(cal.get(Calendar.DAY_OF_MONTH) +"."+cal.get(Calendar.MONTH) +"." + cal.get(Calendar.YEAR) );
-                timeTextField.setText(cal.get(Calendar.HOUR_OF_DAY)+":"+cal.get(Calendar.MINUTE));
+                dateTextField.setText(cal.get(Calendar.DAY_OF_MONTH) + "." + cal.get(Calendar.MONTH) + "."
+                                + cal.get(Calendar.YEAR));
+                timeTextField.setText(cal.get(Calendar.HOUR_OF_DAY) + ":" + cal.get(Calendar.MINUTE));
 
                 reportsComboBox.addActionListener(new java.awt.event.ActionListener() {
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -81,6 +78,11 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 applyButton.addActionListener(new java.awt.event.ActionListener() {
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
                                 applyButtonActionPerformed(evt);
+                        }
+                });
+                infoButton.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                infoButtonActionPerformed(evt);
                         }
                 });
 
@@ -104,6 +106,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.gridy = 0;
                 gridBagConstraints.ipadx = 30;
                 gridBagConstraints.ipady = 14;
+                gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
                 add(infoButton, gridBagConstraints);
 
                 duplicatesScrollPane.setViewportView(duplicatesJList);
@@ -170,6 +173,51 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 gridBagConstraints.gridx = 2;
                 gridBagConstraints.gridy = 4;
                 add(applyTimeLabel, gridBagConstraints);
+
+        }
+
+        protected void infoButtonActionPerformed(ActionEvent evt) {
+                if (reportsComboBox.getSelectedItem() != null) {
+                        String selected = reportsComboBox.getSelectedItem().toString();
+                        System.out.println("selec:" + selected);
+                        selected = selected.split(": ")[0];
+
+                        JSONObject response = (JSONObject) getClient().get("report/" + selected);
+
+                        JPanel panel = new JPanel();
+                        panel.setPreferredSize(new Dimension(400, 200));
+                        panel.add(new JLabel("Scan info"));
+                        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+                        if (response != null) {
+
+                                if (response.get("status") == null) {
+                                        Calendar cal = Calendar.getInstance();
+                                        panel.add(new JLabel("Duration: "
+                                                        + (Long.valueOf(response.get("duration").toString()) / 1000.0)
+                                                        + " s"));
+                                        cal.setTime(new Date(Long.valueOf(response.get("start").toString())));
+                                        panel.add(new JLabel("Start date: " + cal.get(Calendar.DAY_OF_MONTH) + "."
+                                                        + cal.get(Calendar.MONTH) + ":" + cal.get(Calendar.YEAR) + " "
+                                                        + cal.get(Calendar.HOUR_OF_DAY) + ":"
+                                                        + cal.get(Calendar.MINUTE)));
+                                        panel.add(new JLabel("Files scanned: " + response.get("filesScanned")));
+                                        panel.add(new JLabel("Average duplicate count: "
+                                                        + response.get("averageDuplicateCount")));
+                                        panel.add(new JLabel("User: "
+                                                        + ((JSONObject) response.get("user")).get("username")));
+                                        panel.add(new JLabel("Id: " + response.get("id")));
+                                        JOptionPane.showMessageDialog(this, panel, "Report", JOptionPane.PLAIN_MESSAGE);
+
+                                }else{
+                                        JOptionPane.showMessageDialog(this, "Server error ","Status: "+response.get("status") +System.lineSeparator() +" Server error:" +response.get("message"),
+                                                JOptionPane.ERROR_MESSAGE);
+                                }
+                        }else{
+                                JOptionPane.showMessageDialog(this, "Server error ", "Server error",
+                                                JOptionPane.ERROR_MESSAGE);
+                        }
+
+                }
 
         }
 
@@ -275,7 +323,6 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                                 values.add(key.toString(), obj.get(key));
                                         });
 
-
                                         Calendar test = Calendar.getInstance();
                                         test.setTimeInMillis(calDate.getTimeInMillis());
                                         values.add("scheduler", schedulerId);
@@ -338,7 +385,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
 
                                 public String getElementAt(int i) {
                                         cal.setTimeInMillis(Long.parseLong(array[i].get("start").toString()));
-                                        return array[i].get("id") + ":" + cal.getTime().toString();
+                                        return array[i].get("id") + ": " + cal.getTime().toString();
                                 }
                         });
                 } else {
@@ -440,7 +487,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                         }
 
                 }
-                
+
                 duplicatesScrollPane.repaint();
                 duplicatesJList.clearSelection();
 
