@@ -16,18 +16,18 @@ import samt.smajilbasic.deduplicator.repository.FileRepository;
 /**
  * Thread for scanning
  */
-public class ScannerThread extends Thread {
+public class ScannerThread extends Thread implements ScannerThreadListener {
 
     private ScannerThreadListener listener;
     private Path rootPath;
     private Report report;
+    private int filesScanned = 0;
     private FileRepository fileRepository;
 
     private List<String> ignorePaths;
 
     private List<ScannerThread> children = new ArrayList<ScannerThread>();
     LinkedList<Hasher> hashers = new LinkedList<Hasher>();
-
 
     private Boolean paused = false;
     private boolean ignoreFound = false;
@@ -111,7 +111,7 @@ public class ScannerThread extends Thread {
             if (files.size() > 0) {
                 while (files.peek() != null) {
 
-                    Hasher hasher = new Hasher(files.poll(), report, listener, fileRepository,monitor);
+                    Hasher hasher = new Hasher(files.poll(), report, this, fileRepository, monitor);
                     hashers.add(hasher);
                     pool.execute(hasher);
                 }
@@ -121,10 +121,11 @@ public class ScannerThread extends Thread {
                 } catch (InterruptedException ie) {
                     System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
                     pool.shutdownNow();
-                }finally{
+                } finally {
                     pool.shutdownNow();
                 }
             }
+            listener.addFilesScanned(filesScanned);
         }
     }
 
@@ -136,7 +137,7 @@ public class ScannerThread extends Thread {
         children.forEach(child -> {
             child.pause();
         });
-        hashers.forEach(hasher ->{
+        hashers.forEach(hasher -> {
             hasher.pause();
         });
     }
@@ -161,6 +162,11 @@ public class ScannerThread extends Thread {
         if (!Thread.interrupted())
             interrupt();
         children.forEach(child -> child.stopScan());
+    }
+
+    @Override
+    public void addFilesScanned(int num) {
+        filesScanned++;
     }
 
 }

@@ -88,7 +88,7 @@ public class Hasher extends Thread {
 
             File record = new File(file.getAbsolutePath(), lastModified, hash, size, report);
             fileRepository.save(record);
-            stl.addFilesScanned();
+            stl.addFilesScanned(0);
 
         } catch (NoSuchAlgorithmException nsae) {
             System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());

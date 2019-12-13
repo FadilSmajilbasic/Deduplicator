@@ -30,7 +30,6 @@ public class File {
      * L'attributo lastModified contiene la data dell'ultima modifica del file.
      */
     private Long lastModified;
-    // TODO: add last modified to gui
 
     /**
      * L'attributo hash contiene il hash del contenuto del file.
@@ -132,9 +131,11 @@ public class File {
      * @param hash il hash del file da impostare.
      */
     private void setHash(String hash) {
-        this.hash = hash;
+        if(hash.length() == 32)
+            this.hash = hash;
+        else
+            this.hash = null;
     }
-    //TODO: Add check size of hash
 
     /**
      * Metodo getter per l'attributo size.
@@ -149,9 +150,11 @@ public class File {
      * @param size la grandezza del file da impostare
      */
     private void setSize(Long size) {
-        this.size = size;
+        if(size >= 0)
+            this.size = size;
+        else
+            this.size = 0L;
     }
-    //TODO: Add check
 
     /**
      * Metodo getter per l'attributo report.

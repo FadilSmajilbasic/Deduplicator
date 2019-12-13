@@ -105,7 +105,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             pool.shutdownNow();
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
-            report.setFilesScanned(filesScanned);
+            
             report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             reportRepository.save(report);
@@ -117,8 +117,10 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     }
 
     @Override
-    public synchronized void addFilesScanned() {
-        filesScanned++;
+    public synchronized void addFilesScanned(int num) {
+        filesScanned += num;
+        report.setFilesScanned(filesScanned);
+        reportRepository.save(report);
     }
 
     public void pauseAll() {
