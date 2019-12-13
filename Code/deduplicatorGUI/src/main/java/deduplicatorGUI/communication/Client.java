@@ -1,7 +1,6 @@
 
 package deduplicatorGUI.communication;
 
-import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpEntity;
@@ -58,11 +57,10 @@ public class Client {
         ResponseEntity<String> response = restTemplate.exchange("http://" + addr.getHostName() + ":" + port + "/login/",
                 HttpMethod.GET, requestEntity, String.class);
 
-        if (response.getStatusCode() == HttpStatus.OK) {
+        if (response.getStatusCode().equals(HttpStatus.OK)) {
             this.addr = addr;
             setPort(port);
             return true;
-
         } else {
             return false;
         }
@@ -79,21 +77,18 @@ public class Client {
                     "http://" + addr.getHostName() + ":" + port + "/" + path, HttpMethod.GET, requestEntity,
                     String.class);
 
-            if (response.getStatusCode() == HttpStatus.OK) {
+            if (response.getStatusCode().equals(HttpStatus.OK)) {
                 setPort(port);
                 Object responseObj = new JSONParser().parse(response.getBody());
                 return responseObj;
 
             } else {
-
                 return null;
             }
         } catch (RestClientException rce) {
-            System.out.println(rce);
-            return null;
+            System.out.println("[ERROR] Rest client exception: " +rce);
         } catch (ParseException pe) {
-            System.err.println("parse get : " + pe.getStackTrace());
-
+            System.err.println("[ERROR] Parse exception  : " + pe.getStackTrace());
         }
         return null;
     }
