@@ -21,9 +21,14 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import ch.qos.logback.core.net.ssl.KeyStoreFactoryBean;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -58,6 +63,7 @@ public class Client {
 
     private int port;
     private final String CA_PASS = "Password&1";
+    private KeyStore keyStore;
 
     /**
      * @param port the port to set
@@ -73,14 +79,22 @@ public class Client {
     public Client(String username, String password) {
         this.username = username;
         this.password = password;
-        try{
-            URL jks = new URL("classpath:resources/deduplicator.jks");
-            System.out.println("jks: " + jks.getPath());
-        }catch(MalformedURLException ex){
-            System.out.println("Excpe: "+ ex.getMessage());
-
+        
+            InputStream in = getClass().getResourceAsStream("../resource/deduplicator.jks"); 
+        try{    
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(in, CA_PASS.toCharArray());
+        }catch(IOException ex){
+            
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            e.printStackTrace();
         }
-        /*HttpComponentsClientHttpRequestFactory requestFactory = null;
+
+        HttpComponentsClientHttpRequestFactory requestFactory = null;
         try {
             TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
 
@@ -88,7 +102,7 @@ public class Client {
 
             SSLContext sslContext =
             SSLContextBuilder.create()
-            .loadKeyMaterial(ResourceUtils.getFile(jks), CA_PASS.toCharArray(), CA_PASS.toCharArray())
+            .loadKeyMaterial(keyStore, CA_PASS.toCharArray())
                 .loadTrustMaterial(null, acceptingTrustStrategy)
             .build();
 
@@ -98,14 +112,14 @@ public class Client {
 
             requestFactory.setHttpClient(httpClient);
 
-        } catch (UnrecoverableKeyException | IOException | NoSuchAlgorithmException | KeyStoreException | CertificateException | KeyManagementException  e) {
+        } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException  | KeyManagementException  e) {
 
             System.out.println("Unable to create client: " + e.getMessage());
             e.printStackTrace();
         }
         if (requestFactory != null)
             restTemplate = new RestTemplate(requestFactory);
-        */
+        
 
     }
 

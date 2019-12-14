@@ -6,7 +6,7 @@ plugins {
 
 sourceCompatibility = '11'
 
-mainClassName = 'deduplicatorGUI.Main'
+mainClassName = 'deduplicatorGUI.DeduplicatorGUI'
 
 repositories {
     jcenter()
