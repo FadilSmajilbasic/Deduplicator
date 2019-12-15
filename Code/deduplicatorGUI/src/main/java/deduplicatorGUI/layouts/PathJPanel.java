@@ -149,8 +149,8 @@ public class PathJPanel extends BaseJPanel {
         ResponseEntity<String> response = getClient().insertPath(pathTextField.getText(),
                 !typeComboBox.getSelectedItem().toString().equals("Scan"));
 
+        if(response != null){
         System.out.println("response: " + response.getBody());
-        JSONParser parser = new JSONParser();
         JSONObject resp = new JSONObject();
         try {
             resp = (JSONObject) parser.parse(response.getBody());
@@ -164,6 +164,11 @@ public class PathJPanel extends BaseJPanel {
             JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
                     "Insert error: " + resp.get("message") != null ? resp.get("message").toString() : "No message",
                     JOptionPane.INFORMATION_MESSAGE);
+        }
+        }else{
+            JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
+                        "Insert error",
+                        JOptionPane.INFORMATION_MESSAGE);
         }
 
         updatePathsList();

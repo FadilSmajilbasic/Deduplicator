@@ -10,9 +10,7 @@ import org.springframework.http.ResponseEntity;
 /**
  * ErrorMessage
  */
-public class Message extends ResponseEntity{
-
-    private HttpStatus status;
+public class Message extends ResponseEntity<String>{
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
     private LocalDateTime timestamp;
@@ -21,13 +19,11 @@ public class Message extends ResponseEntity{
 
     public Message(HttpStatus status) {
         super(status);
-        this.status = status;
         timestamp = LocalDateTime.now();
     }
 
     public Message(HttpStatus status, String message) {
         this(status);
-        this.status = status;
         this.message = message;
     }
 
@@ -35,7 +31,7 @@ public class Message extends ResponseEntity{
      * @return the status
      */
     public HttpStatus getStatus() {
-        return status;
+        return getStatusCode();
     }
 
     /**

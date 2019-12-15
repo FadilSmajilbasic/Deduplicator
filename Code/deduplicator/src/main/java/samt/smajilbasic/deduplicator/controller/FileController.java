@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.File;
+import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.Message;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
@@ -67,7 +68,7 @@ public class FileController {
     public @ResponseBody Object getFilesFromReport(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && reportRepository.existsById(intId))
-            return reportRepository.findById(intId).get().getFile();
+            return ((Report)reportRepository.findById(intId).get()).getFile();
         else
             return new Message(HttpStatus.NOT_FOUND, "Invalid report id");
     }

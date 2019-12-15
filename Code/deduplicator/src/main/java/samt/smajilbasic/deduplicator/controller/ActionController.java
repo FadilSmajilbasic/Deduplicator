@@ -1,10 +1,14 @@
 package samt.smajilbasic.deduplicator.controller;
 
 import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -131,8 +135,8 @@ public class ActionController {
         ActionsManager manager = (ActionsManager) context.getBean("actionsManager");
         manager.setActions(actionRepository.findActionsFromUser(internalUser));
         manager.setUser(internalUser);
-        Timer timer = new Timer();
-        timer.schedule(manager, 0);
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        scheduledExecutorService.schedule(manager, 0L, TimeUnit.SECONDS);
 
         return actionRepository.findActionsFromUser(internalUser);
     }
