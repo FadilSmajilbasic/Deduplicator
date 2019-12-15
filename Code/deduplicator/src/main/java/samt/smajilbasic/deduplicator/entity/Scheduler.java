@@ -25,9 +25,8 @@ public class Scheduler {
 
     private Integer weekly;
 
-    private Integer minutes;
     private Boolean repeated;
-    private Date dateStart;
+    private Long timeStart;
     private Integer executonCounter = 0;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "scheduler")
@@ -68,19 +67,6 @@ public class Scheduler {
         this.weekly = weekly;
     }
 
-    /**
-     * @return the minutes
-     */
-    public Integer getMinutes() {
-        return minutes;
-    }
-
-    /**
-     * @param minutes the minutes to set
-     */
-    public void setMinutes(Integer minutes) {
-        this.minutes = minutes;
-    }
 
     /**
      * @return the repeated
@@ -97,17 +83,17 @@ public class Scheduler {
     }
 
     /**
-     * @return the date_start
+     * @return the timeStart
      */
-    public Date getDateStart() {
-        return dateStart;
+    public Long getTimeStart() {
+        return timeStart;
     }
 
     /**
-     * @param dateStart the dateStart to set
+     * @param timeStart the timeStart to set
      */
-    public void setDateStart(Date dateStart) {
-        this.dateStart = dateStart;
+    public void setTimeStart(Long timeStart) {
+        this.timeStart = timeStart;
     }
 
     /**
