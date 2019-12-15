@@ -94,8 +94,8 @@ public class SchedulerController implements TimerListener {
      * 
      * I parametri vengono trattati in modo binario: Se bisogna eseguire lo
      * scheduler ogni 15 del mese, come parametro monthly si dovrà passare il numero
-     * 32768 (2^15 -> 000000000000000000100000000000000).
-     * Se bisogna eseguire lo scheduler ogni 3 giorno della settimana, come parametro weekly bisogna
+     * 32768 (2^15 -&gt; 000000000000000000100000000000000). Se bisogna eseguire lo
+     * scheduler ogni 3 giorno della settimana, come parametro weekly bisogna
      * mettere 8 (2^3).
      * 
      * I parametri vengono accettati in modo binario per permette di aggiungere più
@@ -107,32 +107,25 @@ public class SchedulerController implements TimerListener {
      *                  eseguito mensilmente.
      * @param weekly    parametro da passare se lo {@link Scheduler} deve essere
      *                  eseguito settimanalmente.
-     * @param hour      parametro da passare per indiacre l'ora di esecuzione.
      * @param repeated  parametro da passare se lo scheduler dovrà essere ripetuto,
      *                  valori: "true" o "false"
-     * @param dateStart la data dalla quale partirà l'esecuzione formato timestamp
-     *                  -> long
+     * @param timeStart la data e ora dalla quale partirà l'esecuzione formato timestamp
+     *                  -&gt; Long
      * @return lo scheduler inserito oppure messaggio d'errore
      */
     @PutMapping()
     public @ResponseBody Object addScheduler(@RequestParam String monthly, @RequestParam String weekly,
-            @RequestParam String hour, @RequestParam String repeated, @RequestParam String dateStart) {
+            @RequestParam String repeated, @RequestParam String timeStart) {
 
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);
-        Integer minutes = Validator.isInt(hour);
         Boolean repeatedBool = (repeated.equals("true")) ? true : false;
-        Date date;
+        Long date  = Validator.isLong(timeStart);
         Scheduler scheduler = new Scheduler();
-        
-        try {
-            date = new Date(Long.parseLong(dateStart));
-        } catch (NumberFormatException e) {
-            date = new Date(System.currentTimeMillis());
-        }
+
         if (repeatedBool) {
             scheduler.setRepeated(repeatedBool);
-            if (minutes != null && minutes >= 0 && minutes <= 1440) { // 60 min * 24 h = 1440
+            if (date > System.currentTimeMillis()) {
                 if (monthlyInt != null) {
                     Integer dayMonth = getFirstPosition(monthlyInt, 31);
 
@@ -146,14 +139,12 @@ public class SchedulerController implements TimerListener {
                     return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
                             "Schedule monthly and weekly parameters invalid");
                 }
-                scheduler.setMinutes(minutes);
             } else {
                 return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Schedule hour parameter invalid");
             }
         } else {
 
-            scheduler.setDateStart(date);
-            scheduler.setMinutes(minutes);
+            scheduler.setTimeStart(date);
             scheduler.setRepeated(repeatedBool);
         }
         schedulerRepository.save(scheduler);
@@ -163,7 +154,7 @@ public class SchedulerController implements TimerListener {
 
     /**
      * Il metodo stopTimers risponde alla richiesta di tipo PUT sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/). 
+     * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
      * Il metodo ferma tutti i timer della lista timers.
      * 
      * @return il messaggio con status OK 200.
@@ -180,8 +171,9 @@ public class SchedulerController implements TimerListener {
     }
 
     /**
-     * Il metodo deleteScheduler risponde alla richiesta di tipo DELETE sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/). 
+     * Il metodo deleteScheduler risponde alla richiesta di tipo DELETE
+     * sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
      * Il metodo ferma tutti i timer della lista timers.
      * 
      * @return il messaggio con status OK 200.
@@ -202,12 +194,12 @@ public class SchedulerController implements TimerListener {
         }
     }
 
-
     /**
-     * Il metodo getFirstPosition ritorna la posizione del primo bit a 1 in un intero.
+     * Il metodo getFirstPosition ritorna la posizione del primo bit a 1 in un
+     * intero.
      * 
      * @param number il numero da scansionare.
-     * @param max la grandezza del numero in bit (1-32).
+     * @param max    la grandezza del numero in bit (1-32).
      * @return la posizione del primo bit a 1 oppure 0 se non ci sono.
      */
     public Integer getFirstPosition(Integer number, int max) {
@@ -220,10 +212,11 @@ public class SchedulerController implements TimerListener {
     }
 
     /**
-     * Il metodo getFirstPosition ritorna una lista di posizioni dei bit a 1 nel numero passato come parametro.
+     * Il metodo getFirstPosition ritorna una lista di posizioni dei bit a 1 nel
+     * numero passato come parametro.
      * 
      * @param number il numero da scansionare
-     * @param max la grandezza del numero in bit (1-32)
+     * @param max    la grandezza del numero in bit (1-32)
      * @return le posizioni di tutti i bit a 1 oppure 0 se non ci sono.
      */
     public List<Integer> getPositions(Integer number, int max) {
@@ -241,8 +234,7 @@ public class SchedulerController implements TimerListener {
     }
 
     /**
-     * TODO: check usage
-     * Metodo che aggiunge un timer alla lista timers.
+     * TODO: check usage Metodo che aggiunge un timer alla lista timers.
      */
     @Override
     public void timerAdded(Timer timer) {
