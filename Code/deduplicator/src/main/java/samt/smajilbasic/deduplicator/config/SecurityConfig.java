@@ -29,7 +29,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
          .and()
          .httpBasic()
          .and()
-         .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint);
+         .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).and().requiresChannel().anyRequest().requiresSecure();
     }
  
     @Autowired
