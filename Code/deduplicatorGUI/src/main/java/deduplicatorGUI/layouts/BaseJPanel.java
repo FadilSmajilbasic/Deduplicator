@@ -15,6 +15,7 @@ import deduplicatorGUI.communication.Client;
 public class BaseJPanel extends JPanel{
 
     private Client client;
+    JSONParser parser = new JSONParser();
 
     /**
      * @param client the client to set

@@ -1,11 +1,15 @@
 
 package deduplicatorGUI.layouts;
 
+import org.json.simple.parser.ParseException;
+
 import javax.swing.*;
 
+import org.apache.catalina.connector.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 /**
  *
@@ -127,25 +131,30 @@ public class ScanJPanel extends BaseJPanel {
         }
 
         private void refreshButtonActionPerformed(java.awt.event.ActionEvent evt) {
-                Object response = getClient().get("scan/status");
+                ResponseEntity<String> response = getClient().get("scan/status");
                 if (response != null) {
-                        JSONObject respJson = ((JSONObject) response);
+                        try {
+                                JSONObject respJson = ((JSONObject) parser.parse(response.getBody()));
 
-                        System.out.println("respJson: " + respJson.toString());
-                        String progress = respJson.get("status").toString();
-                        String count = respJson.get("message").toString();
-                        String startDate = respJson.get("timestamp").toString();
+                                System.out.println("respJson: " + respJson.toString());
+                                String progress = respJson.get("status").toString();
+                                String count = respJson.get("message").toString();
+                                String startDate = respJson.get("timestamp").toString();
 
-                        if (progress.equals(HttpStatus.OK.toString())) {
-                                scanInProgressLabel.setText("Scan in progress: yes");
-                                objectsScannedLabel.setText("Files scanned: " + count);
-                                scanStartedLabel.setText("Scan started: " + startDate);
-                        } else {
-                                scanInProgressLabel.setText("Scan in progress: no");
-                                objectsScannedLabel.setText("Files scanned: 0");
-                                scanStartedLabel.setText("Scan started: ");
-                                JOptionPane.showMessageDialog(this, "Scan is not running", "Status Error",
-                                                JOptionPane.INFORMATION_MESSAGE);
+                                if (progress.equals(HttpStatus.OK.toString())) {
+                                        scanInProgressLabel.setText("Scan in progress: yes");
+                                        objectsScannedLabel.setText("Files scanned: " + count);
+                                        scanStartedLabel.setText("Scan started: " + startDate);
+                                } else {
+                                        scanInProgressLabel.setText("Scan in progress: no");
+                                        objectsScannedLabel.setText("Files scanned: 0");
+                                        scanStartedLabel.setText("Scan started: ");
+                                        JOptionPane.showMessageDialog(this, "Scan is not running", "Status Error",
+                                                        JOptionPane.INFORMATION_MESSAGE);
+                                }
+                        } catch (ParseException pe) {
+                                JOptionPane.showMessageDialog(this, "Unable to get scan status: " + pe.getMessage(),
+                                                "Status Error", JOptionPane.INFORMATION_MESSAGE);
                         }
                 } else {
                         JOptionPane.showMessageDialog(this, "Unable to get scan status", "Status Error",
@@ -155,21 +164,28 @@ public class ScanJPanel extends BaseJPanel {
         }
 
         public void updateFilesScanned(int id) {
-                Object response = getClient().get("report/" + id);
+                ResponseEntity<String> response = getClient().get("report/" + id);
 
                 if (response != null) {
-                        JSONObject[] array = getArray((JSONArray) ((JSONObject) response).get("file"));
+                        try {
+                                JSONObject[] array = getArray(
+                                                (JSONArray) ((JSONObject) parser.parse(response.getBody()))
+                                                                .get("file"));
 
-                        fileScannedList.setModel(new DefaultComboBoxModel<>() {
-                                public int getSize() {
-                                        return array.length;
-                                }
+                                fileScannedList.setModel(new DefaultComboBoxModel<>() {
+                                        public int getSize() {
+                                                return array.length;
+                                        }
 
-                                public String getElementAt(int i) {
-                                        return array[i].get("path").toString();
-                                }
-                        });
-                        filesScannedJScrollPane.update(getGraphics());
+                                        public String getElementAt(int i) {
+                                                return array[i].get("path").toString();
+                                        }
+                                });
+                                filesScannedJScrollPane.update(getGraphics());
+                        } catch (ParseException pe) {
+                                JOptionPane.showMessageDialog(this, "Unable to get retrieve files: " + pe.getMessage(),
+                                                "Get error ", JOptionPane.INFORMATION_MESSAGE);
+                        }
                 } else {
                         JOptionPane.showMessageDialog(this, "Unable to get retrieve files", "Get error ",
                                         JOptionPane.INFORMATION_MESSAGE);
@@ -177,28 +193,31 @@ public class ScanJPanel extends BaseJPanel {
         }
 
         private void startButtonActionPerformed(java.awt.event.ActionEvent evt) {
-                Object resp = getClient().post("scan/start", null);
-                if (resp == null) {
-                        JOptionPane.showMessageDialog(this, "Unable to get start scan", "Scan Error",
-                                        JOptionPane.INFORMATION_MESSAGE);
-                } else {
+                ResponseEntity<String> resp = getClient().post("scan/start", null);
+                if (resp != null) {
+
                         try {
-                                JSONObject report = (JSONObject) resp;
+                                JSONObject report = (JSONObject) parser.parse(resp.getBody());
                                 scanInProgressLabel.setText("Scan in progress: yes");
                                 objectsScannedLabel.setText("Files scanned: " + 0);
                                 scanStartedLabel.setText("Scan started: " + report.get("timestamp"));
-                        } catch (ClassCastException cce) {
-                                System.out.println("Cast exception: " + resp.toString());
+                        } catch (ClassCastException | ParseException ex) {
+                                JOptionPane.showMessageDialog(this, "Unable to start scan: " + ex.getMessage(),
+                                                "Scan Error", JOptionPane.INFORMATION_MESSAGE);
                         }
+                } else {
+                        JOptionPane.showMessageDialog(this, "Unable to start scan", "Scan Error",
+                                        JOptionPane.INFORMATION_MESSAGE);
                 }
+
         }
 
         private void stopButtonActionPerformed(java.awt.event.ActionEvent evt) {
-                Object resp = getClient().post("scan/stop", null);
+                ResponseEntity<String> resp = getClient().post("scan/stop", null);
                 if (resp != null) {
                         refreshButtonActionPerformed(evt);
                 } else {
-                        JOptionPane.showMessageDialog(this, "Unable to get stop scan", "Scan Error",
+                        JOptionPane.showMessageDialog(this, "Unable to stop scan", "Scan Error",
                                         JOptionPane.INFORMATION_MESSAGE);
                 }
         }

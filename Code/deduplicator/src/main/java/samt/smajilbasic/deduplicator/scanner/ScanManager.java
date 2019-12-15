@@ -69,6 +69,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     @Autowired
     DuplicateRepository duplicateRepository;
 
+    
+
     public ScanManager() {
         super();
     }
@@ -83,15 +85,19 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         List<GlobalPath> ignorePathsFromRepository = gpr.findIgnored();
 
         List<String> ignorePaths = new ArrayList<>();
+        List<String> ignoreFiles = new ArrayList<>();
 
         for (GlobalPath ignorePath : ignorePathsFromRepository) {
-            ignorePaths.add(ignorePath.getPath());
+            if (ignorePath.isFile())
+                ignoreFiles.add(ignorePath.getPath());
+            else
+                ignorePaths.add(ignorePath.getPath());
         }
 
         try {
             while (paths.hasNext()) {
                 ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this, report,
-                        fileRepository, ignorePaths, monitor);
+                        fileRepository, ignorePaths, ignoreFiles, monitor);
                 rootThreads.add(thread);
                 pool.execute(thread);
             }
@@ -105,13 +111,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             pool.shutdownNow();
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
-            
+
             report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             reportRepository.save(report);
 
             System.out.println("[INFO] Scan manager Finished");
-            if(listener != null)
+            if (listener != null)
                 listener.scanFinished();
         }
     }

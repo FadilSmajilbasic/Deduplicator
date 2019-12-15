@@ -158,7 +158,7 @@ public class PathJPanel extends BaseJPanel {
 
         }
 
-        if (resp.get("status") != null) {
+        if (resp.get("status") == null) {
             updatePathsList();
         } else {
             JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
@@ -178,30 +178,34 @@ public class PathJPanel extends BaseJPanel {
     }
 
     private void updatePathsList() {
-        Object response = getClient().get("path/");
+        ResponseEntity<String> response = getClient().get("path/");
 
-        if (response != null) {
-            JSONObject[] array = getArray((JSONArray) response);
-            pathJList.setModel(new AbstractListModel<String>() {
-                public int getSize() {
-                    return array.length;
-                }
+        if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
+            try {
+                JSONObject[] array = getArray((JSONArray) parser.parse(response.getBody()));
+                pathJList.setModel(new AbstractListModel<String>() {
+                    public int getSize() {
+                        return array.length;
+                    }
 
-                public String getElementAt(int i) {
-                    return array[i].get("path").toString();
-                }
-            });
+                    public String getElementAt(int i) {
+                        return array[i].get("path").toString();
+                    }
+                });
 
-            typeJList.setModel(new AbstractListModel<String>() {
-                public int getSize() {
-                    return array.length;
-                }
+                typeJList.setModel(new AbstractListModel<String>() {
+                    public int getSize() {
+                        return array.length;
+                    }
 
-                public String getElementAt(int i) {
-                    return array[i].get("ignoreFile").toString();
-                }
-            });
-
+                    public String getElementAt(int i) {
+                        return array[i].get("ignoreFile").toString();
+                    }
+                });
+            } catch (ParseException pe) {
+                JOptionPane.showMessageDialog(this, "Unable to get retrieve paths: " + pe.getMessage(), "Get error ",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
         } else {
             JOptionPane.showMessageDialog(this, "Unable to get retrieve paths", "Get error ",
                     JOptionPane.INFORMATION_MESSAGE);

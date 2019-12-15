@@ -1,8 +1,5 @@
 package deduplicatorGUI.layouts;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import javax.swing.*;
 
 import org.springframework.web.client.RestClientException;
@@ -32,14 +29,14 @@ public class ConnectionJPanel extends BaseJPanel {
 
         usernameTextField = new JTextField();
         ipTextField1 = new JTextField();
-        passwordTextField = new JTextField();
+        passwordTextField = new JPasswordField();
         connectButton = new JButton();
         jLabel1 = new JLabel();
         jLabel2 = new JLabel();
         jLabel3 = new JLabel();
 
 
-        ipTextField1.setText("localhost:8080");
+        ipTextField1.setText("localhost:8443");
         usernameTextField.setText("admin");
         passwordTextField.setText("admin");
 
@@ -90,12 +87,13 @@ public class ConnectionJPanel extends BaseJPanel {
         String[] address = ipTextField1.getText().split(":");
 
         String username = usernameTextField.getText();
-        String password = passwordTextField.getText();
+        String password = new String(passwordTextField.getPassword());
+        System.out.println("pass: " + password);
 
         Client client = new Client(username, password);
         try {
             if (address.length == 2) {
-                if (client.isAuthenticated(InetAddress.getByName(address[0]), Integer.parseInt(address[1]))) {
+                if (client.isAuthenticated(address[0], Integer.parseInt(address[1]))) {
                     System.out.println("connected");
                     listener.userConnected(client);
                     JOptionPane.showMessageDialog(this, "User connected successfully ", "Login",
@@ -109,7 +107,7 @@ public class ConnectionJPanel extends BaseJPanel {
                 JOptionPane.showMessageDialog(this, "Ip invalid ", "Login error", JOptionPane.ERROR_MESSAGE);
             }
 
-        } catch (UnknownHostException | NumberFormatException exception) {
+        } catch (NumberFormatException exception) {
             JOptionPane.showMessageDialog(this, "Ip invalid ", "Login error", JOptionPane.ERROR_MESSAGE);
         }catch(RestClientException rce){
             JOptionPane.showMessageDialog(this, "Server not reachable", "Connection error", JOptionPane.ERROR_MESSAGE);
@@ -123,7 +121,7 @@ public class ConnectionJPanel extends BaseJPanel {
     private JLabel jLabel1;
     private JLabel jLabel2;
     private JLabel jLabel3;
-    private JTextField passwordTextField;
+    private JPasswordField passwordTextField;
     private JTextField usernameTextField;
     private UserConnectedListener listener;
 

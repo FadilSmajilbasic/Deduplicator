@@ -3,6 +3,7 @@ package samt.smajilbasic.deduplicator.controller;
 import samt.smajilbasic.deduplicator.exception.*;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -92,20 +93,25 @@ public class PathController {
     @PutMapping()
     public @ResponseBody Object insert(@RequestParam String path, @RequestParam String ignorePath) {
         path = path.replaceAll("&#47;", File.separator).trim();
-        Path p = Paths.get(path);
-        if (!gpr.existsById(p.toAbsolutePath().toString())) {
-            if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
-                if (Files.isReadable(p)) {
-                    gpr.save(new GlobalPath(p.toAbsolutePath().toString(), (ignorePath.equals("true"))));
-                    return getValueByPath(path);
+        try {
+            Path p = Paths.get(path);
+
+            if (!gpr.existsById(p.toAbsolutePath().toString())) {
+                if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
+                    if (Files.isReadable(p)) {
+                        gpr.save(new GlobalPath(p.toAbsolutePath().toString(), (ignorePath.equals("true"))));
+                        return getValueByPath(path);
+                    } else {
+                        return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
+                    }
                 } else {
-                    return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
+                    return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
                 }
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
+                return new Message(HttpStatus.BAD_REQUEST, "Path already present in database: " + path);
             }
-        } else {
-            return new Message(HttpStatus.BAD_REQUEST, "Path already present in database: " + path);
+        } catch (InvalidPathException ipe) {
+            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
         }
     }
 

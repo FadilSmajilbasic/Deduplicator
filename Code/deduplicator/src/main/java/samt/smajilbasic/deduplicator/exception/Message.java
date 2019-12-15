@@ -5,11 +5,12 @@ import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 /**
  * ErrorMessage
  */
-public class Message {
+public class Message extends ResponseEntity{
 
     private HttpStatus status;
 
@@ -18,17 +19,14 @@ public class Message {
     
     private String message;
 
-    private Message() {
+    public Message(HttpStatus status) {
+        super(status);
+        this.status = status;
         timestamp = LocalDateTime.now();
     }
 
-    public Message(HttpStatus status) {
-        this();
-        this.status = status;
-    }
-
     public Message(HttpStatus status, String message) {
-        this();
+        this(status);
         this.status = status;
         this.message = message;
     }

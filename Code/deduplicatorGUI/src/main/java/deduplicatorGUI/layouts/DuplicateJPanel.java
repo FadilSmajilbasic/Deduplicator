@@ -2,7 +2,7 @@
 package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
-import java.text.DecimalFormat;
+import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -181,42 +181,50 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                         String selected = reportsComboBox.getSelectedItem().toString();
                         System.out.println("selec:" + selected);
                         selected = selected.split(": ")[0];
-
-                        JSONObject response = (JSONObject) getClient().get("report/" + selected);
-
+                        ResponseEntity<String> response = getClient().get("report/" + selected);
+                        JSONObject respObj = null;
+                        try {
+                                respObj = (JSONObject) parser.parse(response.getBody());
+                        } catch (ParseException pe) {
+                                System.out.println("Parse exceptioon: " + pe.getMessage());
+                        }
                         JPanel panel = new JPanel();
                         panel.setPreferredSize(new Dimension(400, 200));
                         panel.add(new JLabel("Scan info"));
-                        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
-                        if (response != null) {
+                        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                        if (response != null && respObj != null) {
 
-                                if (response.get("status") == null) {
+                                if (response.getStatusCode().equals(HttpStatus.OK)) {
                                         Calendar cal = Calendar.getInstance();
                                         panel.add(new JLabel("Duration: "
-                                                        + (Long.valueOf(response.get("duration").toString()) / 1000.0)
+                                                        + (Long.valueOf(respObj.get("duration").toString()) / 1000.0)
                                                         + " s"));
-                                        cal.setTime(new Date(Long.valueOf(response.get("start").toString())));
+                                        cal.setTime(new Date(Long.valueOf(respObj.get("start").toString())));
                                         panel.add(new JLabel("Start date: " + cal.get(Calendar.DAY_OF_MONTH) + "."
                                                         + cal.get(Calendar.MONTH) + ":" + cal.get(Calendar.YEAR) + " "
                                                         + cal.get(Calendar.HOUR_OF_DAY) + ":"
                                                         + cal.get(Calendar.MINUTE)));
-                                        panel.add(new JLabel("Files scanned: " + response.get("filesScanned")));
+                                        panel.add(new JLabel("Files scanned: " + respObj.get("filesScanned")));
                                         panel.add(new JLabel("Average duplicate count: "
-                                                        + response.get("averageDuplicateCount")));
-                                        panel.add(new JLabel("User: "
-                                                        + ((JSONObject) response.get("user")).get("username")));
-                                        panel.add(new JLabel("Id: " + response.get("id")));
+                                                        + respObj.get("averageDuplicateCount")));
+                                        panel.add(new JLabel(
+                                                        "User: " + ((JSONObject) respObj.get("user")).get("username")));
+                                        panel.add(new JLabel("Id: " + respObj.get("id")));
                                         JOptionPane.showMessageDialog(this, panel, "Report", JOptionPane.PLAIN_MESSAGE);
 
-                                }else{
-                                        JOptionPane.showMessageDialog(this, "Server error ","Status: "+response.get("status") +System.lineSeparator() +" Server error:" +response.get("message"),
-                                                JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                        JOptionPane.showMessageDialog(this, " Server error:" + respObj.get("message"),
+                                                        "Status: " + response.getStatusCode() + System.lineSeparator(),
+                                                        JOptionPane.ERROR_MESSAGE);
                                 }
-                        }else{
+                        } else {
                                 JOptionPane.showMessageDialog(this, "Server error ", "Server error",
                                                 JOptionPane.ERROR_MESSAGE);
                         }
 
+                }else{
+                        JOptionPane.showMessageDialog(this, "No report selected", "Select report",
+                                                JOptionPane.INFORMATION_MESSAGE);
                 }
 
         }
@@ -237,13 +245,17 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         }
 
         public void updateDuplicatesComboBox(String id) {
-                Object response = getClient().get("report/duplicate/" + id);
+                ResponseEntity<String> response = getClient().get("report/duplicate/" + id);
 
                 if (response != null) {
-                        JSONObject[] array = getArray((JSONArray) response);
-                        model = new DuplicatesComboBoxModel(array);
-                        duplicatesComboBox.setModel(model);
-
+                        try {
+                                JSONObject[] array = getArray((JSONArray) parser.parse(response.getBody()));
+                                model = new DuplicatesComboBoxModel(array);
+                                duplicatesComboBox.setModel(model);
+                        } catch (ParseException pe) {
+                                JOptionPane.showMessageDialog(this, "Unable to retireve duplicates: " + pe.getMessage(),
+                                                "Get error ", JOptionPane.INFORMATION_MESSAGE);
+                        }
                 } else {
                         JOptionPane.showMessageDialog(this, "Unable to retireve duplicates", "Get error ",
                                         JOptionPane.INFORMATION_MESSAGE);
@@ -259,11 +271,12 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         private void updateDuplicates(String hash) {
                 String selected = reportsComboBox.getSelectedItem().toString();
 
-                Object response = getClient().get("report/duplicate/" + selected.split(":")[0] + "/" + hash);
+                ResponseEntity<String> response = getClient()
+                                .get("report/duplicate/" + selected.split(":")[0] + "/" + hash);
 
-                if (response != null && response != "[]") {
+                if (response != null) {
                         try {
-                                JSONObject[] array = getArray((JSONArray) response);
+                                JSONObject[] array = getArray((JSONArray) parser.parse(response.getBody()));
 
                                 List<JSONObject> list = new ArrayList<JSONObject>();
                                 for (JSONObject jsonObject : array) {
@@ -286,8 +299,9 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                                 return obj.toString();
                                         }
                                 });
-                        } catch (ClassCastException e) {
-                                System.out.println("Unable to cast: " + response.toString());
+                        } catch (ClassCastException | ParseException pe) {
+                                JOptionPane.showMessageDialog(this, "Unable to get Duplicates: " + pe.getMessage(),
+                                                "Get error", JOptionPane.ERROR_MESSAGE);
                         }
 
                 }
@@ -372,22 +386,28 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         }
 
         private void updateScansCheckBox() {
-                Object response = getClient().get("report/all");
+                ResponseEntity<String> response = getClient().get("report/all");
 
                 if (response != null) {
-                        JSONObject[] array = getArray((JSONArray) response);
-                        reportsComboBox.setModel(new DefaultComboBoxModel<String>() {
-                                public int getSize() {
-                                        return array.length;
-                                }
+                        try {
+                                JSONObject[] array = getArray((JSONArray) parser.parse(response.getBody()));
+                                reportsComboBox.setModel(new DefaultComboBoxModel<String>() {
+                                        public int getSize() {
+                                                return array.length;
+                                        }
 
-                                private Calendar cal = Calendar.getInstance();
+                                        private Calendar cal = Calendar.getInstance();
 
-                                public String getElementAt(int i) {
-                                        cal.setTimeInMillis(Long.parseLong(array[i].get("start").toString()));
-                                        return array[i].get("id") + ": " + cal.getTime().toString();
-                                }
-                        });
+                                        public String getElementAt(int i) {
+                                                cal.setTimeInMillis(Long.parseLong(array[i].get("start").toString()));
+                                                return array[i].get("id") + ": " + cal.getTime().toString();
+                                        }
+                                });
+                        } catch (ParseException pe) {
+                                JOptionPane.showMessageDialog(this,
+                                                "Unable to get retrieve reports: " + pe.getMessage(), "Get error ",
+                                                JOptionPane.INFORMATION_MESSAGE);
+                        }
                 } else {
                         JOptionPane.showMessageDialog(this, "Unable to get retrieve reports", "Get error ",
                                         JOptionPane.INFORMATION_MESSAGE);
@@ -506,6 +526,5 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         private JComboBox<String> reportsComboBox;
         private JFormattedTextField timeTextField;
         private DuplicatesComboBoxModel model;
-        JSONParser parser = new JSONParser();
 
 }

@@ -25,6 +25,7 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
     private FileRepository fileRepository;
 
     private List<String> ignorePaths;
+    private List<String> ignoreFiles;
 
     private List<ScannerThread> children = new ArrayList<ScannerThread>();
     LinkedList<Hasher> hashers = new LinkedList<Hasher>();
@@ -41,19 +42,21 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
     private static final Integer DEFAULT_THREAD_COUNT = 10;
 
     public ScannerThread(Path rootPath, ScannerThreadListener listener, Report report, FileRepository fileRepository,
-            List<String> ignorePaths, Object monitor) {
+            List<String> ignorePaths, List<String> ignoreFiles, Object monitor) {
         this.listener = listener;
         this.rootPath = rootPath;
         this.report = report;
         this.fileRepository = fileRepository;
         this.ignorePaths = ignorePaths;
         this.monitor = monitor;
+        this.ignoreFiles = ignoreFiles;
+
         for (String ignorePath : ignorePaths) {
             if (rootPath.toString().startsWith(ignorePath)) {
                 ignoreFound = true;
             }
-
         }
+
         pool = Executors.newFixedThreadPool(DEFAULT_THREAD_COUNT);
     }
 
@@ -62,11 +65,11 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
             while (isPaused()) {
                 try {
                     monitor.wait();
-                    System.out.println("[INFO] Threads resumed");
+                    System.out.println("[INFO] Thread resumed");
                 } catch (InterruptedException e) {
                     System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace().toString());
                 }
-                System.out.println("wait ended");
+                System.out.println("Wait ended");
             }
         }
 
@@ -81,15 +84,18 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
                 File[] list = new File(rootPath.toString()).listFiles();
 
                 for (File file : list) {
+                    System.out.println("[INFO] Scanning directory: " + file.getAbsolutePath());
                     if (!Thread.interrupted()) {
                         checkPaused();
-
                         if (file.isFile()) {
-                            files.add(file);
+                            if (!ignoreFiles.contains(file.getAbsolutePath())) {
+                                files.add(file);
+                            } else {
+                                System.out.println("[INFO] File not saved, set to ignore: " + file.getAbsolutePath());
+                            }
                         } else if (file.isDirectory()) {
-                            System.out.println("[INFO] New directory found: " + file.getAbsolutePath());
                             ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener,
-                                    report, fileRepository, ignorePaths, monitor);
+                                    report, fileRepository, ignorePaths, ignoreFiles, monitor);
                             children.add(thread);
                             if (!Thread.interrupted()) {
                                 thread.start();
@@ -100,7 +106,6 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
                         stopScan();
                     }
                 }
-
             } else {
                 System.out.println("[INFO] Path not scanned, set to ignore: " + rootPath.toString());
             }
