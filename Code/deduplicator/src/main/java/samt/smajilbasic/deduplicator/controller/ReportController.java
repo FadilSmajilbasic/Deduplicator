@@ -1,8 +1,18 @@
 package samt.smajilbasic.deduplicator.controller;
 
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,6 +73,36 @@ public class ReportController {
     @GetMapping(value = "/all")
     public @ResponseBody Iterable<Report> getAllReports() {
         return reportRepository.findAll();
+    }
+
+    /**
+     * Il metodo getAllReportsReduced risponde alla richiesta di tipo GET sull'indirizzo
+     * <b>&lt;indirizzo-server&gt;/report/all/reduced</b>(localhost:8080/report/all/reduced).
+     * Questo metodo ritorna solo gli id e la data d'inizio delle scansioni senza i file scansionati.
+     * Il metodo viene usato per caricare la lista di scansioni nel dropdown menu in DuplicateJPanel.java
+     * @return tutti gli id e date d'inizio dei rapporti contenuti nella tabella Report.
+     */
+    @GetMapping(value = "/all/reduced")
+    public @ResponseBody Object getAllReportsReduced() {
+        List<String> values = reportRepository.findAllReduced();
+
+        ArrayList<HashMap<String,String>> formatted = new ArrayList<HashMap<String,String>>();
+
+        for (String object : values) {
+            String[] separated = object.split(",");
+            HashMap<String,String> map = new HashMap<String,String>();
+            map.put("id", separated[0]);
+            map.put("start", separated[1]);
+            formatted.add(map);
+        }
+        ObjectMapper encoder = new ObjectMapper();
+        try{
+            return encoder.writeValueAsString(formatted);
+        }catch(JsonProcessingException ex){
+            System.out.println("[ERROR] Unable to encode JSON : " + ex.getStackTrace());
+        }
+        return new Message(HttpStatus.INTERNAL_SERVER_ERROR,"Unable to parse JSON");
+
     }
 
     /**
