@@ -39,12 +39,26 @@ public class Validator {
 
 	/**
 	 * 
-	 * @param input input to validate (usually uri parameter)
-	 * @return the integer value if input is a number, null otherwise
+	 * @param input input to validate (usually  parameter)
+	 * @return the integer value if input is an Integer, null otherwise
 	 */
 	public static Integer isInt(String input) {
 		try {
 			return Integer.parseInt(input);
+		} catch (NumberFormatException nfe) {
+			return null;
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param input input to validate (usually uri parameter)
+	 * @return the Long value if input is a Long, null otherwise
+	 */
+	public static Long isLong(String input) {
+		try {
+			return Long.parseLong(input);
 		} catch (NumberFormatException nfe) {
 			return null;
 		}
