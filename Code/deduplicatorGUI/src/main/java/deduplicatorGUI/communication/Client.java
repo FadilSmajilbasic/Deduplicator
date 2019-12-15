@@ -209,6 +209,7 @@ public class Client {
                     HttpMethod.PUT, requestEntity, String.class);
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: " + rce.getMessage());
+            System.out.println("path: " + path);
         }
 
         return response;
