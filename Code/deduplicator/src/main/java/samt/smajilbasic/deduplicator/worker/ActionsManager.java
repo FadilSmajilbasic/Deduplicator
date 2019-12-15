@@ -7,6 +7,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -28,7 +29,7 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
  * ActionsManager
  */
 @Component
-public class ActionsManager extends TimerTask {
+public class ActionsManager implements Runnable {
 
     @Autowired
     ActionRepository actionRepository;
@@ -42,8 +43,6 @@ public class ActionsManager extends TimerTask {
     ApplicationContext context;
 
     Scheduler actionScheduler;
-
-    Timer timer;
 
     List<Action> actions;
 
@@ -59,11 +58,14 @@ public class ActionsManager extends TimerTask {
 
         if (actionScheduler != null) {
             actions = actionRepository.findActionsFromScheduler(actionScheduler);
+            System.out.println("[INFO] Found actions");
+
         } else {
             System.out.println("[INFO] Unable to find actions, actionScheduler not set");
         }
         System.out.println("Actions: " + actions.size());
         if (actions != null) {
+            System.out.println("ACtions not null");
             for (Action action : actions) {
                 System.out.println("executing action: " + action.getActionType());
 
@@ -99,12 +101,10 @@ public class ActionsManager extends TimerTask {
                         System.out.println("scan");
                         ScanController controller = (ScanController) context.getBean("scanController");
                         controller.start(null);
-                        timer.cancel();
 
                         long difference = 0;
-                        Calendar nextDate = Calendar.getInstance();
-
-                        Calendar startCalendar = Calendar.getInstance();
+                        Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                        Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
                         if (actionScheduler != null) {
                             System.out.println("sched");
@@ -123,18 +123,19 @@ public class ActionsManager extends TimerTask {
                                 }
                                 ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
                                 actionsManager.setActionScheduler(actionScheduler);
-                                actionsManager.setTimer(timer);
 
-                                timer.schedule(actionsManager,
-                                        new Date(startCalendar.getTime().getTime() + difference));
+                                // timer.schedule(actionsManager,
+                                //         new Date(startCalendar.getTime().getTime() + difference));
 
                             }
                         }
                         executed = true;
 
                     }
-                    if(executed)
+                    if(executed){
                         action.setExecuted();
+                        System.out.println("setting executed");
+                    }
 
                     actionScheduler.executed();
 
@@ -202,13 +203,6 @@ public class ActionsManager extends TimerTask {
      */
     public AuthenticationDetails getUser() {
         return user;
-    }
-
-    /**
-     * @param timer the timer to set
-     */
-    public void setTimer(Timer timer) {
-        this.timer = timer;
     }
 
 }
