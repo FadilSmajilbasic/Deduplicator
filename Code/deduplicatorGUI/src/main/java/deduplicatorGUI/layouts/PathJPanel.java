@@ -204,7 +204,7 @@ public class PathJPanel extends BaseJPanel {
                     }
 
                     public String getElementAt(int i) {
-                        return array[i].get("ignoreFile").toString();
+                        return array[i].get("ignore").toString();
                     }
                 });
             } catch (ParseException pe) {

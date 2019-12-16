@@ -25,7 +25,7 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
     private FileRepository fileRepository;
 
     private List<String> ignorePaths;
-    private List<String> ignoreFiles;
+    private List<String> ignores;
 
     private List<ScannerThread> children = new ArrayList<ScannerThread>();
     LinkedList<Hasher> hashers = new LinkedList<Hasher>();
@@ -42,14 +42,14 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
     private static final Integer DEFAULT_THREAD_COUNT = 10;
 
     public ScannerThread(Path rootPath, ScannerThreadListener listener, Report report, FileRepository fileRepository,
-            List<String> ignorePaths, List<String> ignoreFiles, Object monitor) {
+            List<String> ignorePaths, List<String> ignores, Object monitor) {
         this.listener = listener;
         this.rootPath = rootPath;
         this.report = report;
         this.fileRepository = fileRepository;
         this.ignorePaths = ignorePaths;
         this.monitor = monitor;
-        this.ignoreFiles = ignoreFiles;
+        this.ignores = ignores;
 
         for (String ignorePath : ignorePaths) {
             if (rootPath.toString().startsWith(ignorePath)) {
@@ -88,14 +88,14 @@ public class ScannerThread extends Thread implements ScannerThreadListener {
                     if (!Thread.interrupted()) {
                         checkPaused();
                         if (file.isFile()) {
-                            if (!ignoreFiles.contains(file.getAbsolutePath())) {
+                            if (!ignores.contains(file.getAbsolutePath())) {
                                 files.add(file);
                             } else {
                                 System.out.println("[INFO] File not saved, set to ignore: " + file.getAbsolutePath());
                             }
                         } else if (file.isDirectory()) {
                             ScannerThread thread = new ScannerThread(Paths.get(file.getAbsolutePath()), listener,
-                                    report, fileRepository, ignorePaths, ignoreFiles, monitor);
+                                    report, fileRepository, ignorePaths, ignores, monitor);
                             children.add(thread);
                             if (!Thread.interrupted()) {
                                 thread.start();

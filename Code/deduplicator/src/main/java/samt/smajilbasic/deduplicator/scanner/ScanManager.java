@@ -85,11 +85,11 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         List<GlobalPath> ignorePathsFromRepository = gpr.findIgnored();
 
         List<String> ignorePaths = new ArrayList<>();
-        List<String> ignoreFiles = new ArrayList<>();
+        List<String> ignores = new ArrayList<>();
 
         for (GlobalPath ignorePath : ignorePathsFromRepository) {
             if (ignorePath.isFile())
-                ignoreFiles.add(ignorePath.getPath());
+                ignores.add(ignorePath.getPath());
             else
                 ignorePaths.add(ignorePath.getPath());
         }
@@ -97,7 +97,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         try {
             while (paths.hasNext()) {
                 ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this, report,
-                        fileRepository, ignorePaths, ignoreFiles, monitor);
+                        fileRepository, ignorePaths, ignores, monitor);
                 rootThreads.add(thread);
                 pool.execute(thread);
             }
