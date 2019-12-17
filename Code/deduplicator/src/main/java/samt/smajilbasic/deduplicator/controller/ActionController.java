@@ -6,6 +6,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
@@ -132,6 +134,9 @@ public class ActionController {
 
         AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
 
+        BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+        ((DefaultListableBeanFactory) factory).destroySingleton("actionsManager");
+
         ActionsManager manager = (ActionsManager) context.getBean("actionsManager");
         manager.setActions(actionRepository.findActionsFromUser(internalUser));
         manager.setUser(internalUser);
@@ -156,31 +161,37 @@ public class ActionController {
      */
     @PutMapping("/")
     public @ResponseBody Object addAction(@RequestParam String type, @RequestParam(required = false) String path,
-            @RequestParam(required = false) String newPath,String scheduler) {
+            @RequestParam(required = false) String newPath, String scheduler) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUser = authentication.getName();
 
         Integer schedulerIdInt = Validator.isInt(scheduler);
-        if (!schedulerRepository.existsById(schedulerIdInt != null ? schedulerIdInt : -1))
+
+        if (schedulerRepository.existsById(schedulerIdInt)) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Scheduler id invalid");
+        }
         type = getType(type);
-        if (type == null)
+
+        if (type == null) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Action type invalid");
-
-        if (type.equals(ActionType.MOVE) && (newPath.trim().equalsIgnoreCase("") || newPath == null))
+        }
+        if (type.equals(ActionType.MOVE) && (newPath.trim().equalsIgnoreCase("") || newPath == null)) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path not set while having type = MOVE");
-
-        if (Validator.getPathType(path) != PathType.File && !type.equals(ActionType.SCAN))
+        }
+        if (Validator.getPathType(path) != PathType.File && !type.equals(ActionType.SCAN)) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "File path invalid");
+        }
 
-        if (Validator.getPathType(newPath) != PathType.Directory && !type.equals(ActionType.SCAN))
+        if (Validator.getPathType(newPath) != PathType.Directory && !type.equals(ActionType.SCAN)) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path is invalid or not a directory");
-
+        }
         Action action = new Action(type, path, newPath, adr.findById(currentUser).get(),
                 schedulerRepository.findById(schedulerIdInt).get());
         actionRepository.save(action);
-        checker.check();
+
+        ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
+        checker.start();
         return action;
 
     }
@@ -227,8 +238,8 @@ public class ActionController {
 
     /**
      * Il metodo checkPath risponde alla richiesta di tipo POST sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/action/path&gt;</b> (localhost:8080/action/path). Il
-     * metodo controlla se il path passato come parametro è valido oppure no. Il
+     * <b>&lt;indirizzo-server&gt;/action/path&gt;</b> (localhost:8080/action/path).
+     * Il metodo controlla se il path passato come parametro è valido oppure no. Il
      * metodo veine usato dalla gui per verificare la validità di un percorso quando
      * l'utente sceglie di muovere un duplicato in una nuova posizione. Il percorso
      * passato deve essere una cartella che si trova sul disco.

@@ -24,9 +24,9 @@ public class GlobalPath {
 	private Boolean file;
 
 	/**
-	 * L'attributo ignore indica se l'oggetto è da ignorare o se deve essere preso in considerazione durante la scansione.
+	 * L'attributo ignoreFile indica se l'oggetto è da ignorare o se deve essere preso in considerazione durante la scansione.
 	 */
-	private Boolean ignore;
+	private Boolean ignoreFile;
 
 	/**
 	 * L'attributo date indica la data d'aggiunta in formato timestamp.
@@ -42,11 +42,11 @@ public class GlobalPath {
 	/**
 	 * Costruttore che accetta il percorso dell'oggetto e se è da ignorare oppure no.
 	 * @param path il percorso del oggetto.
-	 * @param ignore se è da ignorare o no.
+	 * @param ignoreFile se è da ignorare o no.
 	 */
-	public GlobalPath(String path, boolean ignore) {
+	public GlobalPath(String path, boolean ignoreFile) {
 		this.setPath(path);
-		this.setignore(ignore);
+		this.setignoreFile(ignoreFile);
 		this.setDate(System.currentTimeMillis());
 	}
 
@@ -93,19 +93,19 @@ public class GlobalPath {
 	}
 
 	/**
-	 * Metodo getter per la variabile ignore.
+	 * Metodo getter per la variabile ignoreFile.
 	 * @return true se l'oggetto è impostato per essere ignorato, false altrimenti.
 	 */
-	public boolean isignore() {
-		return ignore;
+	public boolean isignoreFile() {
+		return ignoreFile;
 	}
 
 	/**
-	 * Metodo setter per la variabile ignore
-	 * @param ignore true se il l'oggetto deve essere ignorato, false se deve essere preso in considerazione durante la scansione.
+	 * Metodo setter per la variabile ignoreFile
+	 * @param ignoreFile true se il l'oggetto deve essere ignorato, false se deve essere preso in considerazione durante la scansione.
 	 */
-	private void setignore(boolean ignore) {
-		this.ignore = ignore;
+	private void setignoreFile(boolean ignoreFile) {
+		this.ignoreFile = ignoreFile;
 	}
 
 	/**

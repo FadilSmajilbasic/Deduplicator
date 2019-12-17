@@ -1,4 +1,3 @@
-
 package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
@@ -13,7 +12,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.MaskFormatter;
-
 
 import java.awt.Dimension;
 
@@ -317,63 +315,62 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
 
                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 SimpleDateFormat time = new SimpleDateFormat("HH:mm");
+                if (actions.size() > 0) {
+                        try {
+                                calDate.setTime(dateFormat.parse(dateTextField.getText()));
+                                calTime.setTime(time.parse(timeTextField.getText()));
 
-                try {
-                        calDate.setTime(dateFormat.parse(dateTextField.getText()));
-                        calTime.setTime(time.parse(timeTextField.getText()));
+                                JPanel panel = new JPanel();
+                                panel.setPreferredSize(new Dimension(600, 400));
+                                panel.add(new JLabel("Are you sure you want to execute the current changes?"));
+                                panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-                        JPanel panel = new JPanel();
-                        panel.setPreferredSize(new Dimension(600, 400));
-                        panel.add(new JLabel("Are you sure you want to execute the current changes?"));
-                        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                                for (Object object : actions.toArray()) {
+                                        JSONObject obj = (JSONObject) object;
 
-                        for (Object object : actions.toArray()) {
-                                JSONObject obj = (JSONObject) object;
-
-                                obj.keySet().forEach(key -> {
-                                        panel.add(new JLabel(String.format("%s: %s", key.toString(), obj.get(key))));
-                                });
-                        }
-                        int result = JOptionPane.showOptionDialog(null, panel, "Action", JOptionPane.YES_NO_OPTION,
-                                        JOptionPane.PLAIN_MESSAGE, null, null, null);
-                        if (result == 0) {
-                                Long schedulerId = createSheduler(calDate.getTimeInMillis()
-                                        + (calTime.get(Calendar.HOUR_OF_DAY) * 60 + calTime.get(Calendar.MINUTE)) * 60
-                                                        * 1000);
-                                JSONObject[] jsonObj = getArray(actions);
-
-                                for (JSONObject jsonObject : jsonObj) {
-                                        panel.add(new JLabel(jsonObject.get("type") + ": " + ""));
+                                        obj.keySet().forEach(key -> {
+                                                panel.add(new JLabel(
+                                                                String.format("%s: %s", key.toString(), obj.get(key))));
+                                        });
                                 }
+                                int result = JOptionPane.showOptionDialog(null, panel, "Action",
+                                                JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, null, null);
+                                if (result == 0) {
+                                        Long schedulerId = createSheduler(calDate.getTimeInMillis()
+                                                        + (calTime.get(Calendar.HOUR_OF_DAY) * 60
+                                                                        + calTime.get(Calendar.MINUTE)) * 60 * 1000);
+                                        
+                                        JSONObject[] jsonObj = getArray(actions);
 
-                                if (schedulerId != null) {
-                                        for (Object object : actions.toArray()) {
-                                                JSONObject obj = (JSONObject) object;
-
-                                                MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
-                                                obj.keySet().forEach(key -> {
-                                                        values.add(key.toString(), obj.get(key));
-                                                });
-
-                                                Calendar test = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-                                                test.setTimeInMillis(calDate.getTimeInMillis());
-                                                values.add("scheduler", schedulerId);
-                                                getClient().put("action/", values);
-
-                                                actions.remove(object);
+                                        if (schedulerId != null) {
+                                                 
+                                                for (Object object : jsonObj) {
+                                                        MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+                                                        JSONObject obj = (JSONObject) object;                                           
+                                                        obj.keySet().forEach(key -> {
+                                                                values.add(key.toString(), obj.get(key));
+                                                        });
+                                                        
+                                                        values.add("scheduler", schedulerId);
+                                                        ResponseEntity<String> resp = getClient().put("action/", values);
+                                                        actions.remove(object);
+                                                }
+                                                
+                                        } else {
+                                                JOptionPane.showMessageDialog(this, "Scheduler not created",
+                                                                "Scheduler not created", JOptionPane.ERROR_MESSAGE);
                                         }
-                                } else {
-                                        JOptionPane.showMessageDialog(this, "Scheduler not created",
-                                                        "Scheduler not created", JOptionPane.ERROR_MESSAGE);
+
+                                } else if (result == 1) {
                                 }
 
-                        } else if (result == 1) {
+                        } catch (java.text.ParseException pe) {
+                                JOptionPane.showMessageDialog(this,
+                                                "Time or date format invalid: please use HH:mm for time and dd.MM.yyyy for year",
+                                                "Time or date invalid", JOptionPane.ERROR_MESSAGE);
                         }
-
-                } catch (java.text.ParseException pe) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Time or date format invalid: please use HH:mm for time and dd.MM.yyyy for year",
-                                        "Time or date invalid", JOptionPane.ERROR_MESSAGE);
+                } else {
+                        JOptionPane.showMessageDialog(this, "No action set", "No action", JOptionPane.ERROR_MESSAGE);
                 }
 
         }
@@ -410,6 +407,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         @Override
         public void tabSelected() {
                 updateScansCheckBox();
+                actions = new JSONArray();
         }
 
         private void updateScansCheckBox() {
@@ -448,8 +446,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                 if (!arg0.getValueIsAdjusting()) {
                         int selectedIndex = arg0.getFirstIndex();
                         if (selectedIndex != -1) {
-                                DefaultListModel<String> model = (DefaultListModel<String>) duplicatesJList
-                                                        .getModel();
+                                DefaultListModel<String> model = (DefaultListModel<String>) duplicatesJList.getModel();
                                 boolean deleteFromList = true;
                                 JPanel panel = new JPanel();
                                 panel.setPreferredSize(new Dimension(300, 100));
@@ -522,17 +519,25 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
                                         values.put("type", ActionType.IGNORE);
                                         values.put("path", model.getElementAt(selectedIndex));
                                         break;
+                                case 3:
+                                        for (int i = 0; i < model.getSize(); i++) {
+                                                values.put("type", ActionType.IGNORE);
+                                                values.put("path", model.getElementAt(i));
+                                                actions.add(values);
+                                                model.remove(i);
+                                        }
+                                        break;
                                 default:
                                         deleteFromList = false;
                                         break;
                                 }
-                                actions.add(values);
-                                if (deleteFromList) {
-                                        
-                                        model.remove(selectedIndex);
-                                        
 
+                                if (deleteFromList) {
+                                        model.remove(selectedIndex);
                                 }
+
+                                if (result != 3)
+                                        actions.add(values);
                         }
 
                 }
@@ -543,7 +548,7 @@ public class DuplicateJPanel extends BaseJPanel implements ListSelectionListener
         }
 
         private JSONArray actions = new JSONArray();
-        private Object[] popupOptions = { "Delete", "Move", "Ignore" };
+        private Object[] popupOptions = { "Delete", "Move", "Ignore", "Ignore All" };
         private JButton applyButton;
         private JLabel applyDateLabel;
         private JFormattedTextField dateTextField;

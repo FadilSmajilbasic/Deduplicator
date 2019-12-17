@@ -1,11 +1,14 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import java.sql.Date;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
@@ -46,11 +49,11 @@ public class SchedulerController implements TimerListener {
     private SchedulerRepository schedulerRepository;
 
     /**
-     * L'attributo checker serve a per eseguire il controllo di azioni o scan da
-     * eseguire.
+     * L'attributo context contiene il contesto dell'applicazione. Viene usato per
+     * trovare l'utente attualmente collegato.
      */
     @Autowired
-    private ScheduleChecker checker;
+    private ApplicationContext context;
 
     /**
      * L'attributo timers è una lista di {@link Timer} che contengono operazioni da
@@ -148,7 +151,12 @@ public class SchedulerController implements TimerListener {
             scheduler.setRepeated(repeatedBool);
         }
         schedulerRepository.save(scheduler);
-        checker.check();
+        BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+        ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
+        ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
+        synchronized(checker){
+            checker.start();
+        }
         return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 

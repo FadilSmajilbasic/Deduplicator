@@ -1,11 +1,14 @@
 package samt.smajilbasic.deduplicator.repository;
 
 import java.util.List;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import samt.smajilbasic.deduplicator.entity.*;
+import samt.smajilbasic.deduplicator.entity.Action;
+import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
+import samt.smajilbasic.deduplicator.entity.Scheduler;
 
 
 /**

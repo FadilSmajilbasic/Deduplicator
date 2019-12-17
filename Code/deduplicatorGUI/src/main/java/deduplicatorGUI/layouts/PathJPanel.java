@@ -10,6 +10,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 /**
  *
@@ -145,29 +147,32 @@ public class PathJPanel extends BaseJPanel {
 
     private void insertButtonActionPerformed(ActionEvent evt) {
 
-        ResponseEntity<String> response = getClient().insertPath(pathTextField.getText(),
-                !typeComboBox.getSelectedItem().toString().equals("Scan"));
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        values.add("path", pathTextField.getText());
+        values.add("ignorePath", !typeComboBox.getSelectedItem().toString().equals("Scan"));
 
-        if(response != null){
-        System.out.println("response: " + response.getBody());
-        JSONObject resp = new JSONObject();
-        try {
-            resp = (JSONObject) parser.parse(response.getBody());
-        } catch (ParseException pe) {
+        ResponseEntity<String> response = null;
 
-        }
+        response = getClient().put("path/", values);
 
-        if (resp.get("status") == null) {
-            updatePathsList();
-        } else {
-            JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
-                    "Insert error: " + resp.get("message") != null ? resp.get("message").toString() : "No message",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
-        }else{
-            JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
-                        "Insert error",
+        if (response != null) {
+            JSONObject resp = new JSONObject();
+            try {
+                resp = (JSONObject) parser.parse(response.getBody());
+            } catch (ParseException pe) {
+
+            }
+
+            if (resp.get("status") == null) {
+                updatePathsList();
+            } else {
+                JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(),
+                        "Insert error: " + resp.get("message") != null ? resp.get("message").toString() : "No message",
                         JOptionPane.INFORMATION_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Unable to insert :" + pathTextField.getText(), "Insert error",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
 
         updatePathsList();
@@ -203,7 +208,7 @@ public class PathJPanel extends BaseJPanel {
                     }
 
                     public String getElementAt(int i) {
-                        return array[i].get("ignore").toString();
+                        return array[i].get("ignoreFile").toString();
                     }
                 });
             } catch (ParseException pe) {

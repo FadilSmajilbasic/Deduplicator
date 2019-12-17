@@ -201,41 +201,24 @@ public class Client {
         values = values == null ? new LinkedMultiValueMap<>() : values;
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
-
+        
         ResponseEntity<String> response = null;
 
         try {
             response = restTemplate.exchange("https://" + host + ":" + port + "/" + path,
                     HttpMethod.PUT, requestEntity, String.class);
         } catch (RestClientException rce) {
-            System.out.println("Rest client exception: " + rce.getMessage());
+            System.out.println("Rest client exception: ");
+            StackTraceElement[] st =  rce.getStackTrace();
+            for (StackTraceElement stackTraceElement : st) {
+                System.out.println(stackTraceElement.toString());
+            }
+
             System.out.println("path: " + path);
+            
         }
 
         return response;
-    }
-
-    public ResponseEntity<String> insertPath(String pathText, boolean ignored) {
-        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-        values.add("path", pathText);
-        values.add("ignorePath", ignored);
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
-
-        ResponseEntity<String> response = null;
-
-        try {
-            response = restTemplate.exchange("https://" + host + ":" + port + "/path/", HttpMethod.PUT,
-                    requestEntity, String.class);
-        } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
-        }
-
-        if (response != null) {
-            return response;
-        } else {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
     }
 
 }

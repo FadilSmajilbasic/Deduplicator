@@ -10,7 +10,7 @@ import javax.persistence.OneToMany;
 
 
 /**
- * La classe
+ * La classe Scheduler descrive evento pianificato per l'esecuzione o già eseguito 
  */
 @Entity
 public class Scheduler {

@@ -5,6 +5,7 @@ import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,11 +19,16 @@ import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 @SpringBootApplication
 public class DeduplicatorApplication {
 
+	/**
+     * L'attributo context contiene il contesto dell'applicazione. Viene usato per
+     * trovare l'utente attualmente collegato.
+     */
+    @Autowired
+    private ApplicationContext context;
+
 	@Autowired
 	AuthenticationDetailsRepository adr;
 
-	@Autowired
-	ScheduleChecker checker;
 
 	public static void main(String[] args) {
 		SpringApplication.run(DeduplicatorApplication.class, args);
@@ -39,7 +45,8 @@ public class DeduplicatorApplication {
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void checkSchedulerAfterStartup() {
-		checker.check();
+		ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
+		checker.start();
 	}
 
 }

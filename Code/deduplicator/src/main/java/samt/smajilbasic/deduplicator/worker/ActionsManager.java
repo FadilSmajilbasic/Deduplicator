@@ -4,13 +4,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import samt.smajilbasic.deduplicator.ActionType;
 import samt.smajilbasic.deduplicator.controller.ScanController;
@@ -41,7 +47,7 @@ public class ActionsManager implements Runnable {
 
     Scheduler actionScheduler;
 
-    List<Action> actions;
+    List<Action> actions = new ArrayList<>();
 
     AuthenticationDetails user;
 
@@ -51,99 +57,88 @@ public class ActionsManager implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("WORKER STARTED");
-
-        if (actionScheduler != null) {
-            actions = actionRepository.findActionsFromScheduler(actionScheduler);
-            System.out.println("[INFO] Found actions");
-
-        } else {
-            System.out.println("[INFO] Unable to find actions, actionScheduler not set");
-        }
-        System.out.println("Actions: " + actions.size());
-        if (actions != null) {
-            System.out.println("ACtions not null");
-            for (Action action : actions) {
-                System.out.println("executing action: " + action.getActionType());
-
-                if (!action.isExecuted()) {
-                    boolean executed = false;
-                    if (action.getActionType().equals(ActionType.MOVE)) {
-
-                        if (this.move(action.getFilePath(), action.getNewFilePath())) {
-                            System.out.println("[INFO] File moved succesfully: " + action.getFilePath());
-                            executed = true;
-                        } else {
-                            System.out.println("[ERROR] Unable to move file: " + action.getFilePath()
-                                    + " to destination: " + action.getNewFilePath());
-                        }
-                    } else if (action.getActionType().equals(ActionType.DELETE)) {
-                        if (this.delete(action.getFilePath())) {
-                            System.out.println("[INFO] File deleted succesfully: " + action.getFilePath());
-                            executed = true;
-                        } else {
-                            System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
-                        }
-                    } else if (action.getActionType().equals(ActionType.IGNORE)) {
-                        GlobalPath path = new GlobalPath(action.getFilePath(), true);
-                        globalPathRepository.save(path);
-
-                        if (globalPathRepository.findById(path.getPath()).get() != null) {
-                            System.out.println("[INFO] File set on ignored list succesfully: " + action.getFilePath());
-                            executed = true;
-                        } else {
-                            System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
-                        }
-                    } else if (action.getActionType().equals(ActionType.SCAN)) {
-                        System.out.println("scan");
-                        ScanController controller = (ScanController) context.getBean("scanController");
-                        controller.start(null);
-
-                        long difference = 0;
-                        Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-                        Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-
-                        if (actionScheduler != null) {
-                            System.out.println("sched");
-                            if (actionScheduler.isRepeated()) {
-                                if (actionScheduler.getMonthly() != null) {
-                                    nextDate.set(startCalendar.get(Calendar.YEAR) + 1900,
-                                            startCalendar.get(Calendar.MONTH), actionScheduler.getMonthly());
-                                    // get time in
-                                    // milliseconds until
-                                    // next execution
-                                    difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
-
-                                } else if (actionScheduler.getWeekly() != null) {
-                                    difference = Math
-                                            .abs(actionScheduler.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
-                                }
-                                ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
-                                actionsManager.setActionScheduler(actionScheduler);
-
-                                // timer.schedule(actionsManager,
-                                //         new Date(startCalendar.getTime().getTime() + difference));
-
-                            }
-                        }
-                        executed = true;
-
-                    }
-                    if(executed){
-                        action.setExecuted();
-                        System.out.println("setting executed");
-                    }
-
-                    actionScheduler.executed();
-
-                    actionRepository.save(action);
-                    schedulerRepository.save(actionScheduler);
-                }else{
-                    System.out.println("[INFO] Action "+action.getId()+" already executed ");
-                }
+        try {
+            System.out.println("WORKER STARTED");
+            if (actionScheduler.equals(null)) {
+                actions = actionRepository.findActionsFromScheduler(actionScheduler);
+                System.out.println("[INFO] Found actions: " + actions.size());
+            } else {
+                System.out.println("[INFO] Unable to find actions, actionScheduler not set");
             }
-        } else {
-            System.out.println("[ERROR] No action to execute set");
+
+            if (actions != null) {
+                if (actions.size() > 0) {
+                    System.out.println("Actions not null");
+                    for (Action action : actions) {
+                        System.out.println("executing action: " + action.getActionType());
+
+                        if (!action.isExecuted()) {
+                            boolean executed = false;
+                            if (action.getActionType().equals(ActionType.MOVE)) {
+
+                                if (this.move(action.getFilePath(), action.getNewFilePath())) {
+                                    System.out.println("[INFO] File moved succesfully: " + action.getFilePath());
+                                    executed = true;
+                                } else {
+                                    System.out.println("[ERROR] Unable to move file: " + action.getFilePath()
+                                            + " to destination: " + action.getNewFilePath());
+                                }
+                            } else if (action.getActionType().equals(ActionType.DELETE)) {
+                                if (this.delete(action.getFilePath())) {
+                                    System.out.println("[INFO] File deleted succesfully: " + action.getFilePath());
+                                    executed = true;
+                                } else {
+                                    System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
+                                }
+                            } else if (action.getActionType().equals(ActionType.IGNORE)) {
+                                GlobalPath path = new GlobalPath(action.getFilePath(), true);
+                                globalPathRepository.save(path);
+
+                                if (globalPathRepository.findById(path.getPath()).get() != null) {
+                                    System.out.println(
+                                            "[INFO] File set on ignored list succesfully: " + action.getFilePath());
+                                    executed = true;
+                                } else {
+                                    System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
+                                }
+                            } else if (action.getActionType().equals(ActionType.SCAN)) {
+                                System.out.println("scan");
+                                ScanController controller = (ScanController) context.getBean("scanController");
+                                controller.start(null);
+
+                                if (actionScheduler != null) {
+
+                                    if (executed) {
+                                        action.setExecuted();
+                                        System.out.println("setting executed");
+                                        actionScheduler.executed();
+                                        schedulerRepository.save(actionScheduler);
+                                    }
+
+                                } else {
+
+                                }
+
+                            } else {
+                                System.out.println("[ERROR] Invalid type");
+                            }
+
+                            actionScheduler.executed();
+
+                            actionRepository.save(action);
+                            schedulerRepository.save(actionScheduler);
+                        } else {
+                            System.out.println("[INFO] Action " + action.getId() + " already executed ");
+                        }
+                    }
+                } else {
+                    System.out.println("[INFO] No action to execute set");
+                }
+            } else {
+                System.out.println("[INFO] action is null");
+            }
+        } catch (Exception npe) {
+            npe.printStackTrace(System.out);
         }
 
         System.out.println("finished working");
