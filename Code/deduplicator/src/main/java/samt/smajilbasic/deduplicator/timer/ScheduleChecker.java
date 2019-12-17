@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.Timer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import samt.smajilbasic.deduplicator.entity.Action;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 import samt.smajilbasic.deduplicator.worker.ActionsManager;

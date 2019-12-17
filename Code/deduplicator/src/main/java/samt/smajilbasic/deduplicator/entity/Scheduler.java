@@ -1,6 +1,4 @@
 package samt.smajilbasic.deduplicator.entity;
-
-import java.sql.Date;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -12,7 +10,7 @@ import javax.persistence.OneToMany;
 
 
 /**
- * Scheduler
+ * La classe
  */
 @Entity
 public class Scheduler {

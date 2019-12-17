@@ -2,7 +2,6 @@
 package deduplicatorGUI.layouts;
 
 import java.awt.event.ActionEvent;
-import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -15,13 +14,11 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.MaskFormatter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.awt.Dimension;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.plaf.DimensionUIResource;
 
 import deduplicatorGUI.communication.Client;
 import deduplicatorGUI.listeners.UserConnectedListener;

@@ -5,7 +5,6 @@ import org.json.simple.parser.ParseException;
 
 import javax.swing.*;
 
-import org.apache.catalina.connector.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
