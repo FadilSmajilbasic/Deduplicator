@@ -11,22 +11,62 @@ import samt.smajilbasic.deduplicator.entity.File;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 
 /**
- * Hasher
+ * La classe hasher si occupa di generare le hash dei file trovati e salvare
+ * questi nella tabella File.
+ * 
  */
 public class Hasher extends Thread {
 
+    /**
+     * L'attributo file definisce il file dal quale verrà creato il hash.
+     */
     private java.io.File file;
-    ScannerThreadListener stl;
-    Report report;
 
+    /**
+     * L'attributo stl definisce il listener che verrà avvisto quando questo oggetto
+     * finisce la usa esecuzione.
+     */
+    private ScannerThreadListener stl;
+    /**
+     * L'attributo report definisce il riferimento al rapporto che verrà impostato
+     * al file.
+     */
+    private Report report;
+
+    /**
+     * L'attributo fileRepository definisce il repository usato per
+     * l'interfacciamento con la tabella File.
+     */
     private FileRepository fileRepository;
 
+    /**
+     * L'attributo monitor viene usato per controllare se l'esecuzione dovrà essere
+     * messa in pausa oppure ripresa.
+     */
     Object monitor;
 
-    boolean paused;
+    /**
+     * L'attributo paused definisce se L'esecuzione è in pausa oppure no.
+     */
+    private boolean paused;
 
+    /**
+     * L'attributo BUFFER_SIZE definisce la grandezza del buffer per la lettura dei
+     * contenuti di file grandi, per la generazione del hash.
+     */
     private final static int BUFFER_SIZE = 32768;
 
+    /**
+     * Metodo costruttore per la classe Hasher.
+     * 
+     * @param file           il file scansionato.
+     * @param report         il rapporto nel quale è stato trovato il file.
+     * @param stl            il listener che verrà notifiacto quando l'esecuzione
+     *                       finisce.
+     * @param fileRepository il repository per slavare il file nel databse.
+     * @param monitor        l'oggetto che verrà controllato nel caso che
+     *                       l'esecuzione viene fermata.
+     */
     public Hasher(java.io.File file, Report report, ScannerThreadListener stl, FileRepository fileRepository,
             Object monitor) {
         this.file = file;
@@ -36,24 +76,33 @@ public class Hasher extends Thread {
         this.monitor = monitor;
     }
 
+    /**
+     * Metodo che restituisce il hash del file che gli viene passato come parametro.
+     * 
+     * @param file il file dal quale verrà generato il hash.
+     * @param mode il tipo di hash da generare.
+     * @return il hash del cententuto del file in formato stringa.
+     * @throws NoSuchAlgorithmException Eccezzione tirata in caso che il tipo di
+     *                                  hash non è disponibile.
+     */
     public String getHash(RandomAccessFile file, String mode) throws NoSuchAlgorithmException {
-
         MessageDigest messageDigest = MessageDigest.getInstance(mode);
 
-        
         try {
-            
             byte[] buffer = new byte[BUFFER_SIZE];
             long read = 0;
 
             long end = file.length();
             int unitsize;
+
             while (read < end) {
                 checkPaused();
-                unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read));
-                file.read(buffer, 0, unitsize);
-                messageDigest.update(buffer, 0, unitsize);
-                read += unitsize;
+                unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read)); // controllo se sono
+                                                                                               // arrivato in fondo al
+                                                                                               // file.
+                file.read(buffer, 0, unitsize); // leggo un chunk del file definito dall'attributo BUFFER_SIZE
+                messageDigest.update(buffer, 0, unitsize); // aggiorno il hash con i nuovi dati letti.
+                read += unitsize; // sposto il buffer al prossimo chunk di dati.
             }
 
         } catch (FileNotFoundException fnfE) {
@@ -68,7 +117,7 @@ public class Hasher extends Thread {
         StringBuffer hexString = new StringBuffer();
 
         for (int i = 0; i < digest.length; i++) {
-            hexString.append(String.format("%02x",digest[i]));
+            hexString.append(String.format("%02x", digest[i]));
         }
 
         return hexString.toString();
@@ -92,7 +141,6 @@ public class Hasher extends Thread {
 
         } catch (NoSuchAlgorithmException nsae) {
             System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
-
         } catch (IOException ioe) {
             System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
         } catch (NullPointerException npe) {
@@ -103,6 +151,10 @@ public class Hasher extends Thread {
         }
     }
 
+    /**
+     * Metodo che viene usato per controllare lo stato del monitor per vedere se
+     * bisogna fermare l'esecuzione.
+     */
     public synchronized void checkPaused() {
         synchronized (monitor) {
             while (isPaused()) {
@@ -118,6 +170,9 @@ public class Hasher extends Thread {
 
     }
 
+    /**
+     * Il metodo pause imposta l'attributo paused a true.
+     */
     public void pause() {
         if (isAlive()) {
             this.paused = true;
@@ -127,7 +182,9 @@ public class Hasher extends Thread {
     }
 
     /**
-     * @return the paused
+     * Metodo getter per la variabile paused.
+     * 
+     * @return ture se l'esecuzione è ferma, false altrimenti.
      */
     public boolean isPaused() {
         return paused;

@@ -19,25 +19,38 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 import samt.smajilbasic.deduplicator.worker.ActionsManager;
 
 /**
- * RemindTask
+ * La classe ScheduleChecker controlla i scheduler inseriti nel database e se
+ * possibile esegue lo scheduler e le sue azioni. Usa
+ * l'annotazione @{@link Component} per indicare a Sping che alla creazione
+ * dell'oggetto ScheduleChecker bisogna anche istanziare gli attributi con
+ * l'annotazione @{@link Autowired}.
  */
 @Component
 public class ScheduleChecker extends Thread {
 
+    /**
+     * L'attributo scheduleRepository permette l'interfacciamento con la tabella
+     * Scheduler del database.
+     */
     @Autowired
     SchedulerRepository schedulerRepository;
 
-    @Autowired
-    ActionsManager actionsManager;
-
+    /**
+     * L'attributo context definisce il contesto dell'applicazione. Viene usato per
+     * creare un nuovo actionsManager.
+     */
     @Autowired
     ApplicationContext context;
 
     /**
-     * Default timeout for the scanning thread pool given in seconds
+     * L'attributo DEFAULT_TERMINATION_TIMEOUT definisce il timeout per l'esecuzione
+     * del applciationManager.
      */
     private static final Integer DEFAULT_TERMINATION_TIMEOUT = 1800;
 
+    /**
+     * Metodo costruttore vuoto.
+     */
     public ScheduleChecker() {
         super();
     }
@@ -49,21 +62,26 @@ public class ScheduleChecker extends Thread {
 
         result.forEach(schedulers::add);
 
-        ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(10);
+        ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(schedulers.size()); // pool di
+                                                                                                            // esecuzione
+                                                                                                            // delle
+                                                                                                            // thread
 
         schedulers.forEach(schedule -> {
             BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
             ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
-            actionsManager = (ActionsManager) context.getBean("actionsManager");
+            ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
             Long startDate = schedule.getTimeStart();
 
             Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             startCalendar.setTimeInMillis(startDate);
 
-            startCalendar.add(Calendar.MONTH, 1); // Calendar month correction
-            startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Calendar time correction
+            startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
+            startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
 
-            if (schedule.getExecutonCounter() == 0 || schedule.isRepeated()) {
+            if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) { // controllo se lo scheduler è già stato
+                                                                                // eseguit oppure se è impostato per
+                                                                                // essere ripetuto
 
                 actionsManager.setActionScheduler(schedule);
 
@@ -75,11 +93,10 @@ public class ScheduleChecker extends Thread {
                 System.out.println(
                         "Current time: " + currCal.get(Calendar.DAY_OF_MONTH) + "." + currCal.get(Calendar.MONTH) + " "
                                 + currCal.get(Calendar.HOUR_OF_DAY) + ":" + currCal.get(Calendar.MINUTE));
-                ActionsManager actionsManager = new ActionsManager();
                 Long delay = startCalendar.getTimeInMillis() - currCal.getTimeInMillis();
                 delay = delay < 0 ? 0 : delay;
                 actionsManager.setActionScheduler(schedule);
-                
+
                 if (schedule.isRepeated()) {
 
                     long difference = 0;
@@ -102,15 +119,13 @@ public class ScheduleChecker extends Thread {
                     if (passed)
                         initialDelay = 0;
 
-                    scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, monthly ? 30 : 7,
-                            TimeUnit.DAYS);
-                }else{
+                    scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, monthly ? 30 : 7, 
+                            TimeUnit.DAYS); //Aggiungo l'actionManager al pool per l'esecuzione
+                } else {
                     scheduledExecutor.schedule(actionsManager, delay, TimeUnit.MILLISECONDS);
                 }
-
             } else {
                 System.out.println("[INFO] Scheduler already executed");
-
             }
         });
         try {
