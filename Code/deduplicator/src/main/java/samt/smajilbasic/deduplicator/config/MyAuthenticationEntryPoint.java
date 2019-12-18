@@ -17,10 +17,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;;
 
 /**
- * MyAuthenticationEntyPoint
+ * MyAuthenticationEntryPoint
  */
 @Component
-public class MyAuthenticationEntyPoint extends BasicAuthenticationEntryPoint{
+public class MyAuthenticationEntryPoint extends BasicAuthenticationEntryPoint{
 
     @Override
     public void commence(
