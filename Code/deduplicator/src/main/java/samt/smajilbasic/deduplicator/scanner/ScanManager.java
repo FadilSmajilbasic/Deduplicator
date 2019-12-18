@@ -20,30 +20,66 @@ import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
 
 /**
- * ScanManager
+ * La classe ScanManger gestisce le thread di scansione delle cartelle. Usa
+ * l'annotazione @{@link Component} per indicare a Sping che alla creazione
+ * dell'oggetto ScheduleChecker bisogna anche istanziare gli attributi con
+ * l'annotazione @{@link Autowired}.
  */
-
 @Component
 public class ScanManager extends Thread implements ScannerThreadListener {
 
+    /**
+     * L'attributo fileRepository serve al controller per interfacciarsi con la
+     * tabella File del database. Usa l'annotazione @{@link Autowired} per indicare a
+     * spring che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
     FileRepository fileRepository;
 
+    /**
+     * L'attributo gpr serve al controller per interfacciarsi con la tabella
+     * GlobalPath del database. Usa l'annotazione @{@link Autowired}4 per indicare a spring
+     * che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
     @Autowired
     GlobalPathRepository gpr;
 
+    /**
+     * L'attributo paths contiene tutti i percorsi che si trovano nel database GlobalPath.
+     */
     private Iterator<GlobalPath> paths;
 
+    /**
+     * L'attributo reportRepository serve al controller per interfacciarsi con la
+     * tabella Report del database.
+     */
     private ReportRepository reportRepository;
 
+    /**
+     * L'attributo reportId contiene l'id del rapporto al quale verranno aggiunti i file trovati.
+     */
     private Integer reportId;
 
+    /**
+     * L'attributo filesScanned contiene il numero di files scansionati.
+     */
     private Integer filesScanned = 0;
 
+    /**
+     * L'attributo rootThreads contiene la lista di thread che dovranno essere scanerizzate.
+     */
     private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
 
+    /**
+     * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che possono essere eseguite contemporaneamente.
+     */
     private static final Integer DEFAULT_THREAD_COUNT = 10;
 
+    /**
+     * L'attributo threadCount contiene il numero di thread che possono essere eseguite contemporaneamente impo
+     */
     private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
     private ExecutorService pool;
@@ -68,8 +104,6 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     @Autowired
     DuplicateRepository duplicateRepository;
-
-    
 
     public ScanManager() {
         super();
