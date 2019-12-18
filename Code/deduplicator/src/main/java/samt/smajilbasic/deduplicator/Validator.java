@@ -67,12 +67,28 @@ public class Validator {
 
 	/**
 	 * 
-	 * @param input input to validate (usually file hash)
-	 * @return value of input is a valid hexadecimal string, null otherwise
+	 * @param input La stringa da verificare
+	 * @return il valore di input se è valido oppure null.
 	 */
 	public static String isHex(String input) {
 		return Pattern.matches("[0-9a-fA-F]+", input) ? input : null;
 
 	}
+
+	/**
+     * Il metodo getActionType serve a identificare il tipo di azione passato come
+     * parametro.
+     * 
+     * @param type la stringa da controllare
+     * @return il tipo con tutte le lettere in maiuscolo oppure null se il tipo
+     *         passato come parametro non è valido.
+     */
+    public static String getActionType(String type) {
+        if (type.equalsIgnoreCase(ActionType.DELETE) || type.equalsIgnoreCase(ActionType.MOVE)
+                || type.equalsIgnoreCase(ActionType.IGNORE) || type.equalsIgnoreCase(ActionType.SCAN))
+            return type.toUpperCase();
+        else
+            return null;
+    }
 
 }

@@ -3,7 +3,6 @@ package samt.smajilbasic.deduplicator.controller;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,7 +23,7 @@ import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.exception.Message;
-import samt.smajilbasic.deduplicator.repository.SchedulerRepository;;
+import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 
 /**
  * SchedulerController si occupa di gestire le richieste in entrata che hanno
@@ -37,7 +35,7 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;;
  */
 @RestController
 @RequestMapping(path = "/scheduler")
-public class SchedulerController implements TimerListener {
+public class SchedulerController {
 
     /**
      * L'attributo schedulerRepository serve al controller per interfacciarsi con la
@@ -56,24 +54,18 @@ public class SchedulerController implements TimerListener {
     private ApplicationContext context;
 
     /**
-     * L'attributo timers è una lista di {@link Timer} che contengono operazioni da
-     * eseguire in un determinante istante.
-     */
-    private List<Timer> timers = new ArrayList<>();
-
-    /**
-     * Il metodo getPaths risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo getAll risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler</b>(localhost:8080/scheduler/).
      * 
      * @return tutti i {@link Scheduler} che si trovano nel database.
      */
     @GetMapping()
-    public @ResponseBody Iterable<Scheduler> getSchedulers() {
+    public @ResponseBody Iterable<Scheduler> getAll() {
         return schedulerRepository.findAll();
     }
 
     /**
-     * Il metodo getScheduler risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo get risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler/&lt;id&gt;</b>
      * (localhost:8080/scheduler/11).
      * 
@@ -82,7 +74,7 @@ public class SchedulerController implements TimerListener {
      *         altrimenti.
      */
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object getScheduler(@PathVariable String id) {
+    public @ResponseBody Object get(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && schedulerRepository.existsById(intId))
             return schedulerRepository.findById(intId).get();
@@ -117,7 +109,7 @@ public class SchedulerController implements TimerListener {
      * @return lo scheduler inserito oppure messaggio d'errore
      */
     @PutMapping()
-    public @ResponseBody Object addScheduler(@RequestParam String monthly, @RequestParam String weekly,
+    public @ResponseBody Object insert(@RequestParam String monthly, @RequestParam String weekly,
             @RequestParam String repeated, @RequestParam String timeStart) {
 
         Integer monthlyInt = Validator.isInt(monthly);
@@ -161,25 +153,7 @@ public class SchedulerController implements TimerListener {
     }
 
     /**
-     * Il metodo stopTimers risponde alla richiesta di tipo PUT sull'indirizzo
-     * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
-     * Il metodo ferma tutti i timer della lista timers.
-     * 
-     * @return il messaggio con status OK 200.
-     */
-    @PostMapping("/stopTimers")
-    public Message stopTimers() {
-
-        timers.forEach(timer -> {
-            timer.cancel();
-            timers.remove(timer);
-        });
-
-        return new Message(HttpStatus.OK, "Timers stopped");
-    }
-
-    /**
-     * Il metodo deleteScheduler risponde alla richiesta di tipo DELETE
+     * Il metodo delete risponde alla richiesta di tipo DELETE
      * sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
      * Il metodo ferma tutti i timer della lista timers.
@@ -187,7 +161,7 @@ public class SchedulerController implements TimerListener {
      * @return il messaggio con status OK 200.
      */
     @DeleteMapping("/{id}")
-    public @ResponseBody Object deleteScheduler(@PathVariable String id) {
+    public @ResponseBody Object delete(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null) {
             if (schedulerRepository.existsById(intId)) {
@@ -220,7 +194,7 @@ public class SchedulerController implements TimerListener {
     }
 
     /**
-     * Il metodo getFirstPosition ritorna una lista di posizioni dei bit a 1 nel
+     * Il metodo getPositions ritorna una lista di posizioni dei bit a 1 nel
      * numero passato come parametro.
      * 
      * @param number il numero da scansionare
@@ -239,13 +213,5 @@ public class SchedulerController implements TimerListener {
             }
         }
         return positions;
-    }
-
-    /**
-     * TODO: check usage Metodo che aggiunge un timer alla lista timers.
-     */
-    @Override
-    public void timerAdded(Timer timer) {
-        timers.add(timer);
     }
 }

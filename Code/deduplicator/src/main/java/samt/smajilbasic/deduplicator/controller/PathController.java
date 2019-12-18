@@ -43,19 +43,19 @@ public class PathController {
     GlobalPathRepository gpr;
 
     /**
-     * Il metodo getPaths risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo getAll risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/).
      * 
      * @return tutti {@link GlobalPath} contenuti nella tabella GlobalPath del
      *         database.
      */
     @GetMapping()
-    public @ResponseBody Iterable<GlobalPath> getPaths() {
+    public @ResponseBody Iterable<GlobalPath> getAll() {
         return gpr.findAll();
     }
 
     /**
-     * Il metodo getValueByPath risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo get risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/path/&lt;percorso&gt;</b>
      * (localhost:8080/path/&#47;home&#47;user&#47;Desktop&#47;).
      * 
@@ -65,7 +65,7 @@ public class PathController {
      *         altrimenti.
      */
     @GetMapping(value = "/{path}")
-    public @ResponseBody Object getValueByPath(@RequestParam String path) {
+    public @ResponseBody Object get(@RequestParam String path) {
 
         path = path.replaceAll("&#47;", File.separator).trim();
         if (Validator.getPathType(path) != PathType.Invalid) {
@@ -100,7 +100,7 @@ public class PathController {
                 if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
                     if (Files.isReadable(p)) {
                         gpr.save(new GlobalPath(p.toAbsolutePath().toString(), (ignorePath.equals("true"))));
-                        return getValueByPath(path);
+                        return get(path);
                     } else {
                         return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
                     }
@@ -116,7 +116,7 @@ public class PathController {
     }
 
     /**
-     * Il metodo remove risponde alla richiesta di tipo DELETE sull'indirizzo
+     * Il metodo delete risponde alla richiesta di tipo DELETE sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/path</b>(localhost:8080/path/). Il metodo rimuove
      * un oggetto dalla tabella GlobalPath in base al percorso passato come
      * parametro nel body della richiesta.
@@ -125,7 +125,7 @@ public class PathController {
      * @return l'oggetto eliminato oppure il messaggio d'errore
      */
     @DeleteMapping()
-    public @ResponseBody Object remove(@RequestParam String path) {
+    public @ResponseBody Object delete(@RequestParam String path) {
 
         PathType type = Validator.getPathType(path);
         path = path.replaceAll("&#47;", File.separator).trim();

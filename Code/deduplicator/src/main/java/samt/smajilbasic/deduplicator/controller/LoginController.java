@@ -46,25 +46,25 @@ public class LoginController {
     private AuthenticationDetailsRepository adr;
 
     /**
-     * Il metodo getFiles risponde alla richiesta di qualisasi tipo (GET,POST,PUT,DELETE,...) sull'indirizzo
+     * Il metodo checkLogin risponde alla richiesta di qualisasi tipo (GET,POST,PUT,DELETE,...) sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/login</b>(localhost:8080/login/).
      * 
      * @return il messaggio che l'utente è autenticato, altimenti riceve un messaggio d'errore da Spring.
      */
     @RequestMapping("/")
     public @ResponseBody Message checkLogin() {
-        return new Message(HttpStatus.OK, "User authenticated sucessfuly");
+        return new Message(HttpStatus.OK, "User authenticated successfully");
     }
 
     /**
-     * Il metodo insertUser risponde alla richiesta di tipo PUT sull'indirizzo
+     * Il metodo insert risponde alla richiesta di tipo PUT sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/login/user</b>(localhost:8080/login/user/).
      * @param username il username del utente da inserire, il parametro deve essere nella parte body della richiesta.
      * @param password la password del utente da inserire, il parametro deve essere nella parte body della richiesta.
      * @return L'utente inserito nel database oppure un messaggio d'errore in base al errore riscontrato.
      */
     @PutMapping("/user")
-    public @ResponseBody Object insertUser(@RequestParam String username, @RequestParam String password) {
+    public @ResponseBody Object insert(@RequestParam String username, @RequestParam String password) {
         username = username.trim();
         password = password.trim();
         if (!username.equals("") && username.length() >= USERNAME_LENGTH) {
@@ -98,7 +98,7 @@ public class LoginController {
      * @return L'utente eliminato oppure il messaggio d'errore se l'utente da eliminare non esiste.
      */
     @DeleteMapping("/user")
-    public @ResponseBody Object deleteUser(@RequestParam String username) {
+    public @ResponseBody Object delete(@RequestParam String username) {
         username = username.trim();
 
         if (!adr.existsById(username)) {

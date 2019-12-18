@@ -1,6 +1,5 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import java.util.Timer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.concurrent.ScheduledExecutorTask;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -75,15 +73,6 @@ public class ActionController {
     private AuthenticationDetailsRepository adr;
 
     /**
-     * L'attributo checker controlla se ci sono operazioni da eseguire salvate nella
-     * tabella Scheduler. Usa l'annotazione @Autowired per indicare a spring che
-     * questo parametro dovrà essere creato come Bean e dovrà essere inizializzato
-     * alla creazione della classe.
-     */
-    @Autowired
-    private ScheduleChecker checker;
-
-    /**
      * L'attributo context contiene il contesto dell'applicazione. Viene usato per
      * trovare l'utente attualmente collegato.
      */
@@ -91,18 +80,18 @@ public class ActionController {
     private ApplicationContext context;
 
     /**
-     * Il metodo getActions risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo getAll risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/action/</b>(localhost:8080/action/).
      * 
      * @return tutte le azioni contenute nella tabella Action del database.
      */
     @GetMapping("/")
-    public @ResponseBody Iterable<Action> getActions() {
+    public @ResponseBody Iterable<Action> getAll() {
         return actionRepository.findAll();
     }
 
     /**
-     * Il metodo getActions risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo get risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/action/&lt;id&gt;</b> (localhost:8080/action/8).
      * 
      * @param id l'id del record da ritornare
@@ -110,7 +99,7 @@ public class ActionController {
      *         parametro, altrimenti risponde con un messaggio d'errore.
      */
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object getActions(@PathVariable String id) {
+    public @ResponseBody Object get(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && actionRepository.existsById(intId))
             return actionRepository.findById(intId).get();
@@ -160,7 +149,7 @@ public class ActionController {
      *         riscontrato.
      */
     @PutMapping("/")
-    public @ResponseBody Object addAction(@RequestParam String type, @RequestParam(required = false) String path,
+    public @ResponseBody Object insert(@RequestParam String type, @RequestParam(required = false) String path,
             @RequestParam(required = false) String newPath, String scheduler) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -171,7 +160,7 @@ public class ActionController {
         if (schedulerRepository.existsById(schedulerIdInt)) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Scheduler id invalid");
         }
-        type = getType(type);
+        type = Validator.getActionType(type);
 
         if (type == null) {
             return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Action type invalid");
@@ -196,21 +185,7 @@ public class ActionController {
 
     }
 
-    /**
-     * Il metodo getType serve a identificare il tipo di azione passato come
-     * parametro.
-     * 
-     * @param type la stringa da controllare
-     * @return il tipo con tutte le lettere in maiuscolo oppure null se il tipo
-     *         passato come parametro non è valido.
-     */
-    private String getType(String type) {
-        if (type.equalsIgnoreCase(ActionType.DELETE) || type.equalsIgnoreCase(ActionType.MOVE)
-                || type.equalsIgnoreCase(ActionType.IGNORE) || type.equalsIgnoreCase(ActionType.SCAN))
-            return type.toUpperCase();
-        else
-            return null;
-    }
+    
 
     /**
      * Il metodo deleteAction risponde alla richiesta di tipo DELETE sull'indirizzo

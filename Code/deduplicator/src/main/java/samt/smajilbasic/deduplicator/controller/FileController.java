@@ -48,24 +48,24 @@ public class FileController {
     ReportRepository reportRepository;
 
     /**
-     * Il metodo getFiles risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo getAll risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/file</b>(localhost:8080/file/).
      * 
      * @return tutte i file contenuti nella tabella File del database.
      */
     @GetMapping()
-    public @ResponseBody Iterable<File> getFiles() {
+    public @ResponseBody Iterable<File> getAll() {
         return fileRepository.findAll();
     }
 
     /**
-     * Il metodo getFilesFromReport risponde alla richiesta di tipo GET sull'indirizzo
+     * Il metodo get risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/file/&lt;id&gt;</b> (localhost:8080/file/45).
      * 
      * @return ritorna il file trovato nella tabella File in base al id passato come parametro, se non esiste ritorna un messaggio d'errore.
      */
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object getFilesFromReport(@PathVariable String id) {
+    public @ResponseBody Object get(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && reportRepository.existsById(intId))
             return ((Report)reportRepository.findById(intId).get()).getFile();

@@ -124,7 +124,7 @@ public class ScanController implements ScanListener{
      * Il metodo stop risponde alla richiesta di tipo POST sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scan/stop</b>(localhost:8080/scan/stop).
      * 
-     * Il stop metodo ferma la scansione distrugendo l'attributo currentScan e report.
+     * Il metodo stop interrompe la scansione distrugendo l'attributo currentScan e report.
      * @see #currentScan
      * @see #report
      * @return il rapporto dell'ultima scansione oppure messaggio d'errore se la scansione non è attiva. 
@@ -200,17 +200,16 @@ public class ScanController implements ScanListener{
     @GetMapping("/status")
     public @ResponseBody Object getStatus() {
         int count = report.getFilesScanned() == null ? 0 : report.getFilesScanned();
-
         Message response;
         if(report != null){
             response = new Message(HttpStatus.OK, String.valueOf(count));
         }else{
             response = new Message(HttpStatus.NOT_FOUND, String.valueOf(count));
         }
-        LocalDateTime time = Instant.ofEpochMilli(report.getStart() == null ? 0 : report.getStart()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime time = Instant.ofEpochMilli(report.getStart() == null ? 0 : report.getStart())
+                                    .atZone(ZoneId.systemDefault()).toLocalDateTime();
         response.setTimestamp(time);
         return response;
-
     }
 
     /**

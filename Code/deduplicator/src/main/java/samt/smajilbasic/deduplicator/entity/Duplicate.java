@@ -2,6 +2,7 @@ package samt.smajilbasic.deduplicator.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+
 /**
  * La classe AuthenticationDetails descrive un duplicato.
  * Usa l'annotazione @Entity per segnalare a Spring che si tratta di una classe che dovrà essere creata nel database.

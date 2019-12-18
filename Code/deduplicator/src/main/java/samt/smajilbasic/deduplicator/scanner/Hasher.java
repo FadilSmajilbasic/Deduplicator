@@ -127,7 +127,6 @@ public class Hasher extends Thread {
     public void run() {
 
         Long lastModified = file.lastModified();
-
         try {
             RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
             String hash = getHash(fileRAF, "MD5");
