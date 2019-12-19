@@ -38,7 +38,6 @@ import javax.net.ssl.SSLContext;
  */
 public class Client {
 
-    // private final HttpClient httpClient;
 
     private String username;
 
@@ -61,6 +60,12 @@ public class Client {
         }
     }
 
+    /**
+     * Il costruttore che riceve il username e la password per l'autenticazione basic che verrà utilizzata in tutte le GUI.
+     * Il costruttore tenta di caricare 
+     * @param username il username da impostare.
+     * @param password la password da impostare.
+     */
     public Client(String username, String password) {
         this.username = username;
         this.password = password;
@@ -69,14 +74,17 @@ public class Client {
         try{    
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(in, CA_PASS.toCharArray());
-        }catch(IOException ex){
-            
+        }catch(IOException e){
+            StackTraceElement[] output = e.getStackTrace();
+            for (StackTraceElement element : output) {
+                System.out.println(element.toString());
+            }
         } catch (KeyStoreException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         } catch (CertificateException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         }
 
         HttpComponentsClientHttpRequestFactory requestFactory = null;
@@ -101,8 +109,6 @@ public class Client {
         }
         if (requestFactory != null)
             restTemplate = new RestTemplate(requestFactory);
-        
-
     }
 
     public boolean isAuthenticated(String host, int port) throws RestClientException {
@@ -193,7 +199,6 @@ public class Client {
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
         }
-
         return response;
     }
 
@@ -213,9 +218,6 @@ public class Client {
             for (StackTraceElement stackTraceElement : st) {
                 System.out.println(stackTraceElement.toString());
             }
-
-            System.out.println("path: " + path);
-            
         }
 
         return response;

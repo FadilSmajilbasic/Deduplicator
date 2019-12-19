@@ -10,35 +10,43 @@ import org.json.simple.parser.ParseException;
 import deduplicatorGUI.communication.Client;
 
 /**
- * BaseJPanel
+ * Il JPanel di base che verrà implementato dalle altre schermate.
  */
 public class BaseJPanel extends JPanel{
 
+    /**
+     * Il client per le richieste.
+     * È di tipo {@link Client}. 
+     */
     private Client client;
     JSONParser parser = new JSONParser();
 
     /**
-     * @param client the client to set
+     * @param client il client da impostare.
      */
     public void setClient(Client client) {
         this.client = client;
     }
 
     /**
-     * @return the client
+     * @return l'oggetto client.
      */
     public Client getClient() {
         return client;
     }
 
     /**
-     * Method to be overridden
+     * Methodo che sarà sovrascritto dagli altri panel del progetto.
      */
     public void tabSelected(){
-
     }
 
 
+    /**
+     * Il metodo getArray trasforma un oggetto di tipo JSONArray in JSONObject[].
+     * @param array l'array da trasformare.
+     * @return l'array di JSONObject.
+     */
     public JSONObject[] getArray(JSONArray array) {
 
         Object[] objectArray = (Object[]) array.toArray();

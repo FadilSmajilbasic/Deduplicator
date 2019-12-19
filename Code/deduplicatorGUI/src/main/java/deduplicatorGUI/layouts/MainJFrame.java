@@ -16,11 +16,6 @@ import deduplicatorGUI.listeners.UserConnectedListener;
 public class MainJFrame extends JFrame implements UserConnectedListener, ChangeListener {
 
     /**
-     *
-     */
-    private static final long serialVersionUID = 1L;
-
-    /**
      * Creates new form MainJFrame
      */
     public MainJFrame() {
@@ -73,6 +68,10 @@ public class MainJFrame extends JFrame implements UserConnectedListener, ChangeL
 
     private JTabbedPane menu;
 
+    /**
+     * Il metodo userConnected viene chiamato quando l'utente inserisce delle credenziali giuste enlla schermata Login.
+     * Questo metodo abilita la selezione e uso delle altre schermate e gli imposta anche il client da usare per la comunicazione.
+     */
     @Override
     public void userConnected(Client client) {
         changeTabsAccessibility(menu, true);

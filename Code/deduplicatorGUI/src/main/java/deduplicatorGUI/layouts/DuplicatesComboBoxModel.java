@@ -17,9 +17,7 @@ public class DuplicatesComboBoxModel extends DefaultComboBoxModel {
         return array.length;
     }
 
-    public String getElementAt(int i) {
-        return "Id: " + i + " Count: " + array[i].get("count").toString() + " Size: " + getSize(Double.valueOf(array[i].get("size").toString()));
-    }
+   
 
     public String getHash(int i) {
         return array[i].get("hash").toString();
@@ -30,10 +28,12 @@ public class DuplicatesComboBoxModel extends DefaultComboBoxModel {
         this.array = array;
     }
 
+    public String getElementAt(int i) {
+        return "Id: " + i + " Count: " + array[i].get("count").toString() + " Size: " + getSize(Double.valueOf(array[i].get("size").toString()));
+    }
     private String getSize(Double sizeDouble) {
         String size = "";
         DecimalFormat formatter = new DecimalFormat("0.0##");
-
         if (sizeDouble > 1073741824.0)
             size = formatter.format(sizeDouble / 1073741824.0) + " GB";
         else if (sizeDouble > 1048576.0)
@@ -46,3 +46,4 @@ public class DuplicatesComboBoxModel extends DefaultComboBoxModel {
         return size;
     }
 }
+
