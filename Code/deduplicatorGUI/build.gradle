@@ -5,7 +5,7 @@ plugins {
 }
 
 sourceCompatibility = '11'
-
+version = '0.0.1'
 mainClassName = 'deduplicatorGUI.DeduplicatorGUI'
 
 repositories {
