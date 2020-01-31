@@ -1,4 +1,4 @@
-package samt.smajilbasic.deduplicator.worker;
+package samt.smajilbasic.deduplicator.actions;
 
 import java.io.IOException;
 import java.nio.file.Files;
