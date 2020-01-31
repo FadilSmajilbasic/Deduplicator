@@ -45,7 +45,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
          .httpBasic()  //abilita autenticazione basic
          .and()
          .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint) // definizione punto d'entrata in caso che l'utente non è autenticato
-         .and().requiresChannel().anyRequest().requiresSecure(); // richiesta utilizzo protocollo sicuro (TSL) per ogni tipo di
+         ;//.and().requiresChannel().anyRequest().requiresSecure(); // richiesta utilizzo protocollo sicuro (TSL) per ogni tipo di
     }
  
     /**
