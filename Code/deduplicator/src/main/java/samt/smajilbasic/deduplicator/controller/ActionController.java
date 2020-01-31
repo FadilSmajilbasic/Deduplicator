@@ -31,7 +31,7 @@ import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
-import samt.smajilbasic.deduplicator.worker.ActionsManager;
+import samt.smajilbasic.deduplicator.actions.ActionsManager;
 
 /**
  * ActionController si occupa di gestire le richieste in entrata che hanno come

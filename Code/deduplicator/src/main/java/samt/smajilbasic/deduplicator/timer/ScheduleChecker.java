@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
-import samt.smajilbasic.deduplicator.worker.ActionsManager;
+import samt.smajilbasic.deduplicator.actions.ActionsManager;
 
 /**
  * La classe ScheduleChecker controlla i scheduler inseriti nel database e se
