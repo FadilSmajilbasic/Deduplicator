@@ -30,8 +30,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     /**
      * L'attributo fileRepository serve al controller per interfacciarsi con la
-     * tabella File del database. Usa l'annotazione @{@link Autowired} per indicare a
-     * spring che questo parametro dovrà essere creato come Bean e dovrà essere
+     * tabella File del database. Usa l'annotazione @{@link Autowired} per indicare
+     * a spring che questo parametro dovrà essere creato come Bean e dovrà essere
      * inizializzato alla creazione della classe.
      */
     @Autowired
@@ -39,17 +39,18 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     /**
      * L'attributo gpr serve al controller per interfacciarsi con la tabella
-     * GlobalPath del database. Usa l'annotazione @{@link Autowired}4 per indicare a spring
-     * che questo parametro dovrà essere creato come Bean e dovrà essere
+     * GlobalPath del database. Usa l'annotazione @{@link Autowired}4 per indicare a
+     * spring che questo parametro dovrà essere creato come Bean e dovrà essere
      * inizializzato alla creazione della classe.
      */
     @Autowired
     GlobalPathRepository gpr;
 
     /**
-     * L'attributo paths contiene tutti i percorsi che si trovano nel database GlobalPath.
+     * L'attributo paths contiene tutti i percorsi che si trovano nel database
+     * GlobalPath.
      */
-    private Iterator<GlobalPath> paths;
+    private List<String> paths = new ArrayList<String>();
 
     /**
      * L'attributo reportRepository serve al controller per interfacciarsi con la
@@ -58,7 +59,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     private ReportRepository reportRepository;
 
     /**
-     * L'attributo reportId contiene l'id del rapporto al quale verranno aggiunti i file trovati.
+     * L'attributo reportId contiene l'id del rapporto al quale verranno aggiunti i
+     * file trovati.
      */
     private Integer reportId;
 
@@ -68,17 +70,14 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     private Integer filesScanned = 0;
 
     /**
-     * L'attributo rootThreads contiene la lista di thread che dovranno essere scanerizzate.
-     */
-    private List<ScannerThread> rootThreads = new ArrayList<ScannerThread>();
-
-    /**
-     * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che possono essere eseguite contemporaneamente.
+     * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che
+     * possono essere eseguite contemporaneamente.
      */
     private static final Integer DEFAULT_THREAD_COUNT = 10;
 
     /**
-     * L'attributo threadCount contiene il numero di thread che possono essere eseguite contemporaneamente impo
+     * L'attributo threadCount contiene il numero di thread che possono essere
+     * eseguite contemporaneamente impo
      */
     private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
@@ -89,6 +88,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     private boolean paused = false;
 
     private ScanListener listener;
+    private FilesScanner scanner;
 
     /**
      * Default timeout for the scanning thread pool given in seconds
@@ -114,42 +114,51 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         pool = Executors.newFixedThreadPool(threadCount);
         report = getReport();
 
-        paths = gpr.findAll().iterator();
+        gpr.findAll().iterator().forEachRemaining(path -> {
+            paths.add(path.getPath());
+        });
 
         List<GlobalPath> ignorePathsFromRepository = gpr.findIgnored();
 
         List<String> ignorePaths = new ArrayList<>();
-        List<String> ignores = new ArrayList<>();
+        List<String> ignoreFiles = new ArrayList<>();
 
         for (GlobalPath ignorePath : ignorePathsFromRepository) {
             if (ignorePath.isFile())
-                ignores.add(ignorePath.getPath());
+                ignoreFiles.add(ignorePath.getPath());
             else
                 ignorePaths.add(ignorePath.getPath());
         }
 
         try {
-            while (paths.hasNext()) {
-                ScannerThread thread = new ScannerThread(Paths.get(paths.next().getPath()), this, report,
-                        fileRepository, ignorePaths, ignores, monitor);
-                rootThreads.add(thread);
+
+            scanner = new FilesScanner(paths, ignorePaths, ignoreFiles, monitor);
+
+            scanner.start();
+            System.out.println("Started scanner wait");
+            scanner.wait(); //TODO: synchronize
+            System.out.println("Ended scanner wait ");
+
+            for (int i = 0; i < DEFAULT_THREAD_COUNT; i++) {
+                ScannerWorker thread = new ScannerWorker(scanner, fileRepository, monitor, report);
                 pool.execute(thread);
             }
-
+            System.out.println("Finished starting workers");
             pool.shutdown();
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
             pool.shutdownNow();
         } finally {
+            System.out.println("started saving");
             pool.shutdownNow();
 
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
             report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
             report.setDuration((System.currentTimeMillis() - report.getStart()));
-            reportRepository.save(report);
-
+            //reportRepository.save(report);
+            //TODO: check saving
             System.out.println("[INFO] Scan manager Finished");
             if (listener != null)
                 listener.scanFinished();
@@ -166,12 +175,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     public void pauseAll() {
         if (!paused)
             paused = true;
-        rootThreads.forEach(rootThread -> rootThread.pause());
+
+        scanner.setPaused(true);
     }
 
     public void resumeAll() {
         paused = false;
-        rootThreads.forEach(rootThread -> rootThread.resumeScan());
+        scanner.setPaused(false);
         synchronized (monitor) {
             monitor.notifyAll();
         }
@@ -179,7 +189,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
     public void stopScan() {
         pool.shutdownNow();
-        rootThreads.forEach(rootThread -> rootThread.stopScan());
+        scanner.interrupt();
     }
 
     /**
@@ -252,7 +262,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     /**
      * @return the paths
      */
-    public Iterator<GlobalPath> getPaths() {
+    public List<String> getPaths() {
         return paths;
     }
 
