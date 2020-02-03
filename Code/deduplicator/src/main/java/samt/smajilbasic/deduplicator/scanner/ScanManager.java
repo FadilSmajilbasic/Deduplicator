@@ -24,7 +24,7 @@ import samt.smajilbasic.deduplicator.repository.ReportRepository;
  * l'annotazione @{@link Autowired}.
  */
 @Component
-public class ScanManager extends Thread implements ScannerThreadListener {
+public class ScanManager extends Thread {
 
     /**
      * L'attributo fileRepository serve al controller per interfacciarsi con la
@@ -65,7 +65,7 @@ public class ScanManager extends Thread implements ScannerThreadListener {
     /**
      * L'attributo filesScanned contiene il numero di files scansionati.
      */
-    private Integer filesScanned = 0;
+    private Integer totalFiles = 0;
 
     /**
      * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che
@@ -130,14 +130,15 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
         try {
 
-            scanner = new FilesScanner(paths, ignorePaths, ignoreFiles, monitor);
+            scanner = new FilesScanner(paths, ignorePaths, ignoreFiles);
 
             scanner.start();
             synchronized (scanner) {
                 scanner.wait();
             }
-            filesScanned = scanner.getSize();
-            while(scanner.hasNext()) {
+            
+            totalFiles = scanner.getSize();
+            while (scanner.hasNext()) {
                 ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, monitor, report);
                 pool.execute(thread);
             }
@@ -146,30 +147,34 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             Thread status = new Thread() {
 
                 private float num;
+
                 @Override
                 public void run() {
                     try {
                         while (!isInterrupted()) {
-                            
+
                             System.out.print("\rProgress: " + calcuateProgress() + "%");
                             synchronized (this) {
                                 this.wait(200);
                             }
                         }
                     } catch (InterruptedException ie) {
-                            System.out.print("\rProgress: " + calcuateProgress() + "%\n");
+                        System.out.print("\rProgress: " + calcuateProgress() + "%\n");
                     }
 
-                    
                 }
-                private String calcuateProgress(){
-                    filesScanned = scanner.getSize();
-                    System.out.println("buffer size:" + filesScanned);
-                    num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
-                    / (float) filesScanned)) * (float) 100;
+
+                private String calcuateProgress() {
+                    if (totalFiles != 0) {
+                        num = (1f - (((float) totalFiles - (float) fileRepository.findByReport(report))
+                                / (float) totalFiles)) * (float) 100;
+                    } else {
+                        num = -1;
+                    }
                     return String.format(java.util.Locale.getDefault(), "%.2f", num);
                 }
             };
+
             status.start();
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
             status.interrupt();
@@ -180,8 +185,15 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             pool.shutdownNow();
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
-            report.setAverageDuplicateCount(((float) duplicates.size() / (float) filesScanned));
+            totalFiles = fileRepository.findByReport(report);
+
+            if (totalFiles == 0) {
+                report.setAverageDuplicateCount(0f);
+            } else {
+                report.setAverageDuplicateCount(((float) duplicates.size() / (float) totalFiles));
+            }
             report.setDuration((System.currentTimeMillis() - report.getStart()));
+            report.setFilesScanned(totalFiles);
             reportRepository.save(report);
             System.out.println("[INFO] Scan manager Finished");
             if (listener != null)
@@ -189,23 +201,13 @@ public class ScanManager extends Thread implements ScannerThreadListener {
         }
     }
 
-    @Override
-    public synchronized void addFilesScanned(int num) {
-        filesScanned += num;
-        report.setFilesScanned(filesScanned);
-        reportRepository.save(report);
-    }
-
     public void pauseAll() {
         if (!paused)
             paused = true;
-
-        scanner.setPaused(true);
     }
 
     public void resumeAll() {
         paused = false;
-        scanner.setPaused(false);
         synchronized (monitor) {
             monitor.notifyAll();
         }
