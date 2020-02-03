@@ -13,15 +13,10 @@ public class FilesScanner extends Thread {
     private List<String> paths;
     private List<String> ignorePaths;
     private LinkedList<String> scanPaths;
-    private Object monitor;
-    private boolean paused;
 
-    public FilesScanner(List<String> paths, List<String> ignorePaths, List<String> ignoreFiles, Object monitor) {
+    public FilesScanner(List<String> paths, List<String> ignorePaths, List<String> ignoreFiles) {
         super();
-        // this.report = report;
-        this.monitor = monitor;
         this.ignorePaths = ignorePaths;
-        this.monitor = monitor;
         this.paths = paths;
         this.scanPaths = new LinkedList<String>();
     }
@@ -29,60 +24,42 @@ public class FilesScanner extends Thread {
     @Override
     public void run() {
 
-        Iterator<String> pathsIterator = paths.iterator();
+        LinkedList<String> tempList = new LinkedList<>();
 
-        while (pathsIterator.hasNext()) {
-            String path = pathsIterator.next();
-            for (String ignorePath : ignorePaths) {
-                if (path.contains(ignorePath)) {
-                    pathsIterator.remove();
-                    System.out.println("Path to ignore:" + path);
-                }
-            }
+        for (String string : paths) {
+            System.out.println("Path: " + string);
         }
 
-        LinkedList<String> tempList = new LinkedList<>();
-        pathsIterator.forEachRemaining(path -> {
-            tempList.add(path);
-        });
-
-        boolean notified = false;
-
+        for (String string : tempList) {
+            System.out.println("Path: " + string);
+        }
+        boolean add = true;
         long start = System.currentTimeMillis();
+
         while (tempList.peek() != null) {
             String path = tempList.poll();
             File file = new File(path);
             if (file.isFile()) {
-                scanPaths.add(path);
+                add = true;
+                for (String ignorePath : ignorePaths) {
+                    if (path.startsWith(ignorePath)) {
+                        add = false;
+                    }
+                }
+                if (add) {
+                    scanPaths.add(path);
+                }
             } else {
                 for (File internalFile : file.listFiles()) {
                     tempList.addLast(internalFile.getAbsolutePath());
                 }
-                ;
-            }
-            if (!notified) {
-                synchronized (this) {
-                    this.notifyAll();
-                }
-                notified = true;
             }
         }
         System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) + "ms");
         System.out.println("Found " + scanPaths.size() + "files");
 
-    }
-
-    public synchronized void checkPaused() {
-        synchronized (monitor) {
-            while (isPaused()) {
-                try {
-                    monitor.wait();
-                    System.out.println("[INFO] Thread resumed");
-                } catch (InterruptedException e) {
-                    System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace().toString());
-                }
-                System.out.println("Wait ended");
-            }
+        synchronized (this) {
+            this.notifyAll();
         }
 
     }
@@ -93,14 +70,6 @@ public class FilesScanner extends Thread {
 
     public synchronized boolean hasNext() {
         return (scanPaths.peek() != null);
-    }
-
-    public synchronized boolean isPaused() {
-        return paused;
-    }
-
-    public synchronized void setPaused(boolean paused) {
-        this.paused = paused;
     }
 
     public synchronized int getSize() {
