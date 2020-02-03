@@ -136,7 +136,10 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
             scanner.start();
             System.out.println("Started scanner wait");
-            scanner.wait(); //TODO: synchronize
+            synchronized (scanner) {
+                scanner.wait();
+                filesScanned = scanner.getSize();
+            }
             System.out.println("Ended scanner wait ");
 
             for (int i = 0; i < DEFAULT_THREAD_COUNT; i++) {

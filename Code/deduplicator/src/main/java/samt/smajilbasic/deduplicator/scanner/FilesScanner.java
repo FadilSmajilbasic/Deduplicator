@@ -98,4 +98,8 @@ public class FilesScanner extends Thread {
         this.paused = paused;
     }
 
+    public synchronized int getSize(){
+        return scanPaths.size();
+    }
+
 }
