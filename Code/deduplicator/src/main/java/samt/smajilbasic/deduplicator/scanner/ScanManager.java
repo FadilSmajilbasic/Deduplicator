@@ -1,8 +1,6 @@
 package samt.smajilbasic.deduplicator.scanner;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -137,9 +135,8 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             scanner.start();
             synchronized (scanner) {
                 scanner.wait();
-                filesScanned = scanner.getSize();
             }
-
+            filesScanned = scanner.getSize();
             while(scanner.hasNext()) {
                 ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, monitor, report);
                 pool.execute(thread);
@@ -148,25 +145,29 @@ public class ScanManager extends Thread implements ScannerThreadListener {
 
             Thread status = new Thread() {
 
+                private float num;
                 @Override
                 public void run() {
                     try {
                         while (!isInterrupted()) {
-                            float num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
-                                    / (float) filesScanned)) * (float) 100;
-                            String formatted = String.format(java.util.Locale.FRANCE, "%.2f", num);
-                            System.out.print("\rCompleted: " + formatted + "%");
-
+                            
+                            System.out.print("\rProgress: " + calcuateProgress() + "%");
                             synchronized (this) {
                                 this.wait(200);
                             }
                         }
                     } catch (InterruptedException ie) {
-                        float num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
-                                    / (float) filesScanned)) * (float) 100;
-                            String formatted = String.format(java.util.Locale.FRANCE, "%.2f", num);
-                            System.out.print("\rCompleted: " + formatted + "%");
+                            System.out.print("\rProgress: " + calcuateProgress() + "%\n");
                     }
+
+                    
+                }
+                private String calcuateProgress(){
+                    filesScanned = scanner.getSize();
+                    System.out.println("buffer size:" + filesScanned);
+                    num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
+                    / (float) filesScanned)) * (float) 100;
+                    return String.format(java.util.Locale.getDefault(), "%.2f", num);
                 }
             };
             status.start();
