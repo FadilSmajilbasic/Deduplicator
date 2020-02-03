@@ -2,13 +2,19 @@ package samt.smajilbasic.deduplicator.controller;
 
 import samt.smajilbasic.deduplicator.exception.Message;
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -95,16 +101,15 @@ public class PathController {
         path = path.replaceAll("&#47;", File.separator).trim();
         try {
             Path p = Paths.get(path);
-            System.out.println("Path to add:"  + p.toUri());
 
-            if(Files.isDirectory(p) && path.charAt(path.length()-1)!=File.separatorChar){
-                    path += File.separator;
+            if (Files.isDirectory(p) && path.charAt(path.length() - 1) != File.separatorChar) {
+                path += File.separator;
             }
-            
-            if (!gpr.existsById(p.toAbsolutePath().toString())) {
-                if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
+
+            if (!gpr.existsById(path)) {
+                if (Validator.getPathType(path) != PathType.Invalid) {
                     if (Files.isReadable(p)) {
-                        gpr.save(new GlobalPath(p.toAbsolutePath().toString(), (ignorePath.equals("true"))));
+                        gpr.save(new GlobalPath(path, (ignorePath.equals("true"))));
                         return get(path);
                     } else {
                         return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
@@ -134,6 +139,12 @@ public class PathController {
 
         PathType type = Validator.getPathType(path);
         path = path.replaceAll("&#47;", File.separator).trim();
+
+        Path p = Paths.get(path);
+
+        if (Files.isDirectory(p) && path.charAt(path.length() - 1) != File.separatorChar) {
+            path += File.separator;
+        }
 
         if (gpr.existsById(path) && type != PathType.Invalid) {
             GlobalPath entry = gpr.findById(path).get();
