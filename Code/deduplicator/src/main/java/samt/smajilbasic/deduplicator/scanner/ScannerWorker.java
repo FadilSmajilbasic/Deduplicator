@@ -20,20 +20,16 @@ public class ScannerWorker extends Thread {
     private Report report;
     private FileRepository fileRepository;
 
-
     private Boolean paused = false;
     Object monitor;
-    private FilesScanner scanner;
+    File file;
     private final static int BUFFER_SIZE = 32768;
-    /**
-     * Default timeout for the scanning thread pool given in seconds
-     */
 
-    public ScannerWorker(FilesScanner scanner, FileRepository fileRepository, Object monitor, Report report) {
+    public ScannerWorker(File file, FileRepository fileRepository, Object monitor, Report report) {
         this.report = report;
         this.fileRepository = fileRepository;
         this.monitor = monitor;
-        this.scanner = scanner;
+        this.file = file;
     }
 
     public synchronized void checkPaused() {
@@ -53,37 +49,31 @@ public class ScannerWorker extends Thread {
 
     @Override
     public void run() {
-        synchronized (scanner) {
-             while(scanner.hasNext() && !scanner.isAlive()){
-            
-                File file = scanner.getNextFile();
-                if (file.isFile()) {
 
-                    Long lastModified = file.lastModified();
-                    try {
-                        RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
-                        String hash = getHash(fileRAF, "MD5");
-                        long size = fileRAF.length();
+        if (file.isFile()) {
 
-                        fileRAF.close();
+            try {
+                RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
+                String hash = getHash(fileRAF, "MD5");
+                long size = fileRAF.length();
+                Long lastModified = file.lastModified();
+                fileRAF.close();
 
-                        samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
-                                file.getAbsolutePath(), lastModified, hash, size, report);
-                        fileRepository.save(record);
+                samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
+                        file.getAbsolutePath(), lastModified, hash, size, report);
+                fileRepository.save(record);
 
-                    } catch (NoSuchAlgorithmException nsae) {
-                        System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
-                    } catch (IOException ioe) {
-                        System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
-                    } catch (NullPointerException npe) {
-                        System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
-                    }
-                }
-                System.out.println("Scanning finished: " + file.getAbsolutePath());
+            } catch (NoSuchAlgorithmException nsae) {
+                System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
+            } catch (IOException ioe) {
+                System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
+            } catch (NullPointerException npe) {
+                System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
             }
-            
+        } else {
+            System.err.println("[ERROR] file is not file: " + file.getAbsolutePath());
         }
-        System.out.println("Thread finished");
+        System.out.println("Scanning finished: " + file.getAbsolutePath());
     }
 
     /**
