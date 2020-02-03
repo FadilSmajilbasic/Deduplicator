@@ -1,14 +1,9 @@
 package samt.smajilbasic.deduplicator.scanner;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
-import samt.smajilbasic.deduplicator.entity.GlobalPath;
 
 /**
  * FilesScanner
@@ -33,37 +28,47 @@ public class FilesScanner extends Thread {
 
     @Override
     public void run() {
-        for (String path : paths) {
 
+        Iterator<String> pathsIterator = paths.iterator();
+
+        while (pathsIterator.hasNext()) {
+            String path = pathsIterator.next();
             for (String ignorePath : ignorePaths) {
                 if (path.contains(ignorePath)) {
-                    paths.remove(path);
-                } else {
+                    pathsIterator.remove();
                     System.out.println("Path to ignore:" + path);
                 }
             }
         }
 
         LinkedList<String> tempList = new LinkedList<>();
-        paths.forEach(path->{tempList.add(path);});
+        pathsIterator.forEachRemaining(path -> {
+            tempList.add(path);
+        });
+
+        boolean notified = false;
 
         long start = System.currentTimeMillis();
-        while(tempList.peek()!= null) {
+        while (tempList.peek() != null) {
             String path = tempList.poll();
             File file = new File(path);
             if (file.isFile()) {
                 scanPaths.add(path);
             } else {
-                for (File internalFile : file.listFiles()) { //TODO: check if it works
+                for (File internalFile : file.listFiles()) {
                     tempList.addLast(internalFile.getAbsolutePath());
-                };
+                }
+                ;
+            }
+            if (!notified) {
+                synchronized (this) {
+                    this.notifyAll();
+                }
+                notified = true;
             }
         }
-        System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) +"ms");
+        System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) + "ms");
         System.out.println("Found " + scanPaths.size() + "files");
-        synchronized(this){
-            this.notifyAll();
-        }
 
     }
 
@@ -98,7 +103,8 @@ public class FilesScanner extends Thread {
         this.paused = paused;
     }
 
-    public synchronized int getSize(){
+    public synchronized int getSize() {
+        System.out.println("[INFO]Size requested" + scanPaths.size());
         return scanPaths.size();
     }
 

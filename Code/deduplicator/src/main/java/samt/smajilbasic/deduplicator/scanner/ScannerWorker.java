@@ -73,7 +73,7 @@ public class ScannerWorker extends Thread {
         } else {
             System.err.println("[ERROR] file is not file: " + file.getAbsolutePath());
         }
-        System.out.println("Scanning finished: " + file.getAbsolutePath());
+        // System.out.println("Scanning finished: " + file.getAbsolutePath());
     }
 
     /**
