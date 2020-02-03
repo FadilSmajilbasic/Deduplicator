@@ -44,14 +44,10 @@ public class FilesScanner extends Thread {
             }
         }
 
-        synchronized(this){
-            this.notifyAll();
-        }
-
         LinkedList<String> tempList = new LinkedList<>();
-
         paths.forEach(path->{tempList.add(path);});
 
+        long start = System.currentTimeMillis();
         while(tempList.peek()!= null) {
             String path = tempList.poll();
             File file = new File(path);
@@ -63,7 +59,11 @@ public class FilesScanner extends Thread {
                 };
             }
         }
-        System.out.println("File scanner finisheddd");
+        System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) +"ms");
+        System.out.println("Found " + scanPaths.size() + "files");
+        synchronized(this){
+            this.notifyAll();
+        }
 
     }
 
