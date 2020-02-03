@@ -64,16 +64,15 @@ public class ScannerWorker extends Thread {
                 fileRepository.save(record);
 
             } catch (NoSuchAlgorithmException nsae) {
-                System.err.println("[ERROR] Unable to hash file: " + nsae.getMessage());
+                System.err.println("[ERROR] Thread "+this.getName()+" Unable to hash file: " + nsae.getMessage());
             } catch (IOException ioe) {
-                System.err.println("[ERROR] Unable to read file: " + ioe.getMessage());
+                System.err.println("[ERROR] Thread "+this.getName()+" Unable to read file: " + ioe.getMessage());
             } catch (NullPointerException npe) {
-                System.err.println("[ERROR] Unable to save file: " + npe.getMessage());
+                System.err.println("[ERROR] Thread "+this.getName()+" Unable to save file: " + npe.getMessage());
             }
         } else {
-            System.err.println("[ERROR] file is not file: " + file.getAbsolutePath());
+            System.err.println("[ERROR] Thread "+this.getName()+" Path set is not file: " + file.getAbsolutePath());
         }
-        // System.out.println("Scanning finished: " + file.getAbsolutePath());
     }
 
     /**
