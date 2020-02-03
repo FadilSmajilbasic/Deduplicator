@@ -1,7 +1,6 @@
 package samt.smajilbasic.deduplicator.scanner;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,25 +23,20 @@ public class FilesScanner extends Thread {
     @Override
     public void run() {
 
-        LinkedList<String> tempList = new LinkedList<>();
+        LinkedList<String> pathsLinkedList = new LinkedList<>();
 
-        for (String string : paths) {
-            System.out.println("Path: " + string);
-        }
+        paths.iterator().forEachRemaining(pathsLinkedList::add);
 
-        for (String string : tempList) {
-            System.out.println("Path: " + string);
-        }
         boolean add = true;
         long start = System.currentTimeMillis();
 
-        while (tempList.peek() != null) {
-            String path = tempList.poll();
+        while (pathsLinkedList.peek() != null) {
+            String path = pathsLinkedList.poll();
             File file = new File(path);
             if (file.isFile()) {
                 add = true;
                 for (String ignorePath : ignorePaths) {
-                    if (path.startsWith(ignorePath)) {
+                    if (path.startsWith(ignorePath) || path.equals(ignorePath)) {
                         add = false;
                     }
                 }
@@ -51,12 +45,12 @@ public class FilesScanner extends Thread {
                 }
             } else {
                 for (File internalFile : file.listFiles()) {
-                    tempList.addLast(internalFile.getAbsolutePath());
+                    pathsLinkedList.addLast(internalFile.getAbsolutePath());
                 }
             }
         }
         System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) + "ms");
-        System.out.println("Found " + scanPaths.size() + "files");
+        System.out.println("Found " + scanPaths.size() + " files");
 
         synchronized (this) {
             this.notifyAll();
@@ -73,7 +67,6 @@ public class FilesScanner extends Thread {
     }
 
     public synchronized int getSize() {
-        System.out.println("[INFO]Size requested" + scanPaths.size());
         return scanPaths.size();
     }
 
