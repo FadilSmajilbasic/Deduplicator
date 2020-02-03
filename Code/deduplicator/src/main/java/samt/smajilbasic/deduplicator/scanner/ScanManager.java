@@ -67,6 +67,10 @@ public class ScanManager extends Thread {
      */
     private Integer totalFiles = 0;
 
+    public float scanProgress = 0;
+
+    private List<ScannerWorker> threads = new ArrayList<ScannerWorker>();
+
     /**
      * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che
      * possono essere eseguite contemporaneamente.
@@ -80,6 +84,8 @@ public class ScanManager extends Thread {
     private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
     private ExecutorService pool;
+
+    private final long POLLING_DELAY = 100;
 
     private Report report;
 
@@ -136,8 +142,9 @@ public class ScanManager extends Thread {
             synchronized (scanner) {
                 scanner.wait();
             }
-            
+
             totalFiles = scanner.getSize();
+
             while (scanner.hasNext()) {
                 ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, monitor, report);
                 pool.execute(thread);
@@ -146,8 +153,6 @@ public class ScanManager extends Thread {
 
             Thread status = new Thread() {
 
-                private float num;
-
                 @Override
                 public void run() {
                     try {
@@ -155,28 +160,18 @@ public class ScanManager extends Thread {
 
                             System.out.print("\rProgress: " + calcuateProgress() + "%");
                             synchronized (this) {
-                                this.wait(200);
+                                this.wait(POLLING_DELAY);
                             }
                         }
                     } catch (InterruptedException ie) {
+                    } finally {
                         System.out.print("\rProgress: " + calcuateProgress() + "%\n");
                     }
-
-                }
-
-                private String calcuateProgress() {
-                    if (totalFiles != 0) {
-                        num = (1f - (((float) totalFiles - (float) fileRepository.findByReport(report))
-                                / (float) totalFiles)) * (float) 100;
-                    } else {
-                        num = -1;
-                    }
-                    return String.format(java.util.Locale.getDefault(), "%.2f", num);
                 }
             };
-
             status.start();
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
+
             status.interrupt();
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
@@ -185,6 +180,9 @@ public class ScanManager extends Thread {
             pool.shutdownNow();
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
+            System.out.println("test: " + scanProgress);
+            System.out.println("files: " + totalFiles + "scanned: " + fileRepository.findByReport(report));
+
             totalFiles = fileRepository.findByReport(report);
 
             if (totalFiles == 0) {
@@ -192,6 +190,7 @@ public class ScanManager extends Thread {
             } else {
                 report.setAverageDuplicateCount(((float) duplicates.size() / (float) totalFiles));
             }
+
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             report.setFilesScanned(totalFiles);
             reportRepository.save(report);
@@ -201,13 +200,30 @@ public class ScanManager extends Thread {
         }
     }
 
+    private String calcuateProgress() {
+        if (totalFiles != 0) {
+            scanProgress = (1f
+                    - (((float) totalFiles - (float) fileRepository.findByReport(report)) / (float) totalFiles));
+        } else {
+            scanProgress = -1;
+        }
+        return String.format(java.util.Locale.getDefault(), "%.2f", scanProgress * 100f);
+    }
+
     public void pauseAll() {
-        if (!paused)
+        if (!paused) {
             paused = true;
+            System.out.println("pause invoked");
+            threads.forEach(thread -> {
+                thread.pause();
+            });
+
+        }
     }
 
     public void resumeAll() {
         paused = false;
+
         synchronized (monitor) {
             monitor.notifyAll();
         }
@@ -216,6 +232,11 @@ public class ScanManager extends Thread {
     public void stopScan() {
         pool.shutdownNow();
         scanner.interrupt();
+        threads.forEach(thread -> {
+            if (!thread.isInterrupted()) {
+                thread.interrupt();
+            }
+        });
     }
 
     /**
