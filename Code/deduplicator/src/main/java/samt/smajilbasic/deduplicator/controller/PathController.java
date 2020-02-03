@@ -1,6 +1,6 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import samt.smajilbasic.deduplicator.exception.*;
+import samt.smajilbasic.deduplicator.exception.Message;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -95,7 +95,12 @@ public class PathController {
         path = path.replaceAll("&#47;", File.separator).trim();
         try {
             Path p = Paths.get(path);
+            System.out.println("Path to add:"  + p.toUri());
 
+            if(Files.isDirectory(p) && path.charAt(path.length()-1)!=File.separatorChar){
+                    path += File.separator;
+            }
+            
             if (!gpr.existsById(p.toAbsolutePath().toString())) {
                 if (Validator.getPathType(p.toAbsolutePath().toString()) != PathType.Invalid) {
                     if (Files.isReadable(p)) {
