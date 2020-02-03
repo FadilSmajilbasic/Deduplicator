@@ -135,33 +135,53 @@ public class ScanManager extends Thread implements ScannerThreadListener {
             scanner = new FilesScanner(paths, ignorePaths, ignoreFiles, monitor);
 
             scanner.start();
-            System.out.println("Started scanner wait");
             synchronized (scanner) {
                 scanner.wait();
                 filesScanned = scanner.getSize();
             }
-            System.out.println("Ended scanner wait ");
 
-            for (int i = 0; i < DEFAULT_THREAD_COUNT; i++) {
-                ScannerWorker thread = new ScannerWorker(scanner, fileRepository, monitor, report);
+            while(scanner.hasNext()) {
+                ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, monitor, report);
                 pool.execute(thread);
             }
-            System.out.println("Finished starting workers");
             pool.shutdown();
+
+            Thread status = new Thread() {
+
+                @Override
+                public void run() {
+                    try {
+                        while (!isInterrupted()) {
+                            float num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
+                                    / (float) filesScanned)) * (float) 100;
+                            String formatted = String.format(java.util.Locale.FRANCE, "%.2f", num);
+                            System.out.print("\rCompleted: " + formatted + "%");
+
+                            synchronized (this) {
+                                this.wait(200);
+                            }
+                        }
+                    } catch (InterruptedException ie) {
+                        float num = (1f - (((float) filesScanned - (float) fileRepository.findByReport(report))
+                                    / (float) filesScanned)) * (float) 100;
+                            String formatted = String.format(java.util.Locale.FRANCE, "%.2f", num);
+                            System.out.print("\rCompleted: " + formatted + "%");
+                    }
+                }
+            };
+            status.start();
             pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
+            status.interrupt();
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
             pool.shutdownNow();
         } finally {
-            System.out.println("started saving");
             pool.shutdownNow();
-
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
-            report.setAverageDuplicateCount((float) duplicates.size() / (float) filesScanned);
+            report.setAverageDuplicateCount(((float) duplicates.size() / (float) filesScanned));
             report.setDuration((System.currentTimeMillis() - report.getStart()));
-            //reportRepository.save(report);
-            //TODO: check saving
+            reportRepository.save(report);
             System.out.println("[INFO] Scan manager Finished");
             if (listener != null)
                 listener.scanFinished();

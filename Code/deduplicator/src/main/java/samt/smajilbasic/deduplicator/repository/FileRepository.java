@@ -21,4 +21,8 @@ public interface FileRepository extends CrudRepository<File,String>{
 
     @Query(value = "SELECT if(EXISTS(SELECT * from file WHERE hash=?1)>0,'true','false')",nativeQuery = true)
     boolean existsByHash(String hash);
+
+
+    @Query( value =  "SELECT count(*) FROM file f where f.report=?1 ",nativeQuery = true)
+	int findByReport(Report report);
 }
