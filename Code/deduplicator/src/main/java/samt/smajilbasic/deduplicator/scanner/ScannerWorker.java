@@ -37,11 +37,10 @@ public class ScannerWorker extends Thread {
             while (isPaused()) {
                 try {
                     monitor.wait();
-                    System.out.println("[INFO] Thread resumed");
+                    System.out.println("[INFO] Thread " + this.getName() + " Thread resumed");
                 } catch (InterruptedException e) {
-                    System.out.println("[INFO] Interrupted exception on pause: " + e.getStackTrace().toString());
+                    System.out.println("[INFO] Thread " + this.getName() + " Interrupted exception on pause: " + e.getStackTrace().toString());
                 }
-                System.out.println("Wait ended");
             }
         }
 
@@ -49,29 +48,29 @@ public class ScannerWorker extends Thread {
 
     @Override
     public void run() {
-
         if (file.isFile()) {
 
             try {
+                checkPaused();
                 RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
                 String hash = getHash(fileRAF, "MD5");
                 long size = fileRAF.length();
                 Long lastModified = file.lastModified();
                 fileRAF.close();
-
+                checkPaused();
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
                         file.getAbsolutePath(), lastModified, hash, size, report);
                 fileRepository.save(record);
 
             } catch (NoSuchAlgorithmException nsae) {
-                System.err.println("[ERROR] Thread "+this.getName()+" Unable to hash file: " + nsae.getMessage());
+                System.err.println("[ERROR] Thread " + this.getName() + " Unable to hash file: " + nsae.getMessage());
             } catch (IOException ioe) {
-                System.err.println("[ERROR] Thread "+this.getName()+" Unable to read file: " + ioe.getMessage());
+                System.err.println("[ERROR] Thread " + this.getName() + " Unable to read file: " + ioe.getMessage());
             } catch (NullPointerException npe) {
-                System.err.println("[ERROR] Thread "+this.getName()+" Unable to save file: " + npe.getMessage());
+                System.err.println("[ERROR] Thread " + this.getName() + " Unable to save file: " + npe.getMessage());
             }
         } else {
-            System.err.println("[ERROR] Thread "+this.getName()+" Path set is not file: " + file.getAbsolutePath());
+            System.err.println("[ERROR] Thread " + this.getName() + " Path set is not file: " + file.getAbsolutePath());
         }
     }
 
@@ -125,7 +124,7 @@ public class ScannerWorker extends Thread {
     public synchronized void pause() {
         if (isAlive()) {
             this.paused = true;
-            System.out.println("[INFO] Paused thread with root path: " + rootPath);
+            System.out.println("[INFO] Thread " + this.getName() + " Paused thread with root path: " + rootPath);
         }
     }
 
@@ -141,7 +140,7 @@ public class ScannerWorker extends Thread {
     }
 
     public synchronized void stopScan() {
-        System.out.println("[INFO] Stopped thread" + getId());
+        System.out.println("[INFO] Thread " + this.getName() + " Stopped thread" + getId());
         if (!Thread.interrupted())
             interrupt();
     }
