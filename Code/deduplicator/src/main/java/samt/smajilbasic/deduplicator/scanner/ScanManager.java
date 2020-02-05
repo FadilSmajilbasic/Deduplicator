@@ -3,9 +3,6 @@ package samt.smajilbasic.deduplicator.scanner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,9 +67,6 @@ public class ScanManager extends Thread {
     private Integer totalFiles = 0;
 
     public float scanProgress = 0;
-
-    private List<ScannerWorker> threads = new ArrayList<ScannerWorker>();
-
     /**
      * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che
      * possono essere eseguite contemporaneamente.
@@ -95,11 +89,11 @@ public class ScanManager extends Thread {
 
     private ScanListener listener;
     private FilesScanner scanner;
-
+    Thread statusThread;
     /**
      * Default timeout for the scanning thread pool given in seconds
      */
-    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 1800;
+    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 900;
 
     /**
      * An optional timeout for the scanning thread pool
@@ -113,6 +107,33 @@ public class ScanManager extends Thread {
 
     public ScanManager() {
         super();
+
+        statusThread = new Thread() {
+
+            @Override
+            public void run() {
+                try {
+                    while (!isInterrupted()) {
+
+                        synchronized (statusMonitor) {
+                            if (paused) {
+                                statusMonitor.wait();
+                            }
+                        }
+
+                        System.out.print("\rProgress: " + calcuateProgress() + "%");
+                        synchronized (this) {
+                            this.wait(POLLING_DELAY);
+                        }
+
+                    }
+                } catch (InterruptedException ie) {
+
+                } finally {
+                    System.out.print("\rProgress: " + calcuateProgress() + "%\n");
+                }
+            }
+        };
     }
 
     @Override
@@ -154,35 +175,10 @@ public class ScanManager extends Thread {
             }
             pool.shutdown();
 
-            Thread status = new Thread() {
+            statusThread.start();
+            pool.awaitTermination(30, TimeUnit.SECONDS);
 
-                @Override
-                public void run() {
-                    try {
-                        while (!isInterrupted()) {
-
-                            synchronized (statusMonitor) {
-                                if (paused) {
-                                    statusMonitor.wait();
-                                }
-                            }
-
-                            System.out.print("\rProgress: " + calcuateProgress() + "%");
-                            synchronized (this) {
-                                this.wait(POLLING_DELAY);
-                            }
-
-                        }
-                    } catch (InterruptedException ie) {
-                    } finally {
-                        System.out.print("\rProgress: " + calcuateProgress() + "%\n");
-                    }
-                }
-            };
-            status.start();
-            pool.awaitTermination(terminationTimeout, TimeUnit.SECONDS);
-
-            status.interrupt();
+            statusThread.interrupt();
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
             pool.shutdownNow();
@@ -239,11 +235,6 @@ public class ScanManager extends Thread {
     public void stopScan() {
         pool.shutdownNow();
         scanner.interrupt();
-        threads.forEach(thread -> {
-            if (!thread.isInterrupted()) {
-                thread.interrupt();
-            }
-        });
     }
 
     /**
