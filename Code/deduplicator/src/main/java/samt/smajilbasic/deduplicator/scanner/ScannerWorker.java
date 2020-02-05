@@ -71,7 +71,7 @@ public class ScannerWorker extends Thread {
             long end = file.length();
             int unitsize;
 
-            while (read < end && !this.isInterrupted()){
+            while (read < end && !this.isInterrupted()) {
                 unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read)); // controllo se sono
                                                                                                // arrivato in fondo al
                                                                                                // file.

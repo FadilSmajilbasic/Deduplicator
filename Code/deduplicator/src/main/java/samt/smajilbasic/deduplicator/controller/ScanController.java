@@ -171,7 +171,7 @@ public class ScanController implements ScanListener {
     public ResponseEntity<Response> pause() {
         if (currentScan != null) {
             if (!currentScan.isPaused()) {
-                currentScan.pauseAll();
+                currentScan.pauseScan();
                 return new ResponseEntity<Response>(new Response("Scan paused"), HttpStatus.OK);
             } else {
                 return new ResponseEntity<Response>(new Response("Scan already paused"), HttpStatus.OK);
@@ -197,7 +197,7 @@ public class ScanController implements ScanListener {
     public ResponseEntity<Response> resume() {
         if (currentScan != null) {
             if (currentScan.isPaused())
-                currentScan.resume();
+                currentScan.resumeScan();
             return new ResponseEntity<Response>(new Response("Scan resumed"), HttpStatus.OK);
         } else {
             return new ResponseEntity<Response>(new Response("No scan currently running"),

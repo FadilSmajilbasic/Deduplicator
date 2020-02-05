@@ -109,8 +109,8 @@ public class SchedulerController {
      * @return lo scheduler inserito oppure messaggio d'errore
      */
     @PutMapping()
-    public Object insert(@RequestParam String monthly, @RequestParam String weekly,
-            @RequestParam String repeated, @RequestParam String timeStart) {
+    public Object insert(@RequestParam String monthly, @RequestParam String weekly, @RequestParam String repeated,
+            @RequestParam String timeStart) {
 
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);

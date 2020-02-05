@@ -220,7 +220,7 @@ public class ScanManager extends Thread {
         return String.format(java.util.Locale.getDefault(), "%.2f", scanProgress * 100f);
     }
 
-    public void pauseAll() {
+    public void pauseScan() {
         if (!paused) {
             paused = true;
             System.out.println("pause invoked");
@@ -228,7 +228,7 @@ public class ScanManager extends Thread {
         }
     }
 
-    public void resume() {
+    public void resumeScan() {
         paused = false;
         pool.resume();
         synchronized (statusMonitor) {
