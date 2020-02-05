@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
  * La classe che definisce un messaggio d'errore.
  * Viene creata per dare una risposta al client in caso d'errore Durante l'esecuzione.
  */
-public class Message extends ResponseEntity<String>{
+public class Response{
 
     /**
      * L'attributo timestamp definisce la data e ora di qunado si è verificato l'errore.
@@ -22,24 +22,14 @@ public class Message extends ResponseEntity<String>{
      */
     private String message;
 
-    /**
-     * Metodo costruttore che imposta lo stato della risposta. 
-     * @see org.springframework.http.HttpStatus
-     * @param status lo stato da impostare in base all'errore.
-     */
-    public Message(HttpStatus status) {
-        super(status);
-        timestamp = LocalDateTime.now();
-    }
 
     /**
-     * Metodo costruttore che imposta lo stato e il messaggio d'errore. 
-     * @param status lo stato della riposta.
+     * Metodo costruttore che imposta il messaggio d'errore.
      * @param message il messaggio d'errore della riposta.
      */
-    public Message(HttpStatus status, String message) {
-        this(status);
+    public Response(String message) {
         this.message = message;
+        timestamp = LocalDateTime.now();
     }
 
     /**
