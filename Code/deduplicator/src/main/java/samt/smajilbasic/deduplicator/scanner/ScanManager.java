@@ -2,6 +2,8 @@ package samt.smajilbasic.deduplicator.scanner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +85,7 @@ public class ScanManager extends Thread {
      */
     private Integer threadCount = ScanManager.DEFAULT_THREAD_COUNT;
 
-    private ExecutorService pool;
+    private PausableExecutor pool;
 
     private final long POLLING_DELAY = 100;
 
@@ -104,7 +106,7 @@ public class ScanManager extends Thread {
      */
     private Integer terminationTimeout = ScanManager.DEFAULT_TERMINATION_TIMEOUT;
 
-    private final Object monitor = new Object();
+    private final Object statusMonitor = new Object();
 
     @Autowired
     DuplicateRepository duplicateRepository;
@@ -115,7 +117,7 @@ public class ScanManager extends Thread {
 
     @Override
     public void run() {
-        pool = Executors.newFixedThreadPool(threadCount);
+        // pool = Executors.newFixedThreadPool(threadCount);
         report = getReport();
 
         gpr.findAll().iterator().forEachRemaining(path -> {
@@ -144,10 +146,11 @@ public class ScanManager extends Thread {
             }
 
             totalFiles = scanner.getSize();
-
+            ArrayBlockingQueue<ScannerWorker> queue = new ArrayBlockingQueue<ScannerWorker>(totalFiles);
+            pool = new PausableExecutor(threadCount, terminationTimeout, TimeUnit.SECONDS, queue);
             while (scanner.hasNext()) {
-                ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, monitor, report);
-                pool.execute(thread);
+                ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, report);
+                pool.submit(thread);
             }
             pool.shutdown();
 
@@ -158,10 +161,17 @@ public class ScanManager extends Thread {
                     try {
                         while (!isInterrupted()) {
 
+                            synchronized (statusMonitor) {
+                                if (paused) {
+                                    statusMonitor.wait();
+                                }
+                            }
+
                             System.out.print("\rProgress: " + calcuateProgress() + "%");
                             synchronized (this) {
                                 this.wait(POLLING_DELAY);
                             }
+
                         }
                     } catch (InterruptedException ie) {
                     } finally {
@@ -214,18 +224,15 @@ public class ScanManager extends Thread {
         if (!paused) {
             paused = true;
             System.out.println("pause invoked");
-            threads.forEach(thread -> {
-                thread.pause();
-            });
-
+            pool.pause();
         }
     }
 
-    public void resumeAll() {
+    public void resume() {
         paused = false;
-
-        synchronized (monitor) {
-            monitor.notifyAll();
+        pool.resume();
+        synchronized (statusMonitor) {
+            statusMonitor.notify();
         }
     }
 

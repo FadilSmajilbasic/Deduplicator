@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -16,35 +15,15 @@ import samt.smajilbasic.deduplicator.repository.FileRepository;
  */
 public class ScannerWorker extends Thread {
 
-    private Path rootPath;
     private Report report;
     private FileRepository fileRepository;
-
-    private Boolean paused = false;
-    Object monitor;
-    File file;
+    private File file;
     private final static int BUFFER_SIZE = 32768;
 
-    public ScannerWorker(File file, FileRepository fileRepository, Object monitor, Report report) {
+    public ScannerWorker(File file, FileRepository fileRepository, Report report) {
         this.report = report;
         this.fileRepository = fileRepository;
-        this.monitor = monitor;
         this.file = file;
-    }
-
-    public synchronized void checkPaused() {
-        synchronized (monitor) {
-            while (isPaused()) {
-                try {
-                    monitor.wait();
-                    System.out.println("[INFO] Thread " + this.getName() + " Thread resumed");
-                } catch (InterruptedException e) {
-                    System.out.println("[INFO] Thread " + this.getName() + " Interrupted exception on pause: "
-                            + e.getStackTrace().toString());
-                }
-            }
-        }
-
     }
 
     @Override
@@ -52,13 +31,11 @@ public class ScannerWorker extends Thread {
         if (file.isFile()) {
 
             try {
-                checkPaused();
                 RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
                 String hash = getHash(fileRAF, "MD5");
                 long size = fileRAF.length();
                 Long lastModified = file.lastModified();
                 fileRAF.close();
-                checkPaused();
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
                         file.getAbsolutePath(), lastModified, hash, size, report);
                 fileRepository.save(record);
@@ -87,12 +64,6 @@ public class ScannerWorker extends Thread {
     public String getHash(RandomAccessFile file, String mode) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance(mode);
 
-        if (isPaused() == true) {
-            System.out.println("[INFO] Thread " + this.getName() + ": paused true");
-        }
-
-        checkPaused();
-
         try {
             byte[] buffer = new byte[BUFFER_SIZE];
             long read = 0;
@@ -100,8 +71,7 @@ public class ScannerWorker extends Thread {
             long end = file.length();
             int unitsize;
 
-            while (read < end) {
-                checkPaused();
+            while (read < end && !this.isInterrupted()){
                 unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read)); // controllo se sono
                                                                                                // arrivato in fondo al
                                                                                                // file.
@@ -126,29 +96,6 @@ public class ScannerWorker extends Thread {
         }
 
         return hexString.toString();
-    }
-
-    public synchronized void pause() {
-        this.paused = true;
-        System.out.println("[INFO] Thread " + this.getName() + " Paused thread with root path: " + rootPath);
-
-    }
-
-    /**
-     * @return the paused
-     */
-    public synchronized boolean isPaused() {
-        return this.paused;
-    }
-
-    public void resumeScan() {
-        this.paused = false;
-    }
-
-    public synchronized void stopScan() {
-        System.out.println("[INFO] Thread " + this.getName() + " Stopped thread" + getId());
-        if (!Thread.interrupted())
-            interrupt();
     }
 
 }
