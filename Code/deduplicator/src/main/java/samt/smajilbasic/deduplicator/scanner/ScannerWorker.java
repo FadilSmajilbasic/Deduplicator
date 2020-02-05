@@ -26,10 +26,10 @@ public class ScannerWorker extends Thread {
         this.file = file;
     }
 
+
     @Override
     public void run() {
         if (file.isFile()) {
-
             try {
                 RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
                 String hash = getHash(fileRAF, "MD5");
@@ -38,6 +38,7 @@ public class ScannerWorker extends Thread {
                 fileRAF.close();
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
                         file.getAbsolutePath(), lastModified, hash, size, report);
+                
                 fileRepository.save(record);
 
             } catch (NoSuchAlgorithmException nsae) {
@@ -70,21 +71,26 @@ public class ScannerWorker extends Thread {
 
             long end = file.length();
             int unitsize;
-
-            while (read < end && !this.isInterrupted()) {
+            long start = System.currentTimeMillis();
+            while (read < end) {
                 unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read)); // controllo se sono
                                                                                                // arrivato in fondo al
                                                                                                // file.
+                if((System.currentTimeMillis() - start)/1000f > 3f){
+                    System.out.println("Long read: " + read);
+                    System.out.println("Size: " + end);
+                }
+                
                 file.read(buffer, 0, unitsize); // leggo un chunk del file definito dall'attributo BUFFER_SIZE
                 messageDigest.update(buffer, 0, unitsize); // aggiorno il hash con i nuovi dati letti.
                 read += unitsize; // sposto il buffer al prossimo chunk di dati.
             }
 
         } catch (FileNotFoundException fnfE) {
-            System.out.println("[ERROR] Hasher: Item not found");
+            System.err.println("[ERROR] Thread " + this.getName() + " hash generation: File not found");
 
         } catch (IOException ioE) {
-            System.out.println("[ERROR] Hasher: IO Exception");
+            System.err.println("[ERROR] Thread " + this.getName() + " hash generation: IO Exception");
         }
 
         byte[] digest = messageDigest.digest();
