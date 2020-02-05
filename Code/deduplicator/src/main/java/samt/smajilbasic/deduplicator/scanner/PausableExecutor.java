@@ -13,7 +13,7 @@ public class PausableExecutor extends ThreadPoolExecutor {
     private Condition unpaused = pauseLock.newCondition();
 
     public PausableExecutor(Integer threadCount, Integer timeout, TimeUnit timeUnit, ArrayBlockingQueue queue) {
-        super(threadCount, threadCount, timeout, TimeUnit.SECONDS, queue);
+        super(threadCount, threadCount, timeout, timeUnit, queue);
     }
 
     @Override
