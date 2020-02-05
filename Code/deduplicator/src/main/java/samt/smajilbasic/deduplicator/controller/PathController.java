@@ -1,20 +1,15 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import samt.smajilbasic.deduplicator.exception.Message;
+import samt.smajilbasic.deduplicator.exception.Response;
 import java.io.File;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -56,7 +51,7 @@ public class PathController {
      *         database.
      */
     @GetMapping()
-    public @ResponseBody Iterable<GlobalPath> getAll() {
+    public Iterable<GlobalPath> getAll() {
         return gpr.findAll();
     }
 
@@ -71,17 +66,19 @@ public class PathController {
      *         altrimenti.
      */
     @GetMapping(value = "/{path}")
-    public @ResponseBody Object get(@RequestParam String path) {
+    public Object get(@RequestParam String path) {
 
         path = path.replaceAll("&#47;", File.separator).trim();
         if (Validator.getPathType(path) != PathType.Invalid) {
             if (gpr.existsById(path))
                 return gpr.findById(path).get();
             else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Path doesn't exist: " + path);
+                return new ResponseEntity<Response>(new Response("Path doesn't exist: " + path),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
+            return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -97,7 +94,7 @@ public class PathController {
      * @return l'oggetto inserito oppure un messaggio d'errore in base al errore.
      */
     @PutMapping()
-    public @ResponseBody Object insert(@RequestParam String path, @RequestParam String ignorePath) {
+    public Object insert(@RequestParam String path, @RequestParam String ignorePath) {
         path = path.replaceAll("&#47;", File.separator).trim();
         try {
             Path p = Paths.get(path);
@@ -112,16 +109,23 @@ public class PathController {
                         gpr.save(new GlobalPath(path, (ignorePath.equals("true"))));
                         return get(path);
                     } else {
-                        return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "path not readable.: " + path);
+                        return new ResponseEntity<Response>(new Response("path not readable: " + path),
+                                HttpStatus.INTERNAL_SERVER_ERROR);
+
                     }
                 } else {
-                    return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
+                    return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
+                            HttpStatus.INTERNAL_SERVER_ERROR);
+
                 }
             } else {
-                return new Message(HttpStatus.BAD_REQUEST, "Path already present in database: " + path);
+                return new ResponseEntity<Response>(new Response("Path already present in database: " + path),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+
             }
         } catch (InvalidPathException ipe) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid path format: " + path);
+            return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -135,7 +139,7 @@ public class PathController {
      * @return l'oggetto eliminato oppure il messaggio d'errore
      */
     @DeleteMapping()
-    public @ResponseBody Object delete(@RequestParam String path) {
+    public Object delete(@RequestParam String path) {
 
         PathType type = Validator.getPathType(path);
         path = path.replaceAll("&#47;", File.separator).trim();
@@ -151,7 +155,7 @@ public class PathController {
             gpr.delete(entry);
             return entry;
         } else {
-            return new Message(HttpStatus.BAD_REQUEST, "Invalid path: " + path);
+            return new ResponseEntity<Response>(new Response("Invalid path: " + path), HttpStatus.BAD_REQUEST);
         }
     }
 }

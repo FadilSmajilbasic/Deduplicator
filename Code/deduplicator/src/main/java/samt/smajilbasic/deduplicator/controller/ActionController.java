@@ -9,6 +9,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.ActionType;
@@ -26,7 +26,7 @@ import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.Action;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
-import samt.smajilbasic.deduplicator.exception.Message;
+import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
@@ -86,7 +86,7 @@ public class ActionController {
      * @return tutte le azioni contenute nella tabella Action del database.
      */
     @GetMapping("/")
-    public @ResponseBody Iterable<Action> getAll() {
+    public Iterable<Action> getAll() {
         return actionRepository.findAll();
     }
 
@@ -99,12 +99,12 @@ public class ActionController {
      *         parametro, altrimenti risponde con un messaggio d'errore.
      */
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object get(@PathVariable String id) {
+    public Object get(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && actionRepository.existsById(intId))
             return actionRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.NOT_FOUND, "Invalid action id");
+            return new ResponseEntity<Response>(new Response("Invalid action id"), HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -116,7 +116,7 @@ public class ActionController {
      * @return tutte le azioni dell'utente.
      */
     @PostMapping("/execute/all")
-    public @ResponseBody Object executeActions() {
+    public Object executeActions() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authenticatedUser = authentication.getName();
@@ -149,7 +149,7 @@ public class ActionController {
      *         riscontrato.
      */
     @PutMapping("/")
-    public @ResponseBody Object insert(@RequestParam String type, @RequestParam(required = false) String path,
+    public Object insert(@RequestParam String type, @RequestParam(required = false) String path,
             @RequestParam(required = false) String newPath, String scheduler) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -158,22 +158,29 @@ public class ActionController {
         Integer schedulerIdInt = Validator.isInt(scheduler);
 
         if (schedulerRepository.existsById(schedulerIdInt)) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Scheduler id invalid");
+            return new ResponseEntity<Response>(new Response("Scheduler id invalid"), HttpStatus.BAD_REQUEST);
+
         }
         type = Validator.getActionType(type);
 
         if (type == null) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Action type invalid");
+            return new ResponseEntity<Response>(new Response("Action type invalid"), HttpStatus.BAD_REQUEST);
+
         }
         if (type.equals(ActionType.MOVE) && (newPath.trim().equalsIgnoreCase("") || newPath == null)) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path not set while having type = MOVE");
+            return new ResponseEntity<Response>(new Response("New path not set while having type = MOVE"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
         if (Validator.getPathType(path) != PathType.File && !type.equals(ActionType.SCAN)) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "File path invalid");
+            return new ResponseEntity<Response>(new Response("File path invalid"), HttpStatus.BAD_REQUEST);
+
         }
 
         if (Validator.getPathType(newPath) != PathType.Directory && !type.equals(ActionType.SCAN)) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "New path is invalid or not a directory");
+            return new ResponseEntity<Response>(new Response("New path is invalid or not a directory"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
         Action action = new Action(type, path, newPath, adr.findById(currentUser).get(),
                 schedulerRepository.findById(schedulerIdInt).get());
@@ -185,8 +192,6 @@ public class ActionController {
 
     }
 
-    
-
     /**
      * Il metodo deleteAction risponde alla richiesta di tipo DELETE sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/action/&lt;id&gt;</b> (localhost:8080/action/7).
@@ -196,7 +201,7 @@ public class ActionController {
      * @return L'azione elimianta oppure un messaggio d'errore.
      */
     @DeleteMapping("/{id}")
-    public @ResponseBody Object deleteAction(@PathVariable String id) {
+    public Object deleteAction(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null) {
             if (actionRepository.existsById(intId)) {
@@ -204,10 +209,12 @@ public class ActionController {
                 actionRepository.delete(action);
                 return action;
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to find action with id: " + id);
+                return new ResponseEntity<Response>(new Response("Unable to find action with id: " + id),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id);
+            return new ResponseEntity<Response>(new Response("Invalid parameter: " + id),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -224,8 +231,9 @@ public class ActionController {
      * @return true se il percorso è valido, false altrimenti.
      */
     @PostMapping("/path")
-    public @ResponseBody Message checkPath(@RequestParam String path) {
-        return new Message(HttpStatus.OK, String.valueOf(Validator.getPathType(path).equals(PathType.Directory)));
+    public ResponseEntity<Response> checkPath(@RequestParam String path) {
+        return new ResponseEntity<Response>(
+                new Response(String.valueOf(Validator.getPathType(path).equals(PathType.Directory))), HttpStatus.OK);
     }
 
 }

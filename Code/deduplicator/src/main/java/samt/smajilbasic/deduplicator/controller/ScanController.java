@@ -1,9 +1,5 @@
 package samt.smajilbasic.deduplicator.controller;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +7,8 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.entity.Report;
-import samt.smajilbasic.deduplicator.exception.Message;
+import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
@@ -103,7 +101,7 @@ public class ScanController implements ScanListener {
      * @return il rapporto creato all'avvio della scansione.
      */
     @PostMapping("/start")
-    public @ResponseBody Object start(@RequestParam(required = false) Integer threadCount) {
+    public Object start(@RequestParam(required = false) Integer threadCount) {
 
         if (gpr.count() > 0) {
 
@@ -123,7 +121,7 @@ public class ScanController implements ScanListener {
             currentScan.start();
             return report;
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No path to scan set");
+            return new ResponseEntity<Response>(new Response("No path to scan set"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -140,7 +138,7 @@ public class ScanController implements ScanListener {
      *         scansione non è attiva.
      */
     @PostMapping("/stop")
-    public @ResponseBody Object stop() {
+    public Object stop() {
         if (currentScan != null) {
             currentScan.stopScan();
 
@@ -155,7 +153,8 @@ public class ScanController implements ScanListener {
             destroyScanManager();
             return report;
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently running");
+            return new ResponseEntity<Response>(new Response("No scan currently running"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -168,17 +167,18 @@ public class ScanController implements ScanListener {
      * @return Messaggio che la scansione è in pause oppore messaggio d'errore se la
      *         scansione nom è attiva.
      */
-    @PostMapping("/pause")
-    public @ResponseBody Message pause() {
+    @PostMapping(path = "/pause", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> pause() {
         if (currentScan != null) {
             if (!currentScan.isPaused()) {
                 currentScan.pauseAll();
-                return new Message(HttpStatus.OK, "Scan paused");
+                return new ResponseEntity<Response>(new Response("Scan paused"), HttpStatus.OK);
             } else {
-                return new Message(HttpStatus.OK, "Scan already paused");
+                return new ResponseEntity<Response>(new Response("Scan already paused"), HttpStatus.OK);
             }
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently runnin");
+            return new ResponseEntity<Response>(new Response("No scan currently running"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -191,16 +191,17 @@ public class ScanController implements ScanListener {
      * 
      * @return Messaggio che la scansione è in pause oppore messaggio d'errore se la
      *         scansione non è attiva.
-     * @see Message
+     * @see Response
      */
     @PostMapping("/resume")
-    public @ResponseBody Message resume() {
+    public ResponseEntity<Response> resume() {
         if (currentScan != null) {
             if (currentScan.isPaused())
                 currentScan.resumeAll();
-            return new Message(HttpStatus.OK, "Scan resumed");
+            return new ResponseEntity<Response>(new Response("Scan resumed"), HttpStatus.OK);
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "No scan currently running");
+            return new ResponseEntity<Response>(new Response("No scan currently running"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -214,10 +215,10 @@ public class ScanController implements ScanListener {
      *         esecuzione o no, grazie al campo message indica quanti file sono
      *         stati scansionati e grazie al campo timestamp indica la data
      *         d'esecuzione della scansione.
-     * @see Message
+     * @see Response
      */
     @GetMapping("/status")
-    public @ResponseBody Object getStatus() {
+    public Object getStatus() {
         int count = report.getFilesScanned() == null ? 0 : report.getFilesScanned();
 
         Object scanStatus = new Object() {
@@ -227,11 +228,10 @@ public class ScanController implements ScanListener {
 
         Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
         try {
-            Message response = new Message(HttpStatus.OK, encoder.getObjectMapper().writeValueAsString(scanStatus));
-
-            return response;
+            return new ResponseEntity<Object>(encoder.getObjectMapper().writeValueAsString(scanStatus), HttpStatus.OK);
         } catch (JsonProcessingException jpe) {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR,"Unable to retrieve scan status");
+            return new ResponseEntity<Response>(new Response("Unable to retrieve scan status"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

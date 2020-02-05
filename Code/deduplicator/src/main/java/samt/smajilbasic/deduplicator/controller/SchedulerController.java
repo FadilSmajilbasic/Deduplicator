@@ -1,6 +1,5 @@
 package samt.smajilbasic.deduplicator.controller;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
-import samt.smajilbasic.deduplicator.exception.Message;
+import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 
 /**
@@ -60,7 +60,7 @@ public class SchedulerController {
      * @return tutti i {@link Scheduler} che si trovano nel database.
      */
     @GetMapping()
-    public @ResponseBody Iterable<Scheduler> getAll() {
+    public Iterable<Scheduler> getAll() {
         return schedulerRepository.findAll();
     }
 
@@ -74,12 +74,12 @@ public class SchedulerController {
      *         altrimenti.
      */
     @GetMapping(value = "/{id}")
-    public @ResponseBody Object get(@PathVariable String id) {
+    public Object get(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null && schedulerRepository.existsById(intId))
             return schedulerRepository.findById(intId).get();
         else
-            return new Message(HttpStatus.NOT_FOUND, "Invalid scheduler id");
+            return new ResponseEntity<Response>(new Response("Invalid scheduler id"), HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -104,18 +104,18 @@ public class SchedulerController {
      *                  eseguito settimanalmente.
      * @param repeated  parametro da passare se lo scheduler dovrà essere ripetuto,
      *                  valori: "true" o "false"
-     * @param timeStart la data e ora dalla quale partirà l'esecuzione formato timestamp
-     *                  -&gt; Long
+     * @param timeStart la data e ora dalla quale partirà l'esecuzione formato
+     *                  timestamp -&gt; Long
      * @return lo scheduler inserito oppure messaggio d'errore
      */
     @PutMapping()
-    public @ResponseBody Object insert(@RequestParam String monthly, @RequestParam String weekly,
+    public Object insert(@RequestParam String monthly, @RequestParam String weekly,
             @RequestParam String repeated, @RequestParam String timeStart) {
 
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);
         Boolean repeatedBool = (repeated.equals("true")) ? true : false;
-        Long date  = Validator.isLong(timeStart);
+        Long date = Validator.isLong(timeStart);
         Scheduler scheduler = new Scheduler();
 
         if (repeatedBool) {
@@ -131,11 +131,12 @@ public class SchedulerController {
                     scheduler.setWeekly(dayWeek);
 
                 } else {
-                    return new Message(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Schedule monthly and weekly parameters invalid");
+                    return new ResponseEntity<Response>(new Response("Schedule monthly and weekly parameters invalid"),
+                            HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Schedule hour parameter invalid");
+                return new ResponseEntity<Response>(new Response("Schedule hour parameter invalid"),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
 
@@ -146,22 +147,21 @@ public class SchedulerController {
         BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
         ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
         ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
-        synchronized(checker){
+        synchronized (checker) {
             checker.start();
         }
         return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 
     /**
-     * Il metodo delete risponde alla richiesta di tipo DELETE
-     * sull'indirizzo
+     * Il metodo delete risponde alla richiesta di tipo DELETE sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
      * Il metodo ferma tutti i timer della lista timers.
      * 
      * @return il messaggio con status OK 200.
      */
     @DeleteMapping("/{id}")
-    public @ResponseBody Object delete(@PathVariable String id) {
+    public Object delete(@PathVariable String id) {
         Integer intId = Validator.isInt(id);
         if (intId != null) {
             if (schedulerRepository.existsById(intId)) {
@@ -169,10 +169,12 @@ public class SchedulerController {
                 schedulerRepository.delete(scheduler);
                 return scheduler;
             } else {
-                return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to find scheduler with id: " + id);
+                return new ResponseEntity<Response>(new Response("Unable to find scheduler with id: " + id),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            return new Message(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid parameter: " + id);
+            return new ResponseEntity<Response>(new Response("Invalid parameter: " + id),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -194,8 +196,8 @@ public class SchedulerController {
     }
 
     /**
-     * Il metodo getPositions ritorna una lista di posizioni dei bit a 1 nel
-     * numero passato come parametro.
+     * Il metodo getPositions ritorna una lista di posizioni dei bit a 1 nel numero
+     * passato come parametro.
      * 
      * @param number il numero da scansionare
      * @param max    la grandezza del numero in bit (1-32)
