@@ -39,7 +39,8 @@ public class ScannerWorker extends Thread {
                     monitor.wait();
                     System.out.println("[INFO] Thread " + this.getName() + " Thread resumed");
                 } catch (InterruptedException e) {
-                    System.out.println("[INFO] Thread " + this.getName() + " Interrupted exception on pause: " + e.getStackTrace().toString());
+                    System.out.println("[INFO] Thread " + this.getName() + " Interrupted exception on pause: "
+                            + e.getStackTrace().toString());
                 }
             }
         }
@@ -86,6 +87,12 @@ public class ScannerWorker extends Thread {
     public String getHash(RandomAccessFile file, String mode) throws NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance(mode);
 
+        if (isPaused() == true) {
+            System.out.println("[INFO] Thread " + this.getName() + ": paused true");
+        }
+
+        checkPaused();
+
         try {
             byte[] buffer = new byte[BUFFER_SIZE];
             long read = 0;
@@ -122,10 +129,9 @@ public class ScannerWorker extends Thread {
     }
 
     public synchronized void pause() {
-        if (isAlive()) {
-            this.paused = true;
-            System.out.println("[INFO] Thread " + this.getName() + " Paused thread with root path: " + rootPath);
-        }
+        this.paused = true;
+        System.out.println("[INFO] Thread " + this.getName() + " Paused thread with root path: " + rootPath);
+
     }
 
     /**
