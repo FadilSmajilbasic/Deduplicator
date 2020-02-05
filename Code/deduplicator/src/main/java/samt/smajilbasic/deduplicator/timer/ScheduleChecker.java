@@ -74,18 +74,18 @@ public class ScheduleChecker extends Thread {
             Long startDate = schedule.getTimeStart();
 
             Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            Calendar currCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             startCalendar.setTimeInMillis(startDate);
 
-            startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
-            startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
+            // startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
+            // startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
 
             if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) { // controllo se lo scheduler è già stato
                                                                                 // eseguit oppure se è impostato per
                                                                                 // essere ripetuto
 
                 actionsManager.setActionScheduler(schedule);
-
-                Calendar currCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                
                 System.out.println("Action manager scheduled: " + startCalendar.get(Calendar.DAY_OF_MONTH) + "."
                         + startCalendar.get(Calendar.MONTH) + " " + startCalendar.get(Calendar.HOUR_OF_DAY) + ":"
                         + startCalendar.get(Calendar.MINUTE));
