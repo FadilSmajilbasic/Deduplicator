@@ -90,11 +90,11 @@ public class ScanManager extends Thread {
 
     private ScanListener listener;
     private FilesScanner scanner;
-    Thread statusThread;
+    private Thread statusThread;
     /**
      * Default timeout for the scanning thread pool given in seconds
      */
-    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 20;
+    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 600;
 
     /**
      * An optional timeout for the scanning thread pool
@@ -114,14 +114,12 @@ public class ScanManager extends Thread {
             @Override
             public void run() {
                 try {
-                    while (!isInterrupted()) {
-
+                    while (!isInterrupted() && scanProgress < 1f) {
                         synchronized (statusMonitor) {
                             if (paused) {
                                 statusMonitor.wait();
                             }
                         }
-
                         System.out.print("\rProgress: " + calcuateProgress() + "%");
                         synchronized (this) {
                             this.wait(POLLING_DELAY);
@@ -129,8 +127,6 @@ public class ScanManager extends Thread {
 
                     }
                 } catch (InterruptedException ie) {
-
-                } finally {
                     System.out.print("\rProgress: " + calcuateProgress() + "%\n");
                 }
             }
@@ -172,18 +168,17 @@ public class ScanManager extends Thread {
             pool.shutdown();
 
             statusThread.start();
-            pool.awaitTermination(30, TimeUnit.SECONDS);
-
-            statusThread.interrupt();
+            
+            statusThread.join();
         } catch (InterruptedException ie) {
-            System.err.println("[ERROR] Thread interrupted: " + ie.getStackTrace().toString());
+            System.err.println("[ERROR] Scan Manager interrupted");
             pool.shutdownNow();
+            statusThread.interrupt();
         } finally {
             pool.shutdownNow();
             List<Duplicate> duplicates = duplicateRepository.findDuplicatesFromReport(report);
 
-            System.out.println("test: " + scanProgress);
-            System.out.println("files: " + totalFiles + "scanned: " + fileRepository.findByReport(report));
+            System.out.println("Scanned files: " + fileRepository.findByReport(report));
 
             totalFiles = fileRepository.findByReport(report);
 
@@ -196,6 +191,7 @@ public class ScanManager extends Thread {
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             report.setFilesScanned(totalFiles);
             reportRepository.save(report);
+            
             System.out.println("[INFO] Scan manager Finished");
             if (listener != null)
                 listener.scanFinished();
@@ -231,6 +227,7 @@ public class ScanManager extends Thread {
     public void stopScan() {
         pool.shutdownNow();
         scanner.interrupt();
+        this.interrupt();
     }
 
     /**

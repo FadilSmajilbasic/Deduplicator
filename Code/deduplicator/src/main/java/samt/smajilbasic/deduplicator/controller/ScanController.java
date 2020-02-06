@@ -102,23 +102,27 @@ public class ScanController implements ScanListener {
     @PostMapping("/start")
     public Object start(@RequestParam(required = false) Integer threadCount) {
 
+        currentScan = (ScanManager) context.getBean("scanManager");
         if (gpr.count() > 0) {
+            if (!currentScan.isAlive()) {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                String authenticatedUser = authentication.getName();
+                AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String authenticatedUser = authentication.getName();
-            AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
+                report = new Report(internalUser);
+                report.setStart(System.currentTimeMillis());
+                reportRepository.save(report);
 
-            currentScan = (ScanManager) context.getBean("scanManager");
-            report = new Report(internalUser);
-            report.setStart(System.currentTimeMillis());
-            reportRepository.save(report);
-
-            currentScan.setReportRepository(reportRepository);
-            currentScan.setReportId(report.getId());
-            currentScan.setThreadCount(threadCount);
-            currentScan.setListener(this);
-            currentScan.start();
-            return report;
+                currentScan.setReportRepository(reportRepository);
+                currentScan.setReportId(report.getId());
+                currentScan.setThreadCount(threadCount);
+                currentScan.setListener(this);
+                currentScan.start();
+                return report;
+            } else {
+                return new ResponseEntity<Response>(new Response("Scan is already running"),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } else {
             return new ResponseEntity<Response>(new Response("No path to scan set"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -142,12 +146,7 @@ public class ScanController implements ScanListener {
             currentScan.stopScan();
 
             System.out.println("Waiting finish");
-            while (currentScan.isAlive()) {
-                long time = System.currentTimeMillis();
-                if (System.currentTimeMillis() - time > 100) {
-                    System.out.print(".");
-                }
-            }
+
             Report report = currentScan.getReport();
             destroyScanManager();
             return report;
@@ -249,6 +248,5 @@ public class ScanController implements ScanListener {
     private void destroyScanManager() {
         BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
         ((DefaultListableBeanFactory) factory).destroySingleton("scanManager");
-
     }
 }
