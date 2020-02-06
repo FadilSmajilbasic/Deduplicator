@@ -44,7 +44,7 @@ public class PausableExecutor extends ThreadPoolExecutor {
         pauseLock.lock();
         try {
             isPaused = false;
-            unpaused.signal();
+            unpaused.signalAll();
         } finally {
             pauseLock.unlock();
         }
