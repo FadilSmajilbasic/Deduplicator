@@ -2,8 +2,6 @@ package samt.smajilbasic.deduplicator.exception;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 /**
  * La classe che definisce un messaggio d'errore.

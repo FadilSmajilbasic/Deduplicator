@@ -13,7 +13,7 @@ public class FilesScanner extends Thread {
     private List<String> ignorePaths;
     private LinkedList<String> scanPaths;
 
-    public FilesScanner(List<String> paths, List<String> ignorePaths, List<String> ignoreFiles) {
+    public FilesScanner(List<String> paths, List<String> ignorePaths) {
         super();
         this.ignorePaths = ignorePaths;
         this.paths = paths;

@@ -1,6 +1,7 @@
 package samt.smajilbasic.deduplicator.scanner;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +94,7 @@ public class ScanManager extends Thread {
     /**
      * Default timeout for the scanning thread pool given in seconds
      */
-    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 900;
+    private static final Integer DEFAULT_TERMINATION_TIMEOUT = 20;
 
     /**
      * An optional timeout for the scanning thread pool
@@ -138,7 +139,6 @@ public class ScanManager extends Thread {
 
     @Override
     public void run() {
-        // pool = Executors.newFixedThreadPool(threadCount);
         report = getReport();
 
         gpr.findAll().iterator().forEachRemaining(path -> {
@@ -147,19 +147,15 @@ public class ScanManager extends Thread {
 
         List<GlobalPath> ignorePathsFromRepository = gpr.findIgnored();
 
-        List<String> ignorePaths = new ArrayList<>();
-        List<String> ignoreFiles = new ArrayList<>();
+        LinkedList<String> ignorePaths = new LinkedList<>();
 
-        for (GlobalPath ignorePath : ignorePathsFromRepository) {
-            if (ignorePath.isFile())
-                ignoreFiles.add(ignorePath.getPath());
-            else
-                ignorePaths.add(ignorePath.getPath());
-        }
+        ignorePathsFromRepository.forEach(globalPath -> {
+            ignorePaths.add(globalPath.getPath());
+        });
 
         try {
 
-            scanner = new FilesScanner(paths, ignorePaths, ignoreFiles);
+            scanner = new FilesScanner(paths, ignorePaths);
 
             scanner.start();
             synchronized (scanner) {
