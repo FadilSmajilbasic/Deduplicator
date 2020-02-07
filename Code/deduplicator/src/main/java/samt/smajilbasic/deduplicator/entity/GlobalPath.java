@@ -1,7 +1,10 @@
 package samt.smajilbasic.deduplicator.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
+
 import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
 
@@ -16,6 +19,8 @@ public class GlobalPath {
 	 * l'annotazione @Id per indicare che è una chiave primaria della tabella.
 	 */
 	@Id
+	@Lob
+	@Column
 	private String path;
 
 	/**
