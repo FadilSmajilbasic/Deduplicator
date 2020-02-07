@@ -1,6 +1,9 @@
 package samt.smajilbasic.deduplicator.scanner;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,28 +30,45 @@ public class FilesScanner extends Thread {
 
         paths.iterator().forEachRemaining(pathsLinkedList::add);
 
-        boolean add = true;
+        boolean test = true;
         long start = System.currentTimeMillis();
+        try {
+            while (pathsLinkedList.peek() != null) {
+                String path = pathsLinkedList.poll();
+                File file = new File(path);
+                Path p = Paths.get(path);
+                test = true;
 
-        while (pathsLinkedList.peek() != null) {
-            String path = pathsLinkedList.poll();
-            File file = new File(path);
-            if (file.isFile()) {
-                add = true;
                 for (String ignorePath : ignorePaths) {
                     if (path.startsWith(ignorePath) || path.equals(ignorePath)) {
-                        add = false;
+                        test = false;
                     }
                 }
-                if (add) {
-                    scanPaths.add(path);
-                }
-            } else {
-                for (File internalFile : file.listFiles()) {
-                    pathsLinkedList.addLast(internalFile.getAbsolutePath());
+                if (test) {
+                    if (!Files.notExists(p) && Files.isReadable(p)) {
+                        if (file.isFile()) {
+
+                            scanPaths.add(path);
+
+                        } else {
+                            try {
+                                for (File internalFile : file.listFiles()) {
+                                    pathsLinkedList.addLast(internalFile.getAbsolutePath());
+                                }
+                            } catch (NullPointerException npe) {
+                                System.out.println("File not found: " + path);
+                            }
+
+                        }
+                    } else {
+                        // System.err.println("[ERROR] FileScanner unable to read file: " + path);
+                    }
                 }
             }
+        } catch (OutOfMemoryError oome) {
+            System.err.println("[ERROR] FileScanner too many files in the paths specified: " + scanPaths.size());
         }
+
         System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) + "ms");
         System.out.println("Found " + scanPaths.size() + " files");
 
