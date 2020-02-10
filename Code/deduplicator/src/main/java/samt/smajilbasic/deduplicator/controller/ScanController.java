@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
+import samt.smajilbasic.deduplicator.repository.FileRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.ReportRepository;
 import samt.smajilbasic.deduplicator.scanner.ScanListener;
@@ -47,6 +49,15 @@ public class ScanController implements ScanListener {
      */
     @Autowired
     private ReportRepository reportRepository;
+
+    /**
+     * L'attributo fileRepository serve al controller per interfacciarsi con la
+     * tabella File del database. Usa l'annotazione @Autowired per indicare a spring
+     * che questo parametro dovrà essere creato come Bean e dovrà essere
+     * inizializzato alla creazione della classe.
+     */
+    @Autowired
+    private FileRepository fileRepository;
 
     /**
      * L'attributo adr serve al controller per interfacciarsi con la tabella
@@ -216,18 +227,19 @@ public class ScanController implements ScanListener {
      * @see Response
      */
     @GetMapping("/status")
-    public Object getStatus() {
-        int count = report.getFilesScanned() == null ? 0 : report.getFilesScanned();
-
-        Object scanStatus = new Object() {
-            public int fileCount = count;
-            public float progress = currentScan.scanProgress;
-        };
-
-        Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
+    public ResponseEntity getStatus() {
         try {
-            return new ResponseEntity<Object>(encoder.getObjectMapper().writeValueAsString(scanStatus), HttpStatus.OK);
-        } catch (JsonProcessingException jpe) {
+            Object scanStatus = new Object() {
+                public int fileCount = fileRepository.findByReport(report);
+                public float progress = currentScan.scanProgress;
+            };
+
+            Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_TYPE, "application/json; charset=UTF-8");
+
+            return ResponseEntity.ok().headers(headers).body(encoder.getObjectMapper().writeValueAsString(scanStatus));
+        } catch (Exception ex) {
             return new ResponseEntity<Response>(new Response("Unable to retrieve scan status"),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
