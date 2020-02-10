@@ -1,7 +1,0 @@
-{
-  "compatibilityMode": false,
-  "productionMode": false,
-  "npmFolder": "/home/duck/projects/vaadin/test/deduplicatorgui",
-  "generatedFolder": "/home/duck/projects/vaadin/test/deduplicatorgui/target/frontend",
-  "frontendFolder": "/home/duck/projects/vaadin/test/deduplicatorgui/frontend"
-}
