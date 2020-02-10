@@ -77,8 +77,8 @@ public class ScheduleChecker extends Thread {
             Calendar currCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             startCalendar.setTimeInMillis(startDate);
 
-            // startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
-            // startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
+            startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
+            startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
 
             if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) { // controllo se lo scheduler è già stato
                                                                                 // eseguit oppure se è impostato per
