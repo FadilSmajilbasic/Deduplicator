@@ -84,7 +84,7 @@ public class LoginView extends VerticalLayout implements View {
         portTextField.setStep(1);
         portTextField.setMin(1);
         portTextField.setMax(65535);
-        portTextField.setValue(8081d);
+        portTextField.setValue(8443d);
         hostTextField.setValue("127.0.0.1");
         usernameTextField.setValue("admin");
         passwordField.setValue("admin");
@@ -99,7 +99,6 @@ public class LoginView extends VerticalLayout implements View {
 
         button.addClickShortcut(Key.ENTER);
         
-        // addClassName("centered-content");
        
 
         horizontalLayout.add(hostTextField, portTextField);
