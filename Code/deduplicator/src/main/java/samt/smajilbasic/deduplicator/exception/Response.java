@@ -12,7 +12,7 @@ public class Response{
     /**
      * L'attributo timestamp definisce la data e ora di qunado si è verificato l'errore.
      */
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
     private LocalDateTime timestamp;
     
     /**
