@@ -7,6 +7,8 @@ import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import javax.persistence.EntityExistsException;
+
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 
@@ -40,13 +42,15 @@ public class ScannerWorker extends Thread {
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
                         file.getAbsolutePath(), lastModified, hash, size, report);
 
-                if (fileRepository.existsById(record.getPath())) {
+                try {
                     fileRepository.save(record);
-                } else {
-                    System.err.println("[ERROR] Thread " + this.getName() + " File already exists: " + record.getPath());
+                } catch (EntityExistsException eee) {
+                    System.err
+                            .println("[ERROR] Thread " + this.getName() + " File already exists: " + record.getPath());
                     synchronized (listener) {
                         listener.fileNotSaved();
                     }
+                    eee.printStackTrace(System.out);
                 }
 
             } catch (NoSuchAlgorithmException nsae) {
