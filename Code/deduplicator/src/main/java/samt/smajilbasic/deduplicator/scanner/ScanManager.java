@@ -115,7 +115,7 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
             @Override
             public void run() {
                 try {
-                    while (!isInterrupted() && scanProgress < 1f) {
+                    while (!isInterrupted() && scanProgress < 1f && scanProgress != -1f && scanProgress >= 0f) {
                         synchronized (statusMonitor) {
                             if (paused) {
                                 statusMonitor.wait();
@@ -200,9 +200,8 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
 
     private String calcuateProgress() {
         if (totalFiles != 0) {
-            //TODO: check status
             scanProgress = (1f
-                    - (((float) totalFiles - ((float) fileRepository.findByReport(report)) + getUnsuccessfulSaves()) 
+                    - (((float) totalFiles - (float) fileRepository.findByReport(report) - getUnsuccessfulSaves())
                             / (float) totalFiles));
         } else {
             scanProgress = -1;
@@ -323,6 +322,13 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
      */
     public synchronized int getUnsuccessfulSaves() {
         return unsuccessfulSaves;
+    }
+
+    /**
+     * @return the totalFiles
+     */
+    public Integer getTotalFiles() {
+        return totalFiles;
     }
 
 }
