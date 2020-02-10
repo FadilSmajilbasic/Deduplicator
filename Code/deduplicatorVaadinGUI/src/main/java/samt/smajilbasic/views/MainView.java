@@ -17,14 +17,16 @@ import com.vaadin.flow.component.notification.Notification;
  */
 @Route
 public class MainView extends VerticalLayout implements LoginListener  {
-        MenuBar menuBar;
-        MenuItem path;
+
+        private static final long serialVersionUID = -6182309882769111091L;
+        private MenuBar menuBar;
+        private MenuItem path;
+        private MenuItem login;
         private Client client;
         public MainView() {
 
                 menuBar = new MenuBar();
-
-                MenuItem login = menuBar.addItem("Login", e -> changeView(LoginView.class));
+                login = menuBar.addItem("Login", e -> changeView(LoginView.class));
                 path =  menuBar.addItem("Path", e -> changeView(PathView.class));
                 path.setVisible(false);
                 menuBar.setSizeFull();
@@ -64,5 +66,7 @@ public class MainView extends VerticalLayout implements LoginListener  {
         public void userConnected(Client client) {
                 path.setVisible(true);
                 this.client = client;
+                menuBar.remove(login);
+                changeView(PathView.class);
         }
 }
