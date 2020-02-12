@@ -24,19 +24,17 @@ public class MainView extends VerticalLayout implements LoginListener  {
         private MenuItem login;
         private Client client;
         public MainView() {
-
                 menuBar = new MenuBar();
-                login = menuBar.addItem("Login", e -> changeView(LoginView.class));
+                // login = menuBar.addItem("Login", e -> changeView(LoginView.class));
                 path =  menuBar.addItem("Path", e -> changeView(PathView.class));
                 path.setVisible(false);
                 menuBar.setSizeFull();
-                setAlignItems(Alignment.CENTER);
+                this.setAlignItems(Alignment.CENTER);
                 add(menuBar);
-
+                changeView(LoginView.class);
         }
 
         
-
         private void changeView(Class view) {
                 
                 Stream<Component> components = getChildren();
@@ -66,7 +64,6 @@ public class MainView extends VerticalLayout implements LoginListener  {
         public void userConnected(Client client) {
                 path.setVisible(true);
                 this.client = client;
-                menuBar.remove(login);
                 changeView(PathView.class);
         }
 }
