@@ -104,11 +104,10 @@ public class LoginView extends VerticalLayout implements View {
         horizontalLayout.add(hostTextField, portTextField);
         credentialsLayout.add(usernameTextField, passwordField);
         portTextField.setWidthFull();
-        horizontalLayout.setAlignItems(Alignment.START);
-        credentialsLayout.setAlignItems(Alignment.START);
-        
+        horizontalLayout.setAlignItems(Alignment.CENTER);
+        credentialsLayout.setAlignItems(Alignment.CENTER);
         add(horizontalLayout,credentialsLayout , button);
-
+        
        
     }
 
