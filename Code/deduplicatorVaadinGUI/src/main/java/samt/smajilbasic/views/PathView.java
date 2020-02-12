@@ -3,6 +3,9 @@ package samt.smajilbasic.views;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.springframework.http.HttpStatus;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -15,6 +18,13 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
+import com.vaadin.flow.data.provider.hierarchy.HierarchicalDataProvider;
+import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
+import com.vaadin.flow.data.selection.SelectionEvent;
+import com.vaadin.flow.data.selection.SelectionListener;
+import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.navigator.View;
@@ -26,6 +36,9 @@ import org.json.simple.parser.ParseException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.vaadin.filesystemdataprovider.FileSelect;
+import org.vaadin.filesystemdataprovider.FileTypeResolver;
+import org.vaadin.filesystemdataprovider.FilesystemData;
+import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 
 import samt.smajilbasic.GlobalPath;
 import samt.smajilbasic.communication.Client;
@@ -43,69 +56,104 @@ public class PathView extends VerticalLayout implements View {
     private Client client;
     private String type = "true";
     private TextField pathTextField;
+    private File root = new File("/");
 
     public PathView(Client client) {
         this.client = client;
-        Label title = new Label("Path View");
-
         pathTextField = new TextField();
-        Button button = new Button("Browse",new Icon(VaadinIcon.FOLDER_OPEN),e->{openFileBrowser();});
+        pathTextField.setWidth("70%");
+        Button button = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
+            openRootSelect();
+        });
 
-        RadioButtonGroup<String> group = new RadioButtonGroup<>();
+        RadioButtonGroup<String> group = new RadioButtonGroup<String>();
         group.setItems("scan", "ignore");
+        group.setValue("scan");
         group.addValueChangeListener(event -> type = event.getValue());
-
         pathGrid = new Grid<>();
         pathGrid.setVisible(false);
-
-        add(title,new HorizontalLayout(pathTextField, button, group), pathGrid);
+        HorizontalLayout layout = new HorizontalLayout(pathTextField, button, group);
+        layout.setAlignItems(Alignment.CENTER);
+        layout.setWidthFull();
+        add(layout, pathGrid);
 
         getPaths();
     }
 
-    private void openFileBrowser() {
-        File[] roots = File.listRoots();
-        String root = "/";
-        for (File file : roots) {
-            Notification.show(file.getAbsolutePath());
-        }
-        if(roots.length ==1){
-            root = roots[0].getAbsolutePath();
-        }
-        
+    private void openRootSelect() {
+        File[] rootsArray = File.listRoots();
+        ArrayList<File> roots = new ArrayList<File>();
 
-        File rootFile = new File(root);
-        FileSelect fileSelect = new FileSelect(rootFile);
-        fileSelect.addValueChangeListener(event -> {
-            File file = fileSelect.getValue();
-            pathTextField.setValue(file.getAbsolutePath());
+        for (File file : rootsArray) {
+            roots.add(file);
+        }
+        if (roots.size() == 1) {
+            root = roots.get(0);
+            openFileSelect();
+        } else {
+            Grid<File> rootsGrid = new Grid<File>();
+            Dialog rootDialog = new Dialog();
+            SelectionListener<Grid<File>, File> listener = new SelectionListener<Grid<File>, File>() {
+
+                @Override
+                public final void selectionChange(SelectionEvent<Grid<File>, File> event) {
+                    Optional<File> selected = event.getFirstSelectedItem();
+                    if (selected.isPresent()) {
+                        Notification.show("selected");
+                        root = selected.get();
+                        rootDialog.close();
+                        openFileSelect();
+                    }
+
+                }
+
+            };
+            rootDialog.add(new Label("Select root path"));
+            rootsGrid.setItems(roots);
+            rootsGrid.addColumn(File::getAbsolutePath).setHeader("Root");
+            rootsGrid.addSelectionListener(listener);
+            rootDialog.add(rootsGrid);
+            rootsGrid.setVisible(true);
+            rootDialog.open();
+
+        }
+
+    }
+
+    private void openFileSelect() {
+        FilesystemData rootData = new FilesystemData(root, false);
+        FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
+
+        TreeGrid<File> fileBrowser = new TreeGrid<>();
+        fileBrowser.setItems(rootData.getChildren(root));
+
+        fileBrowser.setDataProvider(fileSystem);
+
+        fileBrowser.addSelectionListener(event -> {
+            Optional<File> selected = event.getFirstSelectedItem();
+            if (selected.isPresent()) {
+                pathTextField.setValue(selected.get().getAbsolutePath());
+            }
         });
 
-        fileSelect.setWidth("50%");
-        fileSelect.setHeight("50%");
-        // setSizeFull();
-        fileSelect.setLabel("Select file");
+        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
 
-        // Window subWindow = new Window("Modal View");
-
-        // VerticalLayout subContent = new VerticalLayout();
-        // subContent.setMargin(true);
-        // subWindow.setContent(subContent);
-    
-        // // Put some components in it
-        // subContent.addComponent(new Label("Label"));
-        // subContent.addComponent(new Button("Button"));
-
-        // subWindow.addComponent(fileSelect);
-
-        // subWindow.center();
         Dialog dialog = new Dialog();
-        dialog.add(new Label("Asdd"));
-        dialog.setWidth("40%");
-        dialog.setHeight("20%");
-        
-        // add(dialog);
-        // add(components);
+        Button confirmButton = new Button("Close", button -> {
+            dialog.close();
+        });
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new Label("Select file or folder"));
+        layout.add(fileBrowser);
+        layout.add(confirmButton);
+        layout.setWidthFull();
+        layout.setHeight("500px");
+        layout.setAlignItems(Alignment.CENTER);
+        dialog.add(layout);
+        dialog.setWidth("500px");
+        dialog.setHeight("500px");
+        dialog.open();
     }
 
     private void getPaths() {
@@ -130,7 +178,8 @@ public class PathView extends VerticalLayout implements View {
                 pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("to be ignored");
 
                 pathGrid.asSingleSelect().addValueChangeListener(event -> {
-                    String message = String.format("Selection changed from %s to %s", event.getOldValue().getPath(),
+                    String message = String.format("Selection changed from %s to %s",
+                            event.getOldValue() != null ? event.getOldValue().getPath() : "",
                             event.getValue().getPath());
                     Notification.show(message);
                 });
