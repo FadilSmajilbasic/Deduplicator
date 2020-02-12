@@ -7,6 +7,8 @@ import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import javax.persistence.EntityExistsException;
+
 import samt.smajilbasic.deduplicator.entity.Report;
 import samt.smajilbasic.deduplicator.repository.FileRepository;
 
@@ -18,12 +20,14 @@ public class ScannerWorker extends Thread {
     private Report report;
     private FileRepository fileRepository;
     private File file;
+    private ScannerWorkerListener listener;
     private final static int BUFFER_SIZE = 32768;
 
-    public ScannerWorker(File file, FileRepository fileRepository, Report report) {
+    public ScannerWorker(File file, FileRepository fileRepository, Report report, ScannerWorkerListener listener) {
         this.report = report;
         this.fileRepository = fileRepository;
         this.file = file;
+        this.listener = listener;
     }
 
     @Override
@@ -38,17 +42,41 @@ public class ScannerWorker extends Thread {
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
                         file.getAbsolutePath(), lastModified, hash, size, report);
 
-                fileRepository.save(record);
+                try {
+                    fileRepository.save(record);
+                } catch (EntityExistsException eee) {
+                    System.err
+                            .println("[ERROR] Thread " + this.getName() + " File already exists: " + record.getPath());
+                    synchronized (listener) {
+                        listener.fileNotSaved();
+                    }
+                    eee.printStackTrace(System.out);
+                }
 
             } catch (NoSuchAlgorithmException nsae) {
                 System.err.println("[ERROR] Thread " + this.getName() + " Unable to hash file: " + nsae.getMessage());
+
+                synchronized (listener) {
+                    listener.fileNotSaved();
+                }
+
             } catch (IOException ioe) {
                 System.err.println("[ERROR] Thread " + this.getName() + " Unable to read file: " + ioe.getMessage());
+                synchronized (listener) {
+                    listener.fileNotSaved();
+                }
+
             } catch (NullPointerException npe) {
                 System.err.println("[ERROR] Thread " + this.getName() + " Unable to save file: " + npe.getMessage());
+                synchronized (listener) {
+                    listener.fileNotSaved();
+                }
             }
         } else {
             System.err.println("[ERROR] Thread " + this.getName() + " Path set is not file: " + file.getAbsolutePath());
+            synchronized (listener) {
+                listener.fileNotSaved();
+            }
         }
     }
 

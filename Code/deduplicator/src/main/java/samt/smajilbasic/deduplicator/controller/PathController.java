@@ -76,7 +76,7 @@ public class PathController {
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
-            return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
+            return new ResponseEntity<Response>(new Response("Invalid path: " + path),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -123,7 +123,7 @@ public class PathController {
 
             }
         } catch (InvalidPathException ipe) {
-            return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
+            return new ResponseEntity<Response>(new Response("Invalid path: " + path),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

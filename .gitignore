@@ -58,4 +58,5 @@ out/
 
 ### VS Code ###
 .vscode/
-Code/deduplicatorGUI/src/main/java/deduplicatorGUI/layouts/test.java
+Code/deduplicatorVaadinGUI/node_modules/
+Code/deduplicatorVaadinGUI/target/

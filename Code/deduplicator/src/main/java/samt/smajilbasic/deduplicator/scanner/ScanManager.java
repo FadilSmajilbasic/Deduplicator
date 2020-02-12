@@ -24,7 +24,7 @@ import samt.smajilbasic.deduplicator.repository.ReportRepository;
  * l'annotazione @{@link Autowired}.
  */
 @Component
-public class ScanManager extends Thread {
+public class ScanManager extends Thread implements ScannerWorkerListener {
 
     /**
      * L'attributo fileRepository serve al controller per interfacciarsi con la
@@ -91,6 +91,7 @@ public class ScanManager extends Thread {
     private ScanListener listener;
     private FilesScanner scanner;
     private Thread statusThread;
+    private int unsuccessfulSaves = 0;
     /**
      * Default timeout for the scanning thread pool given in seconds
      */
@@ -114,7 +115,7 @@ public class ScanManager extends Thread {
             @Override
             public void run() {
                 try {
-                    while (!isInterrupted() && scanProgress < 1f) {
+                    while (!isInterrupted() && scanProgress < 1f && scanProgress != -1f && scanProgress >= 0f) {
                         synchronized (statusMonitor) {
                             if (paused) {
                                 statusMonitor.wait();
@@ -161,14 +162,13 @@ public class ScanManager extends Thread {
             totalFiles = scanner.getSize();
             ArrayBlockingQueue<ScannerWorker> queue = new ArrayBlockingQueue<ScannerWorker>(totalFiles);
             pool = new PausableExecutor(threadCount, terminationTimeout, TimeUnit.SECONDS, queue);
+            statusThread.start();
             while (scanner.hasNext()) {
-                ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, report);
+                ScannerWorker thread = new ScannerWorker(scanner.getNextFile(), fileRepository, report, this);
                 pool.submit(thread);
             }
             pool.shutdown();
 
-            statusThread.start();
-            
             statusThread.join();
         } catch (InterruptedException ie) {
             System.err.println("[ERROR] Scan Manager interrupted");
@@ -191,7 +191,7 @@ public class ScanManager extends Thread {
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             report.setFilesScanned(totalFiles);
             reportRepository.save(report);
-            
+
             System.out.println("[INFO] Scan manager Finished");
             if (listener != null)
                 listener.scanFinished();
@@ -201,7 +201,8 @@ public class ScanManager extends Thread {
     private String calcuateProgress() {
         if (totalFiles != 0) {
             scanProgress = (1f
-                    - (((float) totalFiles - (float) fileRepository.findByReport(report)) / (float) totalFiles));
+                    - (((float) totalFiles - (float) fileRepository.findByReport(report) - getUnsuccessfulSaves())
+                            / (float) totalFiles));
         } else {
             scanProgress = -1;
         }
@@ -309,6 +310,25 @@ public class ScanManager extends Thread {
      */
     public void setListener(ScanListener listener) {
         this.listener = listener;
+    }
+
+    @Override
+    public synchronized void fileNotSaved() {
+        this.unsuccessfulSaves++;
+    }
+
+    /**
+     * @return the unsuccessfulSaves
+     */
+    public synchronized int getUnsuccessfulSaves() {
+        return unsuccessfulSaves;
+    }
+
+    /**
+     * @return the totalFiles
+     */
+    public Integer getTotalFiles() {
+        return totalFiles;
     }
 
 }
