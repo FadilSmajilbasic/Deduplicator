@@ -2,68 +2,32 @@ package samt.smajilbasic.views;
 
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
-import samt.smajilbasic.communication.Client;
-import samt.smajilbasic.listener.LoginListener;
+import com.vaadin.flow.server.PWA;
+import com.vaadin.navigator.View;
 
-import java.util.Iterator;
-import java.util.stream.Stream;
-import com.vaadin.flow.component.Component;
+import samt.smajilbasic.communication.Client;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.menubar.MenuBar;
-import com.vaadin.flow.component.notification.Notification;
 
 /**
  * MainView
  */
-@Route
-public class MainView extends VerticalLayout implements LoginListener  {
+@Route(value = "")
+@PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
+@CssImport("./styles/shared-styles.css")
+@CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
+public class MainView extends VerticalLayout implements View{
 
-        private static final long serialVersionUID = -6182309882769111091L;
         private MenuBar menuBar;
         private MenuItem path;
         private MenuItem login;
-        private Client client;
+
         public MainView() {
                 menuBar = new MenuBar();
-                // login = menuBar.addItem("Login", e -> changeView(LoginView.class));
-                path =  menuBar.addItem("Path", e -> changeView(PathView.class));
-                path.setVisible(false);
+                login = menuBar.addItem("Login", e -> login.getUI().ifPresent(ui -> ui.navigate("login")));
+                path = menuBar.addItem("Path", e -> path.getUI().ifPresent(ui -> ui.navigate("path")));
                 menuBar.setSizeFull();
-                this.setAlignItems(Alignment.CENTER);
                 add(menuBar);
-                changeView(LoginView.class);
-        }
-
-        
-        private void changeView(Class view) {
-                
-                Stream<Component> components = getChildren();
-                Iterator<Component> comp = components.iterator();
-                
-                while (comp.hasNext()){
-                        Component component = comp.next();
-                        if(!component.equals(menuBar)){
-                                remove(component);
-                        }   
-                }
-                Component resultView = null;
-
-                if(view.equals(LoginView.class)){
-                        resultView = new LoginView(this);
-                }if(view.equals(PathView.class)){
-                        resultView = new PathView(client);
-                }
-                if(resultView != null)
-                        add(resultView);
-                else
-                        Notification.show("invalid result");
-
-        }
-
-        @Override
-        public void userConnected(Client client) {
-                path.setVisible(true);
-                this.client = client;
-                changeView(PathView.class);
         }
 }
