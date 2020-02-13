@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -33,44 +34,18 @@ import org.json.simple.parser.ParseException;
 
 import samt.smajilbasic.GlobalPath;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.communication.Client.loginResponse;
 import samt.smajilbasic.listener.LoginListener;
 
-/**
- * A sample Vaadin view class.
- * <p>
- * To implement a Vaadin view just extend any Vaadin component and use @Route
- * annotation to announce it in a URL as a Spring managed bean. Use the @PWA
- * annotation make the application installable on phones, tablets and some
- * desktop browsers.
- * <p>
- * A new instance of this class is created for every new user and every browser
- * tab/window.
- */
-@Route
-@PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control thje deduplicator service.", enableInstallPrompt = true)
-@CssImport("./styles/shared-styles.css")
-@CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
+@Route(value = "login", registerAtStartup = true)
 public class LoginView extends VerticalLayout implements View {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 4944489863331319773L;
 
     private Client client;
-    LoginListener listener = null;
+    public final static String CLIENT_STRING = "client";
 
-    /**
-     * Construct a new Vaadin view.
-     * <p>
-     * Build the initial UI state for the user accessing the application.
-     *
-     * @param service The message service. Automatically injected Spring managed
-     *                bean.
-     */
-    public LoginView(LoginListener listener) {
-        this.listener = listener;
-        // Use TextField for standard text input
+    public LoginView() {
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         HorizontalLayout credentialsLayout = new HorizontalLayout();
@@ -79,7 +54,6 @@ public class LoginView extends VerticalLayout implements View {
         NumberField portTextField = new NumberField("Port");
         TextField usernameTextField = new TextField("Username");
         PasswordField passwordField = new PasswordField("Password");
-        
 
         portTextField.setStep(1);
         portTextField.setMin(1);
@@ -88,40 +62,41 @@ public class LoginView extends VerticalLayout implements View {
         hostTextField.setValue("127.0.0.1");
         usernameTextField.setValue("admin");
         passwordField.setValue("admin");
-        // Button click listeners can be defined as lambda expressions
 
         Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
                 usernameTextField.getValue(), passwordField.getValue()));
 
-        
-
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         button.addClickShortcut(Key.ENTER);
-        
-       
 
         horizontalLayout.add(hostTextField, portTextField);
         credentialsLayout.add(usernameTextField, passwordField);
         portTextField.setWidthFull();
         horizontalLayout.setAlignItems(Alignment.CENTER);
         credentialsLayout.setAlignItems(Alignment.CENTER);
-        add(horizontalLayout,credentialsLayout , button);
-        
-       
+        add(horizontalLayout, credentialsLayout, button);
+
     }
 
     public void tryLogin(String host, int port, String user, String pass) {
 
         client = new Client(user, pass);
-        if (client.isAuthenticated(host, port)) {
-            listener.userConnected(client);
-            Notification.show("User authenticated sucessfully");
-        } else {
-            Notification.show("Invalid credentials");
+        loginResponse resp = client.isAuthenticated(host, port);
+
+        switch (resp) {
+        case OK:
+            UI.getCurrent().getSession().setAttribute(CLIENT_STRING, client);
+            UI.getCurrent().navigate("path");
+            Notification.show("User authenticated sucessfully", 2000, Notification.Position.TOP_END);
+            break;
+        case SERVER:
+            Notification.show("Server not reachable", 2000, Notification.Position.TOP_END);
+            break;
+        case CREDENTIALS:
+            Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END);
+            break;
         }
     }
-
-     
 
 }
