@@ -38,7 +38,6 @@ import javax.net.ssl.SSLContext;
  */
 public class Client {
 
-
     private String username;
 
     private String password;
@@ -48,6 +47,12 @@ public class Client {
     private int port;
     private final String CA_PASS = "Password&1";
     private KeyStore keyStore;
+
+    public enum loginResponse {
+        CREDENTIALS,
+        SERVER,
+        OK
+    }
 
     /**
      * @param port the port to set
@@ -61,72 +66,76 @@ public class Client {
     }
 
     /**
-     * Il costruttore che riceve il username e la password per l'autenticazione basic che verrà utilizzata in tutte le GUI.
-     * Il costruttore tenta di caricare 
+     * Il costruttore che riceve il username e la password per l'autenticazione
+     * basic che verrà utilizzata in tutte le GUI. Il costruttore tenta di caricare
+     * 
      * @param username il username da impostare.
      * @param password la password da impostare.
      */
     public Client(String username, String password) {
         this.username = username;
         this.password = password;
-        
+
         /*
-            InputStream in = getClass().getResourceAsStream("../resource/deduplicator.p12"); 
-        try{    
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(in, CA_PASS.toCharArray());
-        }catch(IOException e){
-            StackTraceElement[] output = e.getStackTrace();
-            for (StackTraceElement element : output) {
-                System.out.println(element.toString());
-            }
-        } catch (KeyStoreException e) {
-            e.printStackTrace(System.out);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace(System.out);
-        } catch (CertificateException e) {
-            e.printStackTrace(System.out);
-        }
-        */
+         * InputStream in =
+         * getClass().getResourceAsStream("../resource/deduplicator.p12"); try{ KeyStore
+         * keyStore = KeyStore.getInstance("PKCS12"); keyStore.load(in,
+         * CA_PASS.toCharArray()); }catch(IOException e){ StackTraceElement[] output =
+         * e.getStackTrace(); for (StackTraceElement element : output) {
+         * System.out.println(element.toString()); } } catch (KeyStoreException e) {
+         * e.printStackTrace(System.out); } catch (NoSuchAlgorithmException e) {
+         * e.printStackTrace(System.out); } catch (CertificateException e) {
+         * e.printStackTrace(System.out); }
+         */
         HttpComponentsClientHttpRequestFactory requestFactory = null;
-        //try {
-            /*TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
-            SSLContext sslContext =
-            SSLContextBuilder.create()
-            .loadKeyMaterial(keyStore, CA_PASS.toCharArray())
-                .loadTrustMaterial(null, acceptingTrustStrategy)
-            .build();
+        // try {
+        /*
+         * TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String
+         * authType) -> true; SSLContext sslContext = SSLContextBuilder.create()
+         * .loadKeyMaterial(keyStore, CA_PASS.toCharArray()) .loadTrustMaterial(null,
+         * acceptingTrustStrategy) .build();
+         * 
+         * .setSSLContext(sslContext)
+         */
+        HttpClient httpClient = HttpClients.custom().build();
 
-            .setSSLContext(sslContext)
-*/
-            HttpClient httpClient = HttpClients.custom().build();
-            
-            requestFactory = new HttpComponentsClientHttpRequestFactory();
-            
-            requestFactory.setHttpClient(httpClient);
+        requestFactory = new HttpComponentsClientHttpRequestFactory();
 
-        /*} catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException  | KeyManagementException  e) {
+        requestFactory.setHttpClient(httpClient);
 
-            System.out.println("Unable to create client: " + e.getMessage());
-            e.printStackTrace();
-        }*/
+        /*
+         * } catch (UnrecoverableKeyException | NoSuchAlgorithmException |
+         * KeyStoreException | KeyManagementException e) {
+         * 
+         * System.out.println("Unable to create client: " + e.getMessage());
+         * e.printStackTrace(); }
+         */
         if (requestFactory != null)
             restTemplate = new RestTemplate(requestFactory);
     }
 
-    public boolean isAuthenticated(String host, int port) throws RestClientException {
+    public loginResponse isAuthenticated(String host, int port) throws RestClientException {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
-        ResponseEntity<String> response = restTemplate.exchange("http://" + host + ":" + port + "/login/",
-                HttpMethod.GET, requestEntity, String.class);
+        ResponseEntity<String> response = null;
 
-        if (response.getStatusCode().equals(HttpStatus.OK)) {
-            this.host = host;
-            setPort(port);
-            return true;
-        } else {
-            return false;
+        try {
+            response = restTemplate.exchange("http://" + host + ":" + port + "/login/", HttpMethod.GET, requestEntity,
+                    String.class);
+        } catch (RestClientException rce) {
+            System.err.println("[ERROR] Client exception: " + rce.getMessage());
         }
+
+        if (response != null) {
+            if (response.getStatusCode().equals(HttpStatus.OK)) {
+                this.host = host;
+                setPort(port);
+                return loginResponse.OK;
+            } else {
+                return loginResponse.CREDENTIALS;
+            }
+        }
+        return loginResponse.SERVER;
 
     }
 
@@ -134,12 +143,11 @@ public class Client {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    "http://" + host + ":" + port + "/" + path, HttpMethod.GET, requestEntity,
-                    String.class);
+            ResponseEntity<String> response = restTemplate.exchange("http://" + host + ":" + port + "/" + path,
+                    HttpMethod.GET, requestEntity, String.class);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
-                
+
                 return response;
 
             } else {
@@ -160,8 +168,8 @@ public class Client {
 
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/path/",
-                    HttpMethod.DELETE, requestEntity, String.class);
+            response = restTemplate.exchange("http://" + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+                    String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
         }
@@ -197,8 +205,8 @@ public class Client {
 
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path,
-                    HttpMethod.POST, requestEntity, String.class);
+            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
+                    String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
         }
@@ -209,15 +217,15 @@ public class Client {
         values = values == null ? new LinkedMultiValueMap<>() : values;
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
-        
+
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path,
-                    HttpMethod.PUT, requestEntity, String.class);
+            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
+                    String.class);
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: ");
-            StackTraceElement[] st =  rce.getStackTrace();
+            StackTraceElement[] st = rce.getStackTrace();
             for (StackTraceElement stackTraceElement : st) {
                 System.out.println(stackTraceElement.toString());
             }
