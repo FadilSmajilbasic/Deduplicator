@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.http.HttpStatus;
+
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -19,12 +21,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
-import com.vaadin.flow.data.provider.hierarchy.HierarchicalDataProvider;
-import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.data.selection.SelectionListener;
-import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.navigator.View;
@@ -35,8 +33,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.vaadin.filesystemdataprovider.FileSelect;
-import org.vaadin.filesystemdataprovider.FileTypeResolver;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 
@@ -46,8 +42,8 @@ import samt.smajilbasic.communication.Client;
 /**
  * PathView
  */
-@Route
-@PageTitle("PathView")
+@Route(value = "path", registerAtStartup = true)
+@PageTitle(value = "PathView")
 public class PathView extends VerticalLayout implements View {
 
     Grid<GlobalPath> pathGrid = null;
@@ -58,26 +54,30 @@ public class PathView extends VerticalLayout implements View {
     private TextField pathTextField;
     private File root = new File("/");
 
-    public PathView(Client client) {
-        this.client = client;
-        pathTextField = new TextField();
-        pathTextField.setWidth("70%");
-        Button button = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
-            openRootSelect();
-        });
+    public PathView() {
+        if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
+            UI.getCurrent().navigate("login");
+        } else {
+            client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
+            pathTextField = new TextField();
+            pathTextField.setWidth("70%");
+            Button button = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
+                openRootSelect();
+            });
 
-        RadioButtonGroup<String> group = new RadioButtonGroup<String>();
-        group.setItems("scan", "ignore");
-        group.setValue("scan");
-        group.addValueChangeListener(event -> type = event.getValue());
-        pathGrid = new Grid<>();
-        pathGrid.setVisible(false);
-        HorizontalLayout layout = new HorizontalLayout(pathTextField, button, group);
-        layout.setAlignItems(Alignment.CENTER);
-        layout.setWidthFull();
-        add(layout, pathGrid);
-
-        getPaths();
+            RadioButtonGroup<String> group = new RadioButtonGroup<String>();
+            group.setItems("scan", "ignore");
+            group.setValue("scan");
+            group.addValueChangeListener(event -> type = event.getValue());
+            pathGrid = new Grid<>();
+            pathGrid.setVisible(false);
+            pathTextField.setWidth("20em");
+            HorizontalLayout layout = new HorizontalLayout(pathTextField, button, group);
+            layout.setAlignItems(Alignment.START);
+            layout.setWidthFull();
+            add(layout, pathGrid);
+            getPaths();
+        }
     }
 
     private void openRootSelect() {
@@ -144,14 +144,12 @@ public class PathView extends VerticalLayout implements View {
         });
 
         VerticalLayout layout = new VerticalLayout();
-        layout.add(new Label("Select file or folder"));
-        layout.add(fileBrowser);
-        layout.add(confirmButton);
+        layout.add(new Label("Select file or folder"),fileBrowser,confirmButton);
         layout.setWidthFull();
         layout.setHeight("500px");
         layout.setAlignItems(Alignment.CENTER);
         dialog.add(layout);
-        dialog.setWidth("500px");
+        dialog.setWidthFull();
         dialog.setHeight("500px");
         dialog.open();
     }
