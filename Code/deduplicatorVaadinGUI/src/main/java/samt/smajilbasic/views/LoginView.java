@@ -1,19 +1,9 @@
 package samt.smajilbasic.views;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -21,21 +11,10 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.PWA;
 import com.vaadin.navigator.View;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
-import samt.smajilbasic.GlobalPath;
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.communication.Client.loginResponse;
-import samt.smajilbasic.listener.LoginListener;
 
 @Route(value = "login", registerAtStartup = true)
 public class LoginView extends VerticalLayout implements View {
@@ -63,8 +42,10 @@ public class LoginView extends VerticalLayout implements View {
         usernameTextField.setValue("admin");
         passwordField.setValue("admin");
 
-        Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
-                usernameTextField.getValue(), passwordField.getValue()));
+        Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(),
+         portTextField.getValue().intValue(),
+         usernameTextField.getValue(),
+         passwordField.getValue()));
 
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
@@ -73,8 +54,9 @@ public class LoginView extends VerticalLayout implements View {
         horizontalLayout.add(hostTextField, portTextField);
         credentialsLayout.add(usernameTextField, passwordField);
         portTextField.setWidthFull();
-        horizontalLayout.setAlignItems(Alignment.CENTER);
-        credentialsLayout.setAlignItems(Alignment.CENTER);
+
+        this.setAlignItems(Alignment.CENTER);
+
         add(horizontalLayout, credentialsLayout, button);
 
     }
@@ -88,7 +70,6 @@ public class LoginView extends VerticalLayout implements View {
         case OK:
             UI.getCurrent().getSession().setAttribute(CLIENT_STRING, client);
             UI.getCurrent().navigate("path");
-            Notification.show("User authenticated sucessfully", 2000, Notification.Position.TOP_END);
             break;
         case SERVER:
             Notification.show("Server not reachable", 2000, Notification.Position.TOP_END);
