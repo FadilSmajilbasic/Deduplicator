@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.springframework.http.HttpStatus;
 
@@ -16,8 +15,11 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.notification.Notification.Position;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.WrapMode;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
@@ -26,6 +28,8 @@ import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.navigator.View;
+import com.vaadin.ui.Window.ResizeEvent;
+import com.vaadin.ui.Window.ResizeListener;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -44,7 +48,7 @@ import samt.smajilbasic.communication.Client;
  */
 @Route(value = "path", registerAtStartup = true)
 @PageTitle(value = "PathView")
-public class PathView extends VerticalLayout implements View {
+public class PathView extends VerticalLayout implements View, ResizeListener {
 
     Grid<GlobalPath> pathGrid = null;
     private JSONParser parser = new JSONParser();
@@ -52,32 +56,56 @@ public class PathView extends VerticalLayout implements View {
     private Client client;
     private String type = "true";
     private TextField pathTextField;
+
+    private final static int LENGTH = 2000;
     private File root = new File("/");
 
     public PathView() {
         if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
-            UI.getCurrent().navigate("login");
+            UI.getCurrent().getPage().setLocation("login/");
         } else {
             client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
             pathTextField = new TextField();
-            pathTextField.setWidth("70%");
-            Button button = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
+            Button browseButton = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
                 openRootSelect();
             });
+            Button addButton = new Button("Add", new Icon(VaadinIcon.PLUS), e -> {
+                savePath();
+            });
+
+            pathTextField.setMinWidth("30em");
 
             RadioButtonGroup<String> group = new RadioButtonGroup<String>();
             group.setItems("scan", "ignore");
             group.setValue("scan");
             group.addValueChangeListener(event -> type = event.getValue());
+
             pathGrid = new Grid<>();
             pathGrid.setVisible(false);
-            pathTextField.setWidth("20em");
-            HorizontalLayout layout = new HorizontalLayout(pathTextField, button, group);
+
+            FlexLayout layout = new FlexLayout();
+            layout.add(pathTextField, browseButton, group, addButton);
             layout.setAlignItems(Alignment.START);
             layout.setWidthFull();
+            layout.setFlexGrow(1, pathTextField);
+            layout.setWrapMode(WrapMode.WRAP);
             add(layout, pathGrid);
             getPaths();
         }
+    }
+
+    private void savePath() {
+        String resp = client.savePath(pathTextField.getValue(), type);
+
+        if (resp.equals("OK")) {
+            Notification.show("Path added with success", LENGTH, Position.BOTTOM_END);
+        } else {
+            System.out.println("[ERROR] saving path: " + resp);
+            Notification.show(resp, LENGTH, Position.BOTTOM_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+
+        getPaths();
+
     }
 
     private void openRootSelect() {
@@ -144,18 +172,20 @@ public class PathView extends VerticalLayout implements View {
         });
 
         VerticalLayout layout = new VerticalLayout();
-        layout.add(new Label("Select file or folder"),fileBrowser,confirmButton);
-        layout.setWidthFull();
-        layout.setHeight("500px");
+        layout.add(new Label("Select file or folder"), fileBrowser, confirmButton);
+        layout.setFlexGrow(1, fileBrowser);
+        fileBrowser.setWidthFull();
+        layout.setMinWidth("50em");
         layout.setAlignItems(Alignment.CENTER);
         dialog.add(layout);
-        dialog.setWidthFull();
-        dialog.setHeight("500px");
         dialog.open();
     }
 
     private void getPaths() {
         pathGrid.setVisible(true);
+
+        // pathGrid.removeAllColumns();
+
         ResponseEntity<String> response = client.get("path/");
 
         if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
@@ -172,15 +202,18 @@ public class PathView extends VerticalLayout implements View {
                 }
 
                 pathGrid.setItems(paths);
-                pathGrid.addColumn(GlobalPath::getPath).setHeader("Path");
-                pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("to be ignored");
 
-                pathGrid.asSingleSelect().addValueChangeListener(event -> {
-                    String message = String.format("Selection changed from %s to %s",
-                            event.getOldValue() != null ? event.getOldValue().getPath() : "",
-                            event.getValue().getPath());
-                    Notification.show(message);
-                });
+                if (pathGrid.getColumns().size() == 0) {
+                    pathGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(1);
+                    pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(0);
+
+                    pathGrid.asSingleSelect().addValueChangeListener(event -> {
+                        String message = String.format("Selection changed from %s to %s",
+                                event.getOldValue() != null ? event.getOldValue().getPath() : "",
+                                event.getValue().getPath());
+                        Notification.show(message);
+                    });
+                }
 
             } catch (ParseException pe) {
                 Notification.show("Unable to retrieve paths: " + pe.getMessage());
@@ -188,6 +221,11 @@ public class PathView extends VerticalLayout implements View {
         } else {
             Notification.show("Unable to retrieve paths");
         }
+
+    }
+
+    @Override
+    public void windowResized(ResizeEvent e) {
 
     }
 }
