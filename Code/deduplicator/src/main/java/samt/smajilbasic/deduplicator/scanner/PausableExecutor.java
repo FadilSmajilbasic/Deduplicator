@@ -7,6 +7,11 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Source: https://stackoverflow.com/questions/9748710/how-to-pause-resume-all-threads-in-an-executorservice-in-java
+ * Date: 14.02.2020
+ * @author https://stackoverflow.com/users/471136/pathikrit 
+ */
 public class PausableExecutor extends ThreadPoolExecutor {
     private boolean isPaused = false;
     private Lock pauseLock = new ReentrantLock();
