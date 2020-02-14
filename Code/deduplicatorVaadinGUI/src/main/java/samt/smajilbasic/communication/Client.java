@@ -5,6 +5,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,9 +52,7 @@ public class Client {
     private KeyStore keyStore;
 
     public enum loginResponse {
-        CREDENTIALS,
-        SERVER,
-        OK
+        CREDENTIALS, SERVER, OK
     }
 
     /**
@@ -64,6 +65,8 @@ public class Client {
             port = 8080;
         }
     }
+
+    JSONParser parser = new JSONParser();
 
     /**
      * Il costruttore che riceve il username e la password per l'autenticazione
@@ -225,13 +228,36 @@ public class Client {
                     String.class);
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: ");
-            StackTraceElement[] st = rce.getStackTrace();
-            for (StackTraceElement stackTraceElement : st) {
-                System.out.println(stackTraceElement.toString());
-            }
         }
 
         return response;
+    }
+
+    public String savePath(String value, String type) {
+
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        values.add("path", value);
+        values.add("ignorePath", !type.equals("scan"));
+        ResponseEntity<String> response = null;
+
+        response = put("path/", values);
+
+        if (response != null) {
+            JSONObject resp = new JSONObject();
+            try {
+                resp = (JSONObject) parser.parse(response.getBody());
+            } catch (ParseException pe) {
+                return "Unable to parse the response";
+            }
+            if (response.getStatusCode() == HttpStatus.OK) {
+
+                return "OK";
+            } else {
+                return resp.get("message").toString();
+            }
+        } else {
+            return "Unable to get response from server";
+        }
     }
 
 }
