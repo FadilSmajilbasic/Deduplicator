@@ -18,6 +18,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.WrapMode;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
@@ -90,7 +91,7 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             layout.setFlexGrow(1, pathTextField);
             layout.setWrapMode(WrapMode.WRAP);
             add(layout, pathGrid);
-            getPaths();
+            updatePaths();
         }
     }
 
@@ -104,7 +105,7 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             Notification.show(resp, LENGTH, Position.BOTTOM_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
-        getPaths();
+        updatePaths();
 
     }
 
@@ -181,10 +182,8 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
         dialog.open();
     }
 
-    private void getPaths() {
+    private void updatePaths() {
         pathGrid.setVisible(true);
-
-        // pathGrid.removeAllColumns();
 
         ResponseEntity<String> response = client.get("path/");
 
@@ -208,10 +207,47 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
                     pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(0);
 
                     pathGrid.asSingleSelect().addValueChangeListener(event -> {
-                        String message = String.format("Selection changed from %s to %s",
-                                event.getOldValue() != null ? event.getOldValue().getPath() : "",
-                                event.getValue().getPath());
-                        Notification.show(message);
+                        if (event.getValue() != null) {
+                            Dialog dialog = new Dialog();
+                            VerticalLayout vLayout = new VerticalLayout();
+                            HorizontalLayout hLayout = new HorizontalLayout();
+
+                            Label title = new Label("Select action");
+                            Button deleteButton = new Button("Delete", e -> {
+                                deletePath(event.getValue());
+                            });
+                            Button modifyButton = new Button("Modify", e -> {
+                                Dialog dialogModify = new Dialog();
+                                Label titleModify = new Label("Select action");
+                                VerticalLayout vLayoutModify = new VerticalLayout();
+                                HorizontalLayout hLayoutModify = new HorizontalLayout();
+                                TextField pathTextFieldModify = new TextField("Path");
+                                pathTextFieldModify.setMinWidth("30em");
+                                RadioButtonGroup<String> group = new RadioButtonGroup<String>();
+                                group.setItems("scan", "ignore");
+                                group.setValue("scan");
+                                group.addValueChangeListener(groupModify -> type = groupModify.getValue());
+
+                                Button modifyConfirmButton = new Button("Confirm", eventModify -> modifyPath(
+                                        event.getValue(),
+                                        new GlobalPath(pathTextFieldModify.getValue(), (group.getValue() == "scan"))));
+                                hLayoutModify.add(pathTextFieldModify, group);
+                                hLayoutModify.setFlexGrow(1, pathTextFieldModify);
+
+                                vLayoutModify.add(titleModify, hLayoutModify, modifyConfirmButton);
+                                dialogModify.add(vLayoutModify);
+                            });
+                            Button closeButton = new Button("Close", e -> dialog.close());
+                            Label path = new Label();
+
+                            path.setText(event.getValue().getPath());
+
+                            hLayout.add(deleteButton, modifyButton, closeButton);
+                            vLayout.add(title, hLayout);
+                            dialog.add(vLayout);
+                            dialog.open();
+                        }
+
                     });
                 }
 
@@ -222,6 +258,16 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             Notification.show("Unable to retrieve paths");
         }
 
+    }
+
+    private void modifyPath(GlobalPath oldPath, GlobalPath newPath) {
+        client.modifyPath(oldPath, newPath);
+        updatePaths();
+    }
+
+    private void deletePath(GlobalPath path) {
+        client.deletePath(path);
+        updatePaths();
     }
 
     @Override
