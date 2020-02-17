@@ -206,6 +206,7 @@
                 <configuration>
                     <wait>500</wait>
                     <maxAttempts>240</maxAttempts>
+                    <maxmem>3000m</maxmem>
                 </configuration>
             </plugin>
 
