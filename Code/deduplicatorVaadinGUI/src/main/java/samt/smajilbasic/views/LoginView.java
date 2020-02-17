@@ -24,15 +24,22 @@ public class LoginView extends VerticalLayout implements View {
     private Client client;
     public final static String CLIENT_STRING = "client";
 
+    private boolean defaultView = true;
+    private TextField hostTextField;
+    private NumberField portTextField;
+
     public LoginView() {
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         HorizontalLayout credentialsLayout = new HorizontalLayout();
 
-        TextField hostTextField = new TextField("Host");
-        NumberField portTextField = new NumberField("Port");
+        hostTextField = new TextField("Host");
+        portTextField = new NumberField("Port");
         TextField usernameTextField = new TextField("Username");
         PasswordField passwordField = new PasswordField("Password");
+
+        Button advancedViewButton = new Button("Advanced View",event ->{toggleView();});
+        advancedViewButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         portTextField.setStep(1);
         portTextField.setMin(1);
@@ -42,10 +49,8 @@ public class LoginView extends VerticalLayout implements View {
         usernameTextField.setValue("admin");
         passwordField.setValue("admin");
 
-        Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(),
-         portTextField.getValue().intValue(),
-         usernameTextField.getValue(),
-         passwordField.getValue()));
+        Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
+                usernameTextField.getValue(), passwordField.getValue()));
 
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
@@ -56,9 +61,21 @@ public class LoginView extends VerticalLayout implements View {
         portTextField.setWidthFull();
 
         this.setAlignItems(Alignment.CENTER);
+        toggleView();
 
-        add(horizontalLayout, credentialsLayout, button);
+        add(horizontalLayout, credentialsLayout, button,advancedViewButton);
 
+    }
+
+    private void toggleView() {
+        if (defaultView) {
+            hostTextField.setVisible(!defaultView);
+            portTextField.setVisible(!defaultView);
+        } else {
+            hostTextField.setVisible(!defaultView);
+            portTextField.setVisible(!defaultView);
+        }
+        defaultView = !defaultView;
     }
 
     public void tryLogin(String host, int port, String user, String pass) {
