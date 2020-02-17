@@ -227,6 +227,8 @@ public class Client {
                     String.class);
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: ");
+            rce.printStackTrace(System.out);
+
         }
 
         return response;
@@ -252,22 +254,17 @@ public class Client {
 
     }
 
-    public HttpStatus modifyPath(GlobalPath oldPath, GlobalPath newPath) {
-        if (oldPath != null && newPath != null) {
-            if (oldPath.getPath().equals(newPath.getPath())) {
-                return savePath(oldPath.getPath(), newPath.isignoreFile() ? "scan" : "ignore").getStatusCode();
-            } else {
-                if (deletePath(oldPath) == HttpStatus.OK) {
-                    ResponseEntity<String> response = savePath(newPath.getPath(),
-                            (newPath.isignoreFile() ? "scan" : "ignore"));
-                    if (response != null) {
-                        return response.getStatusCode();
-                    } else {
-                        return HttpStatus.SERVICE_UNAVAILABLE;
-                    }
+    public HttpStatus modifyPath(GlobalPath oldPath, String newIgnoreValue) {
+        if (oldPath != null) {
+            if (deletePath(oldPath) == HttpStatus.OK) {
+                ResponseEntity<String> response = savePath(oldPath.getPath(), newIgnoreValue);
+                if (response != null) {
+                    return response.getStatusCode();
                 } else {
-                    return HttpStatus.INTERNAL_SERVER_ERROR;
+                    return HttpStatus.SERVICE_UNAVAILABLE;
                 }
+            } else {
+                return HttpStatus.INTERNAL_SERVER_ERROR;
             }
         } else {
             return HttpStatus.BAD_REQUEST;
