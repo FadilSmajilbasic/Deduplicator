@@ -105,7 +105,7 @@ public class PathController {
                 }
             } else {
                 return new ResponseEntity<Response>(new Response("Invalid path: " + path),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+                        HttpStatus.BAD_REQUEST);
             }
 
             if (!gpr.existsById(path)) {
@@ -120,17 +120,17 @@ public class PathController {
                     }
                 } else {
                     return new ResponseEntity<Response>(new Response("Invalid path format: " + path),
-                            HttpStatus.INTERNAL_SERVER_ERROR);
+                            HttpStatus.BAD_REQUEST);
 
                 }
             } else {
                 return new ResponseEntity<Response>(new Response("Path already present in database: " + path),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+                        HttpStatus.CONFLICT);
 
             }
         } catch (InvalidPathException ipe) {
             return new ResponseEntity<Response>(new Response("Invalid path: " + path),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.BAD_REQUEST);
         }
     }
 

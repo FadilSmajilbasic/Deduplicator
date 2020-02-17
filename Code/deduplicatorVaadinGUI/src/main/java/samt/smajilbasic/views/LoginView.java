@@ -91,7 +91,7 @@ public class LoginView extends VerticalLayout implements View {
             UI.getCurrent().navigate("path");
             break;
         case SERVICE_UNAVAILABLE:
-            Notification.show("Server not reachable", 2000, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Server not reachable or an error occured", 2000, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             break;
         case UNAUTHORIZED:
             Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
