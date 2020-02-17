@@ -7,7 +7,12 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.FocusNotifier;
+import com.vaadin.flow.component.InputEvent;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.FocusNotifier.FocusEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -57,6 +62,7 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
     private Client client;
     private String type = "true";
     private TextField pathTextField;
+    private Dialog dialogModify = new Dialog();
 
     private final static int LENGTH = 2000;
     private File root = new File("/");
@@ -66,10 +72,15 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             UI.getCurrent().getPage().setLocation("login/");
         } else {
             client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
-            pathTextField = new TextField();
-            Button browseButton = new Button("Browse", new Icon(VaadinIcon.FOLDER_OPEN), e -> {
-                openRootSelect();
+            pathTextField = new TextField("Path");
+            pathTextField.addFocusListener(new ComponentEventListener<FocusNotifier.FocusEvent<TextField>>() {
+
+                @Override
+                public void onComponentEvent(FocusNotifier.FocusEvent<TextField> event) {
+                    openRootSelect();
+                }
             });
+
             Button addButton = new Button("Add", new Icon(VaadinIcon.PLUS), e -> {
                 savePath();
             });
@@ -85,8 +96,8 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             pathGrid.setVisible(false);
 
             FlexLayout layout = new FlexLayout();
-            layout.add(pathTextField, browseButton, group, addButton);
-            layout.setAlignItems(Alignment.START);
+            layout.add(pathTextField, group, addButton);
+            layout.setAlignItems(Alignment.BASELINE);
             layout.setWidthFull();
             layout.setFlexGrow(1, pathTextField);
             layout.setWrapMode(WrapMode.WRAP);
@@ -96,13 +107,27 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
     }
 
     private void savePath() {
-        String resp = client.savePath(pathTextField.getValue(), type);
+        ResponseEntity<String> response = client.savePath(pathTextField.getValue(), type);
 
-        if (resp.equals("OK")) {
-            Notification.show("Path added with success", LENGTH, Position.BOTTOM_END);
+        if (response != null) {
+            JSONObject resp = new JSONObject();
+            try {
+                resp = (JSONObject) parser.parse(response.getBody());
+                if (response.getStatusCode() == HttpStatus.OK) {
+                    Notification.show("Path successfully saved", LENGTH, Position.TOP_END);
+                } else {
+
+                    System.out.println("[ERROR] saving path: " + resp.get("message").toString());
+                    Notification.show(resp.get("message").toString(), LENGTH, Position.TOP_END)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            } catch (ParseException pe) {
+                Notification.show("Unable to parse the response", LENGTH, Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
         } else {
-            System.out.println("[ERROR] saving path: " + resp);
-            Notification.show(resp, LENGTH, Position.BOTTOM_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to get response from server", LENGTH, Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
         updatePaths();
@@ -128,7 +153,6 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
                 public final void selectionChange(SelectionEvent<Grid<File>, File> event) {
                     Optional<File> selected = event.getFirstSelectedItem();
                     if (selected.isPresent()) {
-                        Notification.show("selected");
                         root = selected.get();
                         rootDialog.close();
                         openFileSelect();
@@ -137,6 +161,8 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
                 }
 
             };
+
+            rootDialog.setCloseOnOutsideClick(false);
             rootDialog.add(new Label("Select root path"));
             rootsGrid.setItems(roots);
             rootsGrid.addColumn(File::getAbsolutePath).setHeader("Root");
@@ -155,14 +181,11 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
 
         TreeGrid<File> fileBrowser = new TreeGrid<>();
         fileBrowser.setItems(rootData.getChildren(root));
-
         fileBrowser.setDataProvider(fileSystem);
-
         fileBrowser.addSelectionListener(event -> {
             Optional<File> selected = event.getFirstSelectedItem();
-            if (selected.isPresent()) {
-                pathTextField.setValue(selected.get().getAbsolutePath());
-            }
+            pathTextField.setValue(selected.get().getAbsolutePath());
+
         });
 
         fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
@@ -178,6 +201,7 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
         fileBrowser.setWidthFull();
         layout.setMinWidth("50em");
         layout.setAlignItems(Alignment.CENTER);
+        dialog.setCloseOnOutsideClick(false);
         dialog.add(layout);
         dialog.open();
     }
@@ -211,31 +235,48 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
                             Dialog dialog = new Dialog();
                             VerticalLayout vLayout = new VerticalLayout();
                             HorizontalLayout hLayout = new HorizontalLayout();
-
+                            Label pathLabelModfiy = new Label(event.getValue().getPath());
                             Label title = new Label("Select action");
                             Button deleteButton = new Button("Delete", e -> {
                                 deletePath(event.getValue());
+                                dialog.close();
                             });
+
                             Button modifyButton = new Button("Modify", e -> {
-                                Dialog dialogModify = new Dialog();
+                                dialogModify = new Dialog();
                                 Label titleModify = new Label("Select action");
                                 VerticalLayout vLayoutModify = new VerticalLayout();
                                 HorizontalLayout hLayoutModify = new HorizontalLayout();
-                                TextField pathTextFieldModify = new TextField("Path");
-                                pathTextFieldModify.setMinWidth("30em");
+                                HorizontalLayout hLayoutModify2 = new HorizontalLayout();
                                 RadioButtonGroup<String> group = new RadioButtonGroup<String>();
+
+                                Button modifyConfirmButton = new Button("Confirm", eventModify -> {
+                                    try {
+                                        modifyPath(event.getValue(), (group.getValue() == "scan"));
+                                        dialogModify.close();
+                                        dialog.close();
+                                    } catch (RuntimeException re) {
+                                        Notification
+                                                .show("Invalid Path" + re.getMessage(), LENGTH,
+                                                        Notification.Position.TOP_END)
+                                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    }
+                                });
+                                Button cancelButtonModify = new Button("Cancel", cancelEvent -> {
+                                    dialogModify.close();
+                                    dialog.close();
+                                });
+                                pathLabelModfiy.setMinWidth("30em");
                                 group.setItems("scan", "ignore");
-                                group.setValue("scan");
+                                group.setValue(event.getValue().isignoreFile() ? "ignore" : "scan");
                                 group.addValueChangeListener(groupModify -> type = groupModify.getValue());
-
-                                Button modifyConfirmButton = new Button("Confirm", eventModify -> modifyPath(
-                                        event.getValue(),
-                                        new GlobalPath(pathTextFieldModify.getValue(), (group.getValue() == "scan"))));
-                                hLayoutModify.add(pathTextFieldModify, group);
-                                hLayoutModify.setFlexGrow(1, pathTextFieldModify);
-
-                                vLayoutModify.add(titleModify, hLayoutModify, modifyConfirmButton);
+                                hLayoutModify.add(pathLabelModfiy, group);
+                                hLayoutModify.setFlexGrow(1, pathLabelModfiy);
+                                hLayoutModify2.add(modifyConfirmButton, cancelButtonModify);
+                                vLayoutModify.add(titleModify, hLayoutModify, hLayoutModify2);
                                 dialogModify.add(vLayoutModify);
+                                dialogModify.setCloseOnOutsideClick(false);
+                                dialogModify.open();
                             });
                             Button closeButton = new Button("Close", e -> dialog.close());
                             Label path = new Label();
@@ -252,16 +293,18 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
                 }
 
             } catch (ParseException pe) {
-                Notification.show("Unable to retrieve paths: " + pe.getMessage());
+                Notification.show("Unable to retrieve paths: " + pe.getMessage(), LENGTH, Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to retrieve paths");
+            Notification.show("Unable to retrieve paths", LENGTH, Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
     }
 
-    private void modifyPath(GlobalPath oldPath, GlobalPath newPath) {
-        client.modifyPath(oldPath, newPath);
+    private void modifyPath(GlobalPath oldPath, boolean newIgnoreValue) {
+        client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
         updatePaths();
     }
 
