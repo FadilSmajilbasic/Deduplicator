@@ -20,6 +20,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import samt.smajilbasic.GlobalPath;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -50,10 +52,7 @@ public class Client {
     private int port;
     private final String CA_PASS = "Password&1";
     private KeyStore keyStore;
-
-    public enum loginResponse {
-        CREDENTIALS, SERVER, OK
-    }
+    private static final String prefix = "http://";
 
     /**
      * @param port the port to set
@@ -117,13 +116,13 @@ public class Client {
             restTemplate = new RestTemplate(requestFactory);
     }
 
-    public loginResponse isAuthenticated(String host, int port) throws RestClientException {
+    public HttpStatus isAuthenticated(String host, int port) throws RestClientException {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/login/", HttpMethod.GET, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/login/", HttpMethod.GET, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Client exception: " + rce.getMessage());
@@ -133,12 +132,12 @@ public class Client {
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 this.host = host;
                 setPort(port);
-                return loginResponse.OK;
+                return response.getStatusCode();
             } else {
-                return loginResponse.CREDENTIALS;
+                return response.getStatusCode();
             }
         }
-        return loginResponse.SERVER;
+        return HttpStatus.SERVICE_UNAVAILABLE;
 
     }
 
@@ -146,7 +145,7 @@ public class Client {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
-            ResponseEntity<String> response = restTemplate.exchange("http://" + host + ":" + port + "/" + path,
+            ResponseEntity<String> response = restTemplate.exchange(prefix + host + ":" + port + "/" + path,
                     HttpMethod.GET, requestEntity, String.class);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
@@ -171,7 +170,7 @@ public class Client {
 
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
@@ -208,7 +207,7 @@ public class Client {
 
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
             System.out.println("rce: " + rce.getMessage());
@@ -224,7 +223,7 @@ public class Client {
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange("http://" + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: ");
@@ -233,30 +232,45 @@ public class Client {
         return response;
     }
 
-    public String savePath(String value, String type) {
+    public ResponseEntity<String> savePath(String value, String type) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", value);
         values.add("ignorePath", !type.equals("scan"));
-        ResponseEntity<String> response = null;
+        return put("path/", values);
+    }
 
-        response = put("path/", values);
+    public HttpStatus deletePath(GlobalPath value) {
 
-        if (response != null) {
-            JSONObject resp = new JSONObject();
-            try {
-                resp = (JSONObject) parser.parse(response.getBody());
-            } catch (ParseException pe) {
-                return "Unable to parse the response";
-            }
-            if (response.getStatusCode() == HttpStatus.OK) {
+        if (value != null) {
+            ResponseEntity<String> response = delete("/path", value.getPath());
 
-                return "OK";
+            return response.getStatusCode();
+        } else {
+            return HttpStatus.BAD_REQUEST;
+        }
+
+    }
+
+    public HttpStatus modifyPath(GlobalPath oldPath, GlobalPath newPath) {
+        if (oldPath != null && newPath != null) {
+            if (oldPath.getPath().equals(newPath.getPath())) {
+                return savePath(oldPath.getPath(), newPath.isignoreFile() ? "scan" : "ignore").getStatusCode();
             } else {
-                return resp.get("message").toString();
+                if (deletePath(oldPath) == HttpStatus.OK) {
+                    ResponseEntity<String> response = savePath(newPath.getPath(),
+                            (newPath.isignoreFile() ? "scan" : "ignore"));
+                    if (response != null) {
+                        return response.getStatusCode();
+                    } else {
+                        return HttpStatus.SERVICE_UNAVAILABLE;
+                    }
+                } else {
+                    return HttpStatus.INTERNAL_SERVER_ERROR;
+                }
             }
         } else {
-            return "Unable to get response from server";
+            return HttpStatus.BAD_REQUEST;
         }
     }
 
