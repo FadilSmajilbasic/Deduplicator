@@ -5,6 +5,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -13,8 +14,9 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import com.vaadin.navigator.View;
 
+import org.springframework.http.HttpStatus;
+
 import samt.smajilbasic.communication.Client;
-import samt.smajilbasic.communication.Client.loginResponse;
 
 @Route(value = "login", registerAtStartup = true)
 public class LoginView extends VerticalLayout implements View {
@@ -81,18 +83,18 @@ public class LoginView extends VerticalLayout implements View {
     public void tryLogin(String host, int port, String user, String pass) {
 
         client = new Client(user, pass);
-        loginResponse resp = client.isAuthenticated(host, port);
+        HttpStatus resp = client.isAuthenticated(host, port);
 
         switch (resp) {
         case OK:
             UI.getCurrent().getSession().setAttribute(CLIENT_STRING, client);
             UI.getCurrent().navigate("path");
             break;
-        case SERVER:
-            Notification.show("Server not reachable", 2000, Notification.Position.TOP_END);
+        case SERVICE_UNAVAILABLE:
+            Notification.show("Server not reachable", 2000, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             break;
-        case CREDENTIALS:
-            Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END);
+        case UNAUTHORIZED:
+            Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             break;
         }
     }
