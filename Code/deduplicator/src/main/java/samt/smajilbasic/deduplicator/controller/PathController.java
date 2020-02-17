@@ -97,9 +97,15 @@ public class PathController {
         path = path.replaceAll("&#47;", File.separator).trim();
         try {
             Path p = Paths.get(path);
-
-            if (Files.isDirectory(p) && path.charAt(path.length() - 1) != File.separatorChar) {
-                path += File.separator;
+            if (path.length() > 0) {
+                if (Files.isDirectory(p)) {
+                    if (path.charAt(path.length() - 1) != File.separatorChar) {
+                        path += File.separator;
+                    }
+                }
+            } else {
+                return new ResponseEntity<Response>(new Response("Invalid path: " + path),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             if (!gpr.existsById(path)) {
