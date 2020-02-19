@@ -12,6 +12,12 @@ import java.util.regex.Pattern;
  */
 public class Validator {
 
+	private static final String numerRange = "([01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])";
+
+	private static final String IP_REGEXP = numerRange + "\\." + numerRange + "\\." + numerRange + "\\." + numerRange;
+
+	private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEXP);
+
 	public static PathType getPathType(String path) {
 		try {
 			if (path != null) {
@@ -39,7 +45,7 @@ public class Validator {
 
 	/**
 	 * 
-	 * @param input input to validate (usually  parameter)
+	 * @param input input to validate (usually parameter)
 	 * @return the integer value if input is an Integer, null otherwise
 	 */
 	public static Integer isInt(String input) {
@@ -73,6 +79,10 @@ public class Validator {
 	public static String isHex(String input) {
 		return Pattern.matches("[0-9a-fA-F]+", input) ? input : null;
 
+	}
+
+	public static boolean isValidIP(String address) {
+		return IP_PATTERN.matcher(address).matches();
 	}
 
 }
