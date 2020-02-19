@@ -6,13 +6,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
-
-import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.FocusNotifier;
-import com.vaadin.flow.component.InputEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.FocusNotifier.FocusEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -33,9 +29,6 @@ import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.navigator.View;
-import com.vaadin.ui.Window.ResizeEvent;
-import com.vaadin.ui.Window.ResizeListener;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -54,7 +47,7 @@ import samt.smajilbasic.communication.Client;
  */
 @Route(value = "path", registerAtStartup = true)
 @PageTitle(value = "PathView")
-public class PathView extends VerticalLayout implements View, ResizeListener {
+public class PathView extends BaseView {
 
     Grid<GlobalPath> pathGrid = null;
     private JSONParser parser = new JSONParser();
@@ -71,6 +64,9 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
         if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
             UI.getCurrent().getPage().setLocation("login/");
         } else {
+
+            
+
             client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
             pathTextField = new TextField("Path");
             pathTextField.addFocusListener(new ComponentEventListener<FocusNotifier.FocusEvent<TextField>>() {
@@ -101,7 +97,7 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
             layout.setWidthFull();
             layout.setFlexGrow(1, pathTextField);
             layout.setWrapMode(WrapMode.WRAP);
-            add(layout, pathGrid);
+            add( layout, pathGrid);
             updatePaths();
         }
     }
@@ -311,10 +307,5 @@ public class PathView extends VerticalLayout implements View, ResizeListener {
     private void deletePath(GlobalPath path) {
         client.deletePath(path);
         updatePaths();
-    }
-
-    @Override
-    public void windowResized(ResizeEvent e) {
-
     }
 }
