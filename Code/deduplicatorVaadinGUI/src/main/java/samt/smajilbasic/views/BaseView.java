@@ -10,6 +10,8 @@ import com.vaadin.navigator.View;
  */
 public class BaseView extends VerticalLayout implements View {
 
+    public final static int NOTIFICATION_LENGTH = 2000;
+
     public BaseView() {
         MenuBar menuBar = new MenuBar();
         menuBar.addItem("Scan", e -> {
