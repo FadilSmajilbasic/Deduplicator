@@ -5,10 +5,11 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.WrapMode;
@@ -59,14 +60,12 @@ public class LoginView extends VerticalLayout implements View {
      */
     private Button advancedViewButton;
 
+    private FormLayout form;
     /**
      * Base constructor of the LoginView class. It creates the LoginView GUI with
      * all of it's elements.
      */
     public LoginView() {
-
-        
-
         hostTextField = new TextField("Host");
         portTextField = new NumberField("Port");
         TextField usernameTextField = new TextField("Username");
@@ -91,16 +90,17 @@ public class LoginView extends VerticalLayout implements View {
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         button.addClickShortcut(Key.ENTER);
+      
 
-        HorizontalLayout horizontalLayout = new HorizontalLayout(hostTextField, portTextField);
-        HorizontalLayout credentialsLayout = new HorizontalLayout(usernameTextField, passwordField);
-        portTextField.setWidthFull();
+        form = new FormLayout();
+        
+        form.setResponsiveSteps(new ResponsiveStep("20em",1),new ResponsiveStep("40em",2));
+        form.add(usernameTextField,passwordField);
+        
+        
+        setAlignItems(Alignment.CENTER);
 
-        this.setAlignItems(Alignment.CENTER);
-        this.setFlexGrow(1, this);
-        toggleView();
-
-        add(horizontalLayout, credentialsLayout, button, advancedViewButton);
+        add(form, button, advancedViewButton);
 
     }
 
@@ -109,8 +109,11 @@ public class LoginView extends VerticalLayout implements View {
      * By switching to the advanced view it exposes the host and port fields.
      */
     private void toggleView() {
-        hostTextField.setVisible(!defaultView);
-        portTextField.setVisible(!defaultView);
+        if(!defaultView){
+            form.remove(hostTextField,portTextField);
+        }else{
+            form.add(hostTextField,portTextField);
+        }
         advancedViewButton.setText(defaultView ? "Advanced View" : "Basic View");
         defaultView = !defaultView;
     }
