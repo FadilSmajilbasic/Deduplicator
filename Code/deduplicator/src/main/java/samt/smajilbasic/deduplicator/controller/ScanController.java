@@ -132,7 +132,7 @@ public class ScanController implements ScanListener {
                 return report;
             } else {
                 return new ResponseEntity<Response>(new Response("Scan is already running"),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+                        HttpStatus.ALREADY_REPORTED);
             }
         } else {
             return new ResponseEntity<Response>(new Response("No path to scan set"), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -232,6 +232,8 @@ public class ScanController implements ScanListener {
             Object scanStatus = new Object() {
                 public int fileCount = fileRepository.findByReport(report);
                 public float progress = currentScan.scanProgress;
+                public long timestamp = report.getStart();
+                public int reportId = report.getId();
             };
 
             Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
