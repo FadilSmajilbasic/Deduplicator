@@ -57,7 +57,6 @@ public class PathView extends BaseView {
     private TextField pathTextField;
     private Dialog dialogModify = new Dialog();
 
-    private final static int LENGTH = 2000;
     private File root = new File("/");
 
     public PathView() {
@@ -110,19 +109,19 @@ public class PathView extends BaseView {
             try {
                 resp = (JSONObject) parser.parse(response.getBody());
                 if (response.getStatusCode() == HttpStatus.OK) {
-                    Notification.show("Path successfully saved", LENGTH, Position.TOP_END);
+                    Notification.show("Path successfully saved", NOTIFICATION_LENGTH, Position.TOP_END);
                 } else {
 
                     System.out.println("[ERROR] saving path: " + resp.get("message").toString());
-                    Notification.show(resp.get("message").toString(), LENGTH, Position.TOP_END)
+                    Notification.show(resp.get("message").toString(), NOTIFICATION_LENGTH, Position.TOP_END)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } catch (ParseException pe) {
-                Notification.show("Unable to parse the response", LENGTH, Position.TOP_END)
+                Notification.show("Unable to parse the response", NOTIFICATION_LENGTH, Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to get response from server", LENGTH, Position.TOP_END)
+            Notification.show("Unable to get response from server", NOTIFICATION_LENGTH, Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -253,7 +252,7 @@ public class PathView extends BaseView {
                                         dialog.close();
                                     } catch (RuntimeException re) {
                                         Notification
-                                                .show("Invalid Path" + re.getMessage(), LENGTH,
+                                                .show("Invalid Path" + re.getMessage(), NOTIFICATION_LENGTH,
                                                         Notification.Position.TOP_END)
                                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     }
@@ -289,11 +288,11 @@ public class PathView extends BaseView {
                 }
 
             } catch (ParseException pe) {
-                Notification.show("Unable to retrieve paths: " + pe.getMessage(), LENGTH, Position.TOP_END)
+                Notification.show("Unable to retrieve paths: " + pe.getMessage(), NOTIFICATION_LENGTH, Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to retrieve paths", LENGTH, Position.TOP_END)
+            Notification.show("Unable to retrieve paths", NOTIFICATION_LENGTH, Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
