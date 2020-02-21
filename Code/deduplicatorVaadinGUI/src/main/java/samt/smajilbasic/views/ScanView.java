@@ -14,6 +14,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import org.json.simple.JSONObject;
@@ -24,6 +25,7 @@ import samt.smajilbasic.communication.Client;
  * ScanView is the view to manage the views.
  */
 @Route(value = "scan", registerAtStartup = true)
+@PageTitle(value = "Deduplicator - Scan")
 public class ScanView extends BaseView {
 
   private static final long serialVersionUID = 7985454510058866003L;

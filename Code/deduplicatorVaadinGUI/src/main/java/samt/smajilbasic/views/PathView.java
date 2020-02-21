@@ -46,7 +46,7 @@ import samt.smajilbasic.communication.Client;
  * PathView is the view to manage paths.
  */
 @Route(value = "path", registerAtStartup = true)
-@PageTitle(value = "PathView")
+@PageTitle(value = "Deduplicator - Path")
 public class PathView extends BaseView {
 
     /**

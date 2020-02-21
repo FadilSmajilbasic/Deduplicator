@@ -16,6 +16,7 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout.WrapMode;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.navigator.View;
 
@@ -29,6 +30,7 @@ import samt.smajilbasic.communication.Client;
  * service.
  */
 @Route(value = "login", registerAtStartup = true)
+@PageTitle(value = "Deduplicator - Login")
 public class LoginView extends VerticalLayout implements View {
 
     private static final long serialVersionUID = 4944489863331319773L;
