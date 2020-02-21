@@ -8,13 +8,13 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 
 /**
- * MainView
+ * The main view of the application that redirects to the login view.
  */
 @Route(value = "")
 @PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
-public class MainView extends VerticalLayout implements View{
+public class MainView extends VerticalLayout implements View {
 
         public MainView() {
                 UI.getCurrent().getPage().setLocation("login/");

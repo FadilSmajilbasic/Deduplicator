@@ -43,29 +43,54 @@ import samt.smajilbasic.GlobalPath;
 import samt.smajilbasic.communication.Client;
 
 /**
- * PathView
+ * PathView is the view to manage paths.
  */
 @Route(value = "path", registerAtStartup = true)
 @PageTitle(value = "PathView")
 public class PathView extends BaseView {
 
-    Grid<GlobalPath> pathGrid = null;
+    /**
+     * The grid used to rappresent the paths that are in the database.
+     */
+    private Grid<GlobalPath> pathGrid = null;
+    /**
+     * The parser used to read the JSON response from the server when updating the status.
+     */
     private JSONParser parser = new JSONParser();
+    /**
+     * The encoder used to map the return values from the server to a GlobalPath object.
+     */
     private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
+    /**
+     * The HTTP/HTTPS client used for the communication.
+     */
     private Client client;
-    private String type = "true";
+    /**
+     * Defines if the path to be added is to be scanned or ignored.
+     */
+    private String type = "scan";
+    /**
+     * Defines the input text field of the path.
+     */
     private TextField pathTextField;
+    /**
+     * Defines the dialog pop-up that the user uses to modify a path.
+     */
     private Dialog dialogModify = new Dialog();
 
+    /**
+     * Defines the default root path for the fileBrowser.
+     */
     private File root = new File("/");
 
+    /**
+     * The default constructor.
+     */
     public PathView() {
+        super();
         if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
             UI.getCurrent().getPage().setLocation("login/");
         } else {
-
-            
-
             client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
             pathTextField = new TextField("Path");
             pathTextField.addFocusListener(new ComponentEventListener<FocusNotifier.FocusEvent<TextField>>() {
@@ -100,7 +125,9 @@ public class PathView extends BaseView {
             updatePaths();
         }
     }
-
+     /**
+      * Method that manages the process of saving a path.
+      */
     private void savePath() {
         ResponseEntity<String> response = client.savePath(pathTextField.getValue(), type);
 
@@ -129,6 +156,9 @@ public class PathView extends BaseView {
 
     }
 
+    /**
+     * Method that opens a dialog of the roots in the case that there are multiple.
+     */
     private void openRootSelect() {
         File[] rootsArray = File.listRoots();
         ArrayList<File> roots = new ArrayList<File>();
@@ -170,6 +200,9 @@ public class PathView extends BaseView {
 
     }
 
+    /**
+     * Method that opens a dialog pop-up with a file browser.
+     */
     private void openFileSelect() {
         FilesystemData rootData = new FilesystemData(root, false);
         FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
@@ -201,9 +234,10 @@ public class PathView extends BaseView {
         dialog.open();
     }
 
+    /**
+     * Method that updates the fields of the pathsGrid.
+     */
     private void updatePaths() {
-        pathGrid.setVisible(true);
-
         ResponseEntity<String> response = client.get("path/");
 
         if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
@@ -298,11 +332,17 @@ public class PathView extends BaseView {
 
     }
 
+    /**
+     * Method that updates a path's type using the client.
+     */
     private void modifyPath(GlobalPath oldPath, boolean newIgnoreValue) {
         client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
         updatePaths();
     }
 
+    /**
+     * Method that deletes a path's type using the client.
+     */
     private void deletePath(GlobalPath path) {
         client.deletePath(path);
         updatePaths();

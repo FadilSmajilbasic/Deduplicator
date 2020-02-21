@@ -15,42 +15,90 @@ import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.router.Route;
-import com.vaadin.navigator.Navigator;
 
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
 import samt.smajilbasic.communication.Client;
 
 /**
- * ScanView
+ * ScanView is the view to manage the views.
  */
 @Route(value = "scan", registerAtStartup = true)
 public class ScanView extends BaseView {
 
   private static final long serialVersionUID = 7985454510058866003L;
+  /**
+   * The HTTP/HTTPS client.
+   */
   private Client client;
 
+  /**
+   * The label for the scan status.
+   */
   private Label statusLabel = new Label();
+  /**
+   * The label for the number of files scanned.
+   */
   private Label fileScannedLabel = new Label();
+  /**
+   * The label for the total number of files.
+   */
   private Label totalFilesLabel = new Label();
+  /**
+   * The label for the date and time that the scan started.
+   */
   private Label scanStartedLabel = new Label();
+  /**
+   * The label for the time left to completion of the scan.
+   */
   private Label timeLeftLabel = new Label();
+  /**
+   * The progress bar that displays the scan progress
+   */
   private ProgressBar progressBar = new ProgressBar(0d, 1d);
-  private float scanProgress = 0;
-  private final int POLLING_DELAY = 200;
+  /**
+   * The progress of the scan rappresented as a float, the value goes from 0 to 1
+   */
+  private float scanProgress = 0f;
+  /**
+   * The delay at which the statusThread will poll the scan status.
+   */
+  private final int POLLING_DELAY = 500;
+  /**
+   * The thread that polls the scan status data.
+   */
   private Thread statusThread;
 
+  /**
+   * The button that starts a scan.
+   */
   private Button scanButton;
+  /**
+   * The button that stop the ongoing scan.
+   */
   private Button stopButton;
+  /**
+   * The button that pauses an  ongoing scan
+   */
   private Button pauseButton;
+  /**
+   * The button that resumes a paused scan.
+   */
   private Button resumeButton;
+  /**
+   * The flag that indicates that the statusThread needs to pause. 
+   */
   private boolean paused = false;
+
+  /**
+   * The monitor that the statusThread waits onto. 
+   * When the statusThread needs to resume the program calls the notifyAll method of this monitor.
+   */
   private Object statusMonitor = new Object();
 
+  /**
+   * The ScanView constructor.
+   */
   public ScanView() {
     super();
     if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
@@ -81,8 +129,11 @@ public class ScanView extends BaseView {
 
   }
 
+  /**
+   * The resumeScan method resumes a paused scan.
+   */
   private void resumeScan() {
-    HttpStatus resp = client.post("scan/pause", null).getStatusCode();
+    HttpStatus resp = client.post("scan/resume", null).getStatusCode();
     if (resp.equals(HttpStatus.OK)) {
       Notification.show("Scan resumend", NOTIFICATION_LENGTH, Position.TOP_END);
       pauseButton.setVisible(true);
@@ -97,6 +148,13 @@ public class ScanView extends BaseView {
 
   }
 
+  /**
+   * The updateStatus method changes the values of the status labels.
+   * @param status a boolean telling wether the scan is running or not.
+   * @param filesScanned the number of files scanned.
+   * @param dateStarted the date and time of the start time of the scan, formatted as a timestamp 
+   * @param progress the progress of the scan written as a float
+   */
   public void updateStatus(boolean status, String filesScanned, long dateStarted, float progress) {
     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
     Calendar cal = Calendar.getInstance();
@@ -112,6 +170,9 @@ public class ScanView extends BaseView {
     progressBar.setValue(progress);
   }
 
+  /**
+   * The recreateStatusThread creates a new statusTrhead after it gets interrupted.
+   */
   private void recreateStatusThread() {
     statusThread = new Thread() {
 
@@ -119,7 +180,7 @@ public class ScanView extends BaseView {
       public void run() {
         try {
           while (!isInterrupted() && scanProgress < 1f && scanProgress != -1f && scanProgress >= 0f) {
-
+            System.out.println("Getting status");
             synchronized (statusMonitor) {
               if (paused) {
                 statusMonitor.wait();
@@ -150,6 +211,9 @@ public class ScanView extends BaseView {
     };
   }
 
+  /**
+   * The pauseScan method pauses the scan and the statusThread.
+   */
   private void pauseScan() {
     HttpStatus resp = client.post("scan/pause", null).getStatusCode();
     if (resp.equals(HttpStatus.OK)) {
@@ -166,6 +230,9 @@ public class ScanView extends BaseView {
 
   }
 
+  /**
+   * The stopScan method stops the scan and the statusThread.
+   */
   private void stopScan() {
     HttpStatus resp = client.post("scan/stop", null).getStatusCode();
     if (resp.equals(HttpStatus.OK)) {
@@ -177,6 +244,9 @@ public class ScanView extends BaseView {
     }
   }
 
+  /**
+   * The startScan method start a scan and a new statusThread
+   */
   private void startScan() {
     HttpStatus resp = client.startScan();
 
