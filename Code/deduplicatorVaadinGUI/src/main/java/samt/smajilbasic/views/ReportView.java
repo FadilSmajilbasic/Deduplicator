@@ -6,7 +6,7 @@ import com.vaadin.flow.router.Route;
 /**
  * ReportView
  */
-@Route(value = "scheduler", registerAtStartup = true)
+@Route(value = "report", registerAtStartup = true)
 @PageTitle(value = "Deduplicator - Report")
 public class ReportView extends BaseView {
 
