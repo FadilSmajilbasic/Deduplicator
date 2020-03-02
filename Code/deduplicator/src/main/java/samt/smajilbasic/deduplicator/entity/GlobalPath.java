@@ -15,7 +15,7 @@ import samt.smajilbasic.deduplicator.Validator;
 @Entity
 public class GlobalPath {
 	/**
-	 * L'attributo path conteine il percorso assoluto del file o cartella. Utilizza
+	 * L'attributo path contiene il percorso assoluto del file o cartella. Utilizza
 	 * l'annotazione @Id per indicare che è una chiave primaria della tabella.
 	 */
 	@Id
