@@ -39,26 +39,30 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 
-import samt.smajilbasic.GlobalPath;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.entity.GlobalPath;
+import samt.smajilbasic.Resources;
 
 /**
  * PathView is the view to manage paths.
  */
-@Route(value = "path", registerAtStartup = true)
+@Route(value = "path", layout = MainLayout.class)
 @PageTitle(value = "Deduplicator - Path")
-public class PathView extends BaseView {
+public class PathView extends VerticalLayout {
 
+    public static String VIEW_NAME = "Paths";
     /**
      * The grid used to rappresent the paths that are in the database.
      */
     private Grid<GlobalPath> pathGrid = null;
     /**
-     * The parser used to read the JSON response from the server when updating the status.
+     * The parser used to read the JSON response from the server when updating the
+     * status.
      */
     private JSONParser parser = new JSONParser();
     /**
-     * The encoder used to map the return values from the server to a GlobalPath object.
+     * The encoder used to map the return values from the server to a GlobalPath
+     * object.
      */
     private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
     /**
@@ -87,11 +91,10 @@ public class PathView extends BaseView {
      * The default constructor.
      */
     public PathView() {
-        super();
-        if (UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING) == null) {
-            UI.getCurrent().getPage().setLocation("login/");
-        } else {
-            client = (Client) UI.getCurrent().getSession().getAttribute(LoginView.CLIENT_STRING);
+        client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
+
+        if (client != null) {
+
             pathTextField = new TextField("Path");
             pathTextField.addFocusListener(new ComponentEventListener<FocusNotifier.FocusEvent<TextField>>() {
 
@@ -113,7 +116,6 @@ public class PathView extends BaseView {
             group.addValueChangeListener(event -> type = event.getValue());
 
             pathGrid = new Grid<>();
-            pathGrid.setVisible(false);
 
             FlexLayout layout = new FlexLayout();
             layout.add(pathTextField, group, addButton);
@@ -121,13 +123,14 @@ public class PathView extends BaseView {
             layout.setWidthFull();
             layout.setFlexGrow(1, pathTextField);
             layout.setWrapMode(WrapMode.WRAP);
-            add( layout, pathGrid);
+            add(layout, pathGrid);
             updatePaths();
         }
     }
-     /**
-      * Method that manages the process of saving a path.
-      */
+
+    /**
+     * Method that manages the process of saving a path.
+     */
     private void savePath() {
         ResponseEntity<String> response = client.savePath(pathTextField.getValue(), type);
 
@@ -136,19 +139,19 @@ public class PathView extends BaseView {
             try {
                 resp = (JSONObject) parser.parse(response.getBody());
                 if (response.getStatusCode() == HttpStatus.OK) {
-                    Notification.show("Path successfully saved", NOTIFICATION_LENGTH, Position.TOP_END);
+                    Notification.show("Path successfully saved", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
                 } else {
 
                     System.out.println("[ERROR] saving path: " + resp.get("message").toString());
-                    Notification.show(resp.get("message").toString(), NOTIFICATION_LENGTH, Position.TOP_END)
+                    Notification.show(resp.get("message").toString(), Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } catch (ParseException pe) {
-                Notification.show("Unable to parse the response", NOTIFICATION_LENGTH, Position.TOP_END)
+                Notification.show("Unable to parse the response", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to get response from server", NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Unable to get response from server", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -162,10 +165,13 @@ public class PathView extends BaseView {
     private void openRootSelect() {
         File[] rootsArray = File.listRoots();
         ArrayList<File> roots = new ArrayList<File>();
+        System.out.println("RootsArray: " + rootsArray.length);
 
         for (File file : rootsArray) {
             roots.add(file);
+            System.out.println("File: " + file.getAbsolutePath());
         }
+
         if (roots.size() == 1) {
             root = roots.get(0);
             openFileSelect();
@@ -182,9 +188,7 @@ public class PathView extends BaseView {
                         rootDialog.close();
                         openFileSelect();
                     }
-
                 }
-
             };
 
             rootDialog.setCloseOnOutsideClick(false);
@@ -225,8 +229,8 @@ public class PathView extends BaseView {
 
         VerticalLayout layout = new VerticalLayout();
         layout.add(new Label("Select file or folder"), fileBrowser, confirmButton);
-        layout.setFlexGrow(1, fileBrowser);
-        fileBrowser.setWidthFull();
+        // layout.setFlexGrow(1, fileBrowser);
+        // fileBrowser.setWidthFull();
         layout.setMinWidth("50em");
         layout.setAlignItems(Alignment.CENTER);
         dialog.setCloseOnOutsideClick(false);
@@ -257,8 +261,9 @@ public class PathView extends BaseView {
 
                 if (pathGrid.getColumns().size() == 0) {
                     pathGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(1);
+                    pathGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date added").setFlexGrow(0);
                     pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(0);
-
+                    
                     pathGrid.asSingleSelect().addValueChangeListener(event -> {
                         if (event.getValue() != null) {
                             Dialog dialog = new Dialog();
@@ -281,12 +286,12 @@ public class PathView extends BaseView {
 
                                 Button modifyConfirmButton = new Button("Confirm", eventModify -> {
                                     try {
-                                        modifyPath(event.getValue(), (group.getValue() == "scan"));
+                                        modifyPath(event.getValue(), (group.getValue() == "ignore"));
                                         dialogModify.close();
                                         dialog.close();
                                     } catch (RuntimeException re) {
                                         Notification
-                                                .show("Invalid Path" + re.getMessage(), NOTIFICATION_LENGTH,
+                                                .show("Invalid Path" + re.getMessage(), Resources.NOTIFICATION_LENGTH,
                                                         Notification.Position.TOP_END)
                                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     }
@@ -322,11 +327,11 @@ public class PathView extends BaseView {
                 }
 
             } catch (ParseException pe) {
-                Notification.show("Unable to retrieve paths: " + pe.getMessage(), NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to retrieve paths: " + pe.getMessage(), Resources.NOTIFICATION_LENGTH,
+                        Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to retrieve paths", NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Unable to retrieve paths", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
