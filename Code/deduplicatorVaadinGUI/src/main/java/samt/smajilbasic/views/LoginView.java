@@ -1,6 +1,5 @@
 package samt.smajilbasic.views;
 
-import com.vaadin.data.Binder;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -10,28 +9,31 @@ import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.orderedlayout.FlexLayout.WrapMode;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterListener;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.navigator.View;
+import com.vaadin.flow.router.internal.BeforeEnterHandler;
 
 import org.springframework.http.HttpStatus;
 
 import samt.smajilbasic.Validator;
+import samt.smajilbasic.authentication.AccessControl;
+import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 
 /**
  * The Login view that the user uses to authenticate to the deduplicator
  * service.
  */
-@Route(value = "login", registerAtStartup = true)
+@Route(value = "login")
 @PageTitle(value = "Deduplicator - Login")
-public class LoginView extends VerticalLayout implements View {
+public class LoginView extends VerticalLayout {
 
     private static final long serialVersionUID = 4944489863331319773L;
 
@@ -39,12 +41,6 @@ public class LoginView extends VerticalLayout implements View {
      * The HTTP/HTTPS client uset for the authentication.
      */
     private Client client;
-
-    /**
-     * Token used to identify the {@link Client} when passing it between classes.
-     */
-    public final static String CLIENT_STRING = "client";
-
     /**
      * Flag used to switch between the advanced and basic view.
      */
@@ -63,11 +59,16 @@ public class LoginView extends VerticalLayout implements View {
     private Button advancedViewButton;
 
     private FormLayout form;
+
+    AccessControl accessControl;
+
     /**
      * Base constructor of the LoginView class. It creates the LoginView GUI with
      * all of it's elements.
      */
     public LoginView() {
+        setSizeFull();
+        accessControl = AccessControlFactory.getInstance().createAccessControl();
         hostTextField = new TextField("Host");
         portTextField = new NumberField("Port");
         TextField usernameTextField = new TextField("Username");
@@ -92,17 +93,16 @@ public class LoginView extends VerticalLayout implements View {
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         button.addClickShortcut(Key.ENTER);
-      
 
         form = new FormLayout();
-        
-        form.setResponsiveSteps(new ResponsiveStep("20em",1),new ResponsiveStep("40em",2));
-        form.add(usernameTextField,passwordField);
-        
-        
+
+        form.setResponsiveSteps(new ResponsiveStep("20em", 1), new ResponsiveStep("40em", 2));
+        form.add(usernameTextField, passwordField);
+        Div container = new Div(form);
+        container.setWidth("50%");
         setAlignItems(Alignment.CENTER);
 
-        add(form, button, advancedViewButton);
+        add(container, button, advancedViewButton);
 
     }
 
@@ -111,10 +111,10 @@ public class LoginView extends VerticalLayout implements View {
      * By switching to the advanced view it exposes the host and port fields.
      */
     private void toggleView() {
-        if(!defaultView){
-            form.remove(hostTextField,portTextField);
-        }else{
-            form.add(hostTextField,portTextField);
+        if (!defaultView) {
+            form.remove(hostTextField, portTextField);
+        } else {
+            form.add(hostTextField, portTextField);
         }
         advancedViewButton.setText(defaultView ? "Advanced View" : "Basic View");
         defaultView = !defaultView;
@@ -137,22 +137,23 @@ public class LoginView extends VerticalLayout implements View {
                 HttpStatus resp = client.isAuthenticated(host, port);
 
                 switch (resp) {
-                case OK:
-                    UI.getCurrent().getSession().setAttribute(CLIENT_STRING, client);
-                    UI.getCurrent().navigate("path");
-                    break;
-                case SERVICE_UNAVAILABLE:
-                    Notification.show("Server not reachable or an error occured", 2000, Notification.Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    break;
-                case UNAUTHORIZED:
-                    Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    break;
-                default:
-                    Notification.show("Unknown error occured", 2000, Notification.Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    break;
+                    case OK:
+                        accessControl.signedIn(user, client);
+                        UI.getCurrent().navigate("");
+                        break;
+                    case SERVICE_UNAVAILABLE:
+                        Notification
+                                .show("Server not reachable or an error occured", 2000, Notification.Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        break;
+                    case UNAUTHORIZED:
+                        Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        break;
+                    default:
+                        Notification.show("Unknown error occured", 2000, Notification.Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        break;
                 }
             } else {
                 Notification.show("Invalid port set", 2000, Notification.Position.TOP_END)
@@ -163,5 +164,4 @@ public class LoginView extends VerticalLayout implements View {
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
-
 }
