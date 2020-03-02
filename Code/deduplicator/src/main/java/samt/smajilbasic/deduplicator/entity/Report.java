@@ -22,7 +22,7 @@ import org.springframework.lang.Nullable;
 public class Report {
 
     /**
-     * L'attributo path conteine il percorso assoluto del file o cartella. Usa
+     * L'attributo reportId contiene il percorso assoluto del file o cartella. Usa
      * l'annotazione @Id per indicare che è una chiave primaria della tabella.
      */
     @Id
