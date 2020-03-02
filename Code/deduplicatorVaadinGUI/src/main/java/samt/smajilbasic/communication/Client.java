@@ -18,7 +18,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import samt.smajilbasic.GlobalPath;
+import samt.smajilbasic.entity.GlobalPath;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -144,8 +144,8 @@ public class Client {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
-            ResponseEntity<String> response = restTemplate.exchange(prefix + host + ":" + port + "/" + path,
-                    HttpMethod.GET, requestEntity, String.class);
+            ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
+                    String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
 
@@ -172,7 +172,7 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
+            System.out.println("[ERROR] Delete rce: " + rce.getMessage());
         }
 
         if (response != null) {
@@ -208,7 +208,8 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
+            System.out.println("[ERROR] Post rce: " + rce.getMessage());
+            rce.printStackTrace(System.out);
         }
         return response;
     }
@@ -236,7 +237,7 @@ public class Client {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", value);
-        values.add("ignorePath", type.equals("scan"));
+        values.add("ignorePath", type.equals("ignore"));
         return put("path/", values);
     }
 
@@ -272,33 +273,39 @@ public class Client {
     public JSONObject getStatus() {
 
         ResponseEntity<String> response = get("scan/status");
-
-        if (response.getStatusCode().equals(HttpStatus.OK)) {
-            try {
-              String body = response.getBody();
-              JSONParser parser = new JSONParser();
-              JSONObject resp = (JSONObject) parser.parse(body);
-              if (resp.get("fileCount") != null && resp.get("progress") != null && resp.get("timestamp") != null) {
-                return resp;
-              }else{
-                HashMap<String,String> error = new HashMap<String,String>();
-                error.put("message", "Response status format invalid");
+        if (response != null) {
+            if (response.getStatusCode().equals(HttpStatus.OK)) {
+                try {
+                    String body = response.getBody();
+                    JSONParser parser = new JSONParser();
+                    JSONObject resp = (JSONObject) parser.parse(body);
+                    if (resp.get("fileCount") != null && resp.get("progress") != null
+                            && resp.get("timestamp") != null) {
+                        return resp;
+                    } else {
+                        HashMap<String, String> error = new HashMap<String, String>();
+                        error.put("message", "Response status format invalid");
+                        return new JSONObject(error);
+                    }
+                } catch (ParseException pe) {
+                    HashMap<String, String> error = new HashMap<String, String>();
+                    error.put("message", "Unable to parse server status");
+                    return new JSONObject(error);
+                }
+            } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
+                HashMap<String, String> error = new HashMap<String, String>();
+                error.put("message", "Scan already running");
                 return new JSONObject(error);
-              }
-            } catch (ParseException pe) {
-                HashMap<String,String> error = new HashMap<String,String>();
-                error.put("message", "Unable to parse server status");
+            } else {
+                HashMap<String, String> error = new HashMap<String, String>();
+                error.put("message", "Unknown error");
                 return new JSONObject(error);
             }
-          } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-            HashMap<String,String> error = new HashMap<String,String>();
-            error.put("message", "Scan already running");
+        } else {
+            HashMap<String, String> error = new HashMap<String, String>();
+            error.put("message", "Unable to get scan status");
             return new JSONObject(error);
-          }else{
-            HashMap<String,String> error = new HashMap<String,String>();
-            error.put("message", "Unknown error");
-            return new JSONObject(error);
-          }
+        }
     }
 
     public HttpStatus startScan() {
