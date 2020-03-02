@@ -1,5 +1,11 @@
-package samt.smajilbasic;
+package samt.smajilbasic.entity;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
+import samt.smajilbasic.PathType;
+import samt.smajilbasic.Validator;
 
 /**
  * La classe GlobalPath descrive un percorso inserito dall'utente per la
@@ -13,12 +19,14 @@ public class GlobalPath {
 	private String path;
 
 	/**
-	 * L'attributo file indica se il percorso {@link GlobalPath#path} sia un file oppure una directory.
+	 * L'attributo file indica se il percorso {@link GlobalPath#path} sia un file
+	 * oppure una directory.
 	 */
 	private Boolean file;
 
 	/**
-	 * L'attributo ignoreFile indica se l'oggetto è da ignorare o se deve essere preso in considerazione durante la scansione.
+	 * L'attributo ignoreFile indica se l'oggetto è da ignorare o se deve essere
+	 * preso in considerazione durante la scansione.
 	 */
 	private Boolean ignoreFile;
 
@@ -34,8 +42,10 @@ public class GlobalPath {
 	}
 
 	/**
-	 * Costruttore che accetta il percorso dell'oggetto e se è da ignorare oppure no.
-	 * @param path il percorso del oggetto.
+	 * Costruttore che accetta il percorso dell'oggetto e se è da ignorare oppure
+	 * no.
+	 * 
+	 * @param path       il percorso del oggetto.
 	 * @param ignoreFile se è da ignorare o no.
 	 */
 	public GlobalPath(String path, boolean ignoreFile) {
@@ -46,6 +56,7 @@ public class GlobalPath {
 
 	/**
 	 * Metodo getter per la variabile path..
+	 * 
 	 * @return il percorso del oggetto.
 	 */
 	public String getPath() {
@@ -53,8 +64,9 @@ public class GlobalPath {
 	}
 
 	/**
-	 * Metodo setter per la variabile path.
-	 * Se il percorso non è valido viene tirata una RuntimeException.
+	 * Metodo setter per la variabile path. Se il percorso non è valido viene tirata
+	 * una RuntimeException.
+	 * 
 	 * @param path il percorso da impostare.
 	 */
 	private void setPath(String path) {
@@ -72,6 +84,7 @@ public class GlobalPath {
 
 	/**
 	 * Metodo getter per la variabile file.
+	 * 
 	 * @return true se il percorso impostato è un file, false se è una cartella.
 	 */
 	public boolean isFile() {
@@ -80,6 +93,7 @@ public class GlobalPath {
 
 	/**
 	 * Metodo setter per la variabile file.
+	 * 
 	 * @param file true se il percorso impostato è un file, false altrimenti.
 	 */
 	private void setFile(boolean file) {
@@ -88,6 +102,7 @@ public class GlobalPath {
 
 	/**
 	 * Metodo getter per la variabile ignoreFile.
+	 * 
 	 * @return true se l'oggetto è impostato per essere ignorato, false altrimenti.
 	 */
 	public boolean isignoreFile() {
@@ -96,7 +111,9 @@ public class GlobalPath {
 
 	/**
 	 * Metodo setter per la variabile ignoreFile
-	 * @param ignoreFile true se il l'oggetto deve essere ignorato, false se deve essere preso in considerazione durante la scansione.
+	 * 
+	 * @param ignoreFile true se il l'oggetto deve essere ignorato, false se deve
+	 *                   essere preso in considerazione durante la scansione.
 	 */
 	private void setignoreFile(boolean ignoreFile) {
 		this.ignoreFile = ignoreFile;
@@ -104,14 +121,23 @@ public class GlobalPath {
 
 	/**
 	 * Metodo getter per la variabile date.
+	 * 
 	 * @return la data in formato timestamp.
 	 */
 	public Long getDate() {
 		return date;
 	}
 
+	public String getDateFormatted() {
+		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeInMillis(getDate());
+		return dateFormat.format(cal.getTime());
+	}
+
 	/**
 	 * Metodo setter per la variabile date.
+	 * 
 	 * @param date la data da impostare in formato timestamp.
 	 */
 	private void setDate(Long date) {
