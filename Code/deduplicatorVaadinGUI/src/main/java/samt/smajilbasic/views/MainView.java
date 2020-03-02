@@ -1,22 +1,24 @@
 package samt.smajilbasic.views;
 
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.PWA;
-import com.vaadin.navigator.View;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 
 /**
- * The main view of the application that redirects to the login view.
+ * MainView
  */
-@Route(value = "")
-@PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
+@Route(value = "", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
-@CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
-public class MainView extends VerticalLayout implements View {
+@PageTitle(value = "Deduplicator - Home")
+public class MainView extends VerticalLayout{
 
-        public MainView() {
-                UI.getCurrent().getPage().setLocation("login/");
-        }
+    public static final String VIEW_NAME = "Home";
+
+	public MainView() {
+        super();
+        this.setAlignItems(Alignment.CENTER);
+        add(new Label("Welcome to Main View"),new Label("Select a section from the side menu"));
+    }
 }
