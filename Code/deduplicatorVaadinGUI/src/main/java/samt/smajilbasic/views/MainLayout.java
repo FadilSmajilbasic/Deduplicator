@@ -2,21 +2,15 @@ package samt.smajilbasic.views;
 
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.PWA;
 
-import samt.smajilbasic.authentication.AccessControlInterface;
 import samt.smajilbasic.authentication.AccessControlFactory;
-
-import java.io.File;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -37,39 +31,35 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 @CssImport(value = "./styles/menu-links.css")
 public class MainLayout extends AppLayout{
 
-        private final Button logoutButton;
+private final Button logoutButton;
 
-        public MainLayout() {
+  public MainLayout() {
+    //Tasto apertura/chiusura menu
+    final DrawerToggle drawerToggle = new DrawerToggle();
+    drawerToggle.addClassName("menu-toggle");
+    addToNavbar(drawerToggle);
 
-                // Header of the menu (the navbar)
+    //Barra horrizontale in alto con il titolo
+    final HorizontalLayout top = new HorizontalLayout();
+    top.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+    top.setClassName("menu-header");
+    final Label title = new Label("DeduplicatorGUI");
+    top.add(title);
+    addToNavbar(top);
 
-                // menu toggle
-                final DrawerToggle drawerToggle = new DrawerToggle();
-                drawerToggle.addClassName("menu-toggle");
-                addToNavbar(drawerToggle);
+    //Gli oggetti del menu
+    addToDrawer(createMenuLink(MainView.class, MainView.VIEW_NAME, VaadinIcon.HOME.create()));
+    addToDrawer(createMenuLink(PathView.class, PathView.VIEW_NAME, VaadinIcon.EDIT.create()));
+    addToDrawer(createMenuLink(ScanView.class, ScanView.VIEW_NAME, VaadinIcon.BUG.create()));
+    addToDrawer(createMenuLink(ReportView.class, ReportView.VIEW_NAME, VaadinIcon.FILE_TEXT.create()));
+    addToDrawer(createMenuLink(SchedulerView.class, SchedulerView.VIEW_NAME, VaadinIcon.CALENDAR.create()));
+    addToDrawer(createMenuLink(DashboardView.class, DashboardView.VIEW_NAME, VaadinIcon.DASHBOARD.create()));
 
-                final HorizontalLayout top = new HorizontalLayout();
-                top.setDefaultVerticalComponentAlignment(Alignment.CENTER);
-                top.setClassName("menu-header");
-
-
-                final Label title = new Label("DeduplicatorGUI");
-                top.add(title);
-                addToNavbar(top);
-
-                // Navigation items
-                addToDrawer(createMenuLink(MainView.class, MainView.VIEW_NAME, VaadinIcon.HOME.create()));
-                addToDrawer(createMenuLink(PathView.class, PathView.VIEW_NAME, VaadinIcon.EDIT.create()));
-                addToDrawer(createMenuLink(ScanView.class, ScanView.VIEW_NAME, VaadinIcon.BUG.create()));
-                addToDrawer(createMenuLink(ReportView.class, ReportView.VIEW_NAME, VaadinIcon.FILE_TEXT.create()));
-                addToDrawer(createMenuLink(SchedulerView.class, SchedulerView.VIEW_NAME, VaadinIcon.CALENDAR.create()));
-                addToDrawer(createMenuLink(DashboardView.class, DashboardView.VIEW_NAME, VaadinIcon.DASHBOARD.create()));
-
-                logoutButton = createMenuButton("Logout", VaadinIcon.SIGN_OUT.create());
-                logoutButton.addClickListener(e -> logout());
-                logoutButton.getElement().setAttribute("title", "Logout (Ctrl+L)");
-
-        }
+    //Il tasto di logout
+    logoutButton = createMenuButton("Logout", VaadinIcon.SIGN_OUT.create());
+    logoutButton.addClickListener(e -> logout());
+    logoutButton.getElement().setAttribute("title", "Logout (Ctrl+L)");
+  }
 
         private RouterLink createMenuLink(Class<? extends Component> viewClass, String caption, Icon icon) {
                 final RouterLink routerLink = new RouterLink(null, viewClass);
