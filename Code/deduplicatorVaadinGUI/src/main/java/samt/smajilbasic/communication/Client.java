@@ -20,8 +20,6 @@ import org.springframework.web.client.RestTemplate;
 
 import samt.smajilbasic.entity.GlobalPath;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -148,7 +146,7 @@ public class Client {
                     String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
-
+                
                 return response;
 
             } else {
