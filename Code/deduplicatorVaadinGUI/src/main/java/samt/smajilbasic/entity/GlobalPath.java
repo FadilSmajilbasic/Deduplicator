@@ -16,24 +16,24 @@ public class GlobalPath {
 	 * L'attributo path conteine il percorso assoluto del file o cartella. Utilizza
 	 * l'annotazione @Id per indicare che è una chiave primaria della tabella.
 	 */
-	private String path;
+	private String path = "";
 
 	/**
 	 * L'attributo file indica se il percorso {@link GlobalPath#path} sia un file
 	 * oppure una directory.
 	 */
-	private Boolean file;
+	private Boolean file = false;
 
 	/**
 	 * L'attributo ignoreFile indica se l'oggetto è da ignorare o se deve essere
 	 * preso in considerazione durante la scansione.
 	 */
-	private Boolean ignoreFile;
+	private Boolean ignoreFile = false;
 
 	/**
 	 * L'attributo date indica la data d'aggiunta in formato timestamp.
 	 */
-	private Long date;
+	private Long date = 0L;
 
 	/**
 	 * Costruttore vuoto.
@@ -48,10 +48,10 @@ public class GlobalPath {
 	 * @param path       il percorso del oggetto.
 	 * @param ignoreFile se è da ignorare o no.
 	 */
-	public GlobalPath(String path, boolean ignoreFile) {
+	public GlobalPath(String path, boolean ignoreFile, Long date) {
 		this.setPath(path);
 		this.setignoreFile(ignoreFile);
-		this.setDate(System.currentTimeMillis());
+		this.setDate(date);
 	}
 
 	/**
@@ -70,16 +70,7 @@ public class GlobalPath {
 	 * @param path il percorso da impostare.
 	 */
 	private void setPath(String path) {
-		PathType type = Validator.getPathType(path);
-		if (type == PathType.File) {
-			this.path = path;
-			this.setFile(true);
-		} else if (type == PathType.Directory) {
-			this.path = path;
-			this.setFile(false);
-		} else {
-			throw new RuntimeException("Invalid path: " + path);
-		}
+		this.path = path;
 	}
 
 	/**
@@ -131,7 +122,7 @@ public class GlobalPath {
 	public String getDateFormatted() {
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(getDate());
+		cal.setTimeInMillis(date);
 		return dateFormat.format(cal.getTime());
 	}
 
