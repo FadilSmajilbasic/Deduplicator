@@ -1,5 +1,8 @@
 package samt.smajilbasic.authentication;
 
+/**
+ * @author Vaadin Framework Simple UI example
+ */
 public class AccessControlFactory {
     private static final AccessControlFactory INSTANCE = new AccessControlFactory();
     private final AccessControl accessControl = new AccessControl();
