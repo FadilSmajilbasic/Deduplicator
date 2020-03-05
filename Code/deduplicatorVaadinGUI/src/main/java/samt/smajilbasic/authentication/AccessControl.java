@@ -5,6 +5,9 @@ import com.vaadin.flow.server.VaadinSession;
 
 import samt.smajilbasic.communication.Client;
 
+/**
+ * @author Vaadin Framework Simple UI example
+ */
 public class AccessControl implements AccessControlInterface {
 
     @Override
