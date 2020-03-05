@@ -94,7 +94,6 @@
             <version>2.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-common -->
-
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
@@ -127,7 +126,7 @@
             <artifactId>jersey-hk2</artifactId>
             <version>2.30</version>
         </dependency>
-
+            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-client -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
@@ -206,7 +205,6 @@
                 <configuration>
                     <wait>500</wait>
                     <maxAttempts>240</maxAttempts>
-                    <maxmem>3000m</maxmem>
                 </configuration>
             </plugin>
 
