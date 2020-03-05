@@ -23,6 +23,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 
 /**
  * The main view of the application that redirects to the login view.
+ *
+ * @author Vaadin Framework Simple UI example
  */
 @PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
 @CssImport("./styles/shared-styles.css")
@@ -44,8 +46,16 @@ private final Button logoutButton;
     top.setDefaultVerticalComponentAlignment(Alignment.CENTER);
     top.setClassName("menu-header");
     final Label title = new Label("DeduplicatorGUI");
-    top.add(title);
+    Label credits = new Label("Created by Fadil Smajilbasic 2020");
+    HorizontalLayout container = new HorizontalLayout();
+    container.setWidthFull();
+    container.add(credits);
+    container.setAlignItems(Alignment.END);
+    top.setWidthFull();
+    top.add(title,container);
     addToNavbar(top);
+
+
 
     //Gli oggetti del menu
     addToDrawer(createMenuLink(MainView.class, MainView.VIEW_NAME, VaadinIcon.HOME.create()));
@@ -59,6 +69,10 @@ private final Button logoutButton;
     logoutButton = createMenuButton("Logout", VaadinIcon.SIGN_OUT.create());
     logoutButton.addClickListener(e -> logout());
     logoutButton.getElement().setAttribute("title", "Logout (Ctrl+L)");
+    
+    
+
+    
   }
 
         private RouterLink createMenuLink(Class<? extends Component> viewClass, String caption, Icon icon) {
