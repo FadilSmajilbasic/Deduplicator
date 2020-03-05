@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -60,6 +61,8 @@ public class ReportView extends VerticalLayout {
      * The HTTP/HTTPS client used for the communication.
      */
     private Client client;
+
+    private JSONArray actions = new JSONArray();
     /**
      * The encoder used to map the return values from the server to a GlobalPath
      * object.
@@ -169,18 +172,57 @@ public class ReportView extends VerticalLayout {
                     List<MinimalDuplicate> duplicates = new ArrayList<MinimalDuplicate>();
                     List<Grid<GlobalPath>> insideGrids = new ArrayList<Grid<GlobalPath>>();
 
-                    for (int i = 0; i < array.length; i++) {
+                    List<JSONObject> arrayList = new ArrayList<JSONObject>();
+                    for (JSONObject item : array){
+                        arrayList.add(item);
+                    }
+                    Iterator<JSONObject> iterator = arrayList.iterator();
+
+                    while (iterator.hasNext()) {
                         try {
+                            JSONObject obj = iterator.next();
                             MinimalDuplicate duplicate = new MinimalDuplicate();
-                            System.out.println("dup: " + array[i]);
-                            duplicate.setHash(array[i].get("hash").toString());
-                            duplicate.setSize(array[i].get("size").toString());
-                            duplicate.setCount(array[i].get("count").toString());
+                            System.out.println("dup: " + obj);
+                            duplicate.setHash(obj.get("hash").toString());
+                            duplicate.setSize(obj.get("size").toString());
+                            duplicate.setCount(obj.get("count").toString());
                             duplicates.add(duplicate);
                             Grid<GlobalPath> insideGrid = new Grid<GlobalPath>();
                             insideGrid.setItems(getPathsFromDuplicate(value, duplicate.getHash()));
                             insideGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(2);
-                            insideGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date added").setFlexGrow(1);
+                            insideGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date modified")
+                                    .setFlexGrow(1);
+                            insideGrid.addColumn(new ComponentRenderer<>(item -> {
+                                HorizontalLayout buttonLayout = new HorizontalLayout();
+                                Button deleteButton = new Button("Delete");
+                                Button ignoreButton = new Button("Ignore");
+                                Button moveButton = new Button("Move");
+
+                                deleteButton.addClickListener(event -> {
+                                    Notification.show("Delete: " + item.getPath());
+                                    deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+                                });
+                                moveButton.addClickListener(event -> {
+                                    Notification.show("Delete: " + item.getPath());
+                                    deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    moveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+                                });
+                                ignoreButton.addClickListener(event -> {
+                                    Notification.show("Delete: " + item.getPath());
+                                    deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    ignoreButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+                                });
+                                buttonLayout.add();
+                                buttonLayout.add(deleteButton, ignoreButton, moveButton);
+                                return buttonLayout;
+                            })).setHeader("Manage");
                             insideGrids.add(insideGrid);
 
                         } catch (Exception e) {
@@ -207,16 +249,17 @@ public class ReportView extends VerticalLayout {
                         hLayout.setFlexGrow(1, countLabel);
 
                         hLayout.setClassName("duplicate-header");
-                        hLayout.setSizeFull();
+                        hLayout.setWidthFull();
                         VerticalLayout vLayout = new VerticalLayout();
                         vLayout.add(hLayout);
                         vLayout.add(grid);
-                        vLayout.setSizeFull();
+                        vLayout.setWidthFull();
 
                         return vLayout;
 
                     }))).setHeader("Duplicates");
                     duplicatesGrid.setItems(insideGrids);
+                    duplicatesGrid.setSizeFull();
 
                 } catch (ParseException pe) {
                     Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
@@ -227,11 +270,12 @@ public class ReportView extends VerticalLayout {
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         }
+
     }
 
     private List<GlobalPath> getPathsFromDuplicate(String report, String hash) {
         ResponseEntity<String> response = client.get("report/duplicate/" + report.split(":")[0] + "/" + hash);
-
+        ObjectMapper objectMapper = encoder.getObjectMapper();
         if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
             try {
                 JSONObject[] array = Utils.getArray((JSONArray) parser.parse(response.getBody()));
@@ -239,9 +283,7 @@ public class ReportView extends VerticalLayout {
 
                 for (JSONObject jsonObject : array) {
                     try {
-                        System.out.println("Path: " + encoder.getObjectMapper()
-                                .readValue(jsonObject.toJSONString(), GlobalPath.class).getPath());
-                        paths.add(encoder.getObjectMapper().readValue(jsonObject.toJSONString(), GlobalPath.class));
+                        paths.add(objectMapper.readValue(jsonObject.toJSONString(), GlobalPath.class));
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
