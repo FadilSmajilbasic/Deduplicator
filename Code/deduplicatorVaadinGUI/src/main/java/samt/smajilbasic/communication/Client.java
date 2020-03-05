@@ -28,6 +28,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -310,5 +314,19 @@ public class Client {
         ResponseEntity<String> response = post("scan/start/", null);
         return response.getStatusCode();
     }
+
+	public HttpStatus insertSchedule(LocalDateTime value, String text) {
+
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+
+//        if(text.)values
+
+        values.add("repeated", value);
+        values.add("timeStart", Timestamp.valueOf(value).getTime());
+
+
+        ResponseEntity<String> response = put("scheduler/",values);
+        return HttpStatus.OK;
+	}
 
 }
