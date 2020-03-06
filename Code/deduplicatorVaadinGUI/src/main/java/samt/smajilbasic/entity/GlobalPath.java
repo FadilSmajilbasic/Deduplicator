@@ -35,6 +35,8 @@ public class GlobalPath {
 	 */
 	private Long date = 0L;
 
+	private Action action;
+
 	/**
 	 * Costruttore vuoto.
 	 */
@@ -133,5 +135,13 @@ public class GlobalPath {
 	 */
 	private void setDate(Long date) {
 		this.date = date;
+	}
+
+	public Action getAction() {
+		return action;
+	}
+
+	public void setAction(Action action) {
+		this.action = action;
 	}
 }
