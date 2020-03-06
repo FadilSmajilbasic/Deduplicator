@@ -169,7 +169,6 @@ public class PathView extends VerticalLayout {
 
         for (File file : rootsArray) {
             roots.add(file);
-            System.out.println("File: " + file.getAbsolutePath());
         }
 
         if (roots.size() == 1) {
@@ -199,7 +198,6 @@ public class PathView extends VerticalLayout {
             rootDialog.add(rootsGrid);
             rootsGrid.setVisible(true);
             rootDialog.open();
-
         }
 
     }
@@ -229,8 +227,6 @@ public class PathView extends VerticalLayout {
 
         VerticalLayout layout = new VerticalLayout();
         layout.add(new Label("Select file or folder"), fileBrowser, confirmButton);
-        // layout.setFlexGrow(1, fileBrowser);
-        // fileBrowser.setWidthFull();
         layout.setMinWidth("50em");
         layout.setAlignItems(Alignment.CENTER);
         dialog.setCloseOnOutsideClick(false);
