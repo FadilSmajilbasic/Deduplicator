@@ -1,12 +1,9 @@
 package samt.smajilbasic.views;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.UI;
@@ -27,6 +24,7 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -39,8 +37,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
+import org.vaadin.filesystemdataprovider.FilesystemData;
+import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
+import samt.smajilbasic.ActionType;
 import samt.smajilbasic.Resources;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
 
 /**
@@ -94,9 +96,14 @@ public class ReportView extends VerticalLayout {
             Div buttonContainer = new Div();
             buttonContainer.add(button);
             buttonContainer.setWidth("fit-content");
+
+            Button applyButton = new Button("Apply selected changes",event->{
+
+            });
+
             FormLayout form = new FormLayout();
             form.setResponsiveSteps(new ResponsiveStep("0em", 2));
-            form.add(reportSelect, buttonContainer);
+            form.add(new HorizontalLayout(reportSelect,applyButton), buttonContainer);
             Div container = new Div();
             container.add(form);
             container.setWidth("80%");
@@ -173,7 +180,7 @@ public class ReportView extends VerticalLayout {
                     List<Grid<GlobalPath>> insideGrids = new ArrayList<Grid<GlobalPath>>();
 
                     List<JSONObject> arrayList = new ArrayList<JSONObject>();
-                    for (JSONObject item : array){
+                    for (JSONObject item : array) {
                         arrayList.add(item);
                     }
                     Iterator<JSONObject> iterator = arrayList.iterator();
@@ -191,34 +198,38 @@ public class ReportView extends VerticalLayout {
                             insideGrid.setItems(getPathsFromDuplicate(value, duplicate.getHash()));
                             insideGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(2);
                             insideGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date modified")
-                                    .setFlexGrow(1);
+                                    .setFlexGrow(0);
                             insideGrid.addColumn(new ComponentRenderer<>(item -> {
-                                HorizontalLayout buttonLayout = new HorizontalLayout();
+                                FlexLayout buttonLayout = new FlexLayout();
                                 Button deleteButton = new Button("Delete");
                                 Button ignoreButton = new Button("Ignore");
                                 Button moveButton = new Button("Move");
-
+                                Action action = new Action();
                                 deleteButton.addClickListener(event -> {
                                     Notification.show("Delete: " + item.getPath());
                                     deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    item.getAction().setType(ActionType.DELETE);
 
                                 });
                                 moveButton.addClickListener(event -> {
-                                    Notification.show("Delete: " + item.getPath());
+                                    Notification.show("Move: " + item.getPath());
+                                    openFileSelect(item);
                                     deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     moveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
                                 });
                                 ignoreButton.addClickListener(event -> {
-                                    Notification.show("Delete: " + item.getPath());
+                                    Notification.show("Ignore: " + item.getPath());
                                     deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     ignoreButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
                                     moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                                    item.getAction().setType(ActionType.IGNORE);
 
                                 });
+                                item.setAction(action);
                                 buttonLayout.add();
                                 buttonLayout.add(deleteButton, ignoreButton, moveButton);
                                 return buttonLayout;
@@ -232,6 +243,11 @@ public class ReportView extends VerticalLayout {
                     Iterator<MinimalDuplicate> duplicatesIterator = duplicates.iterator();
 
                     System.out.println("size: " + duplicates.size());
+                    int duplicatesBufferSize = 0;
+                    if(duplicates.size() > 10){
+                        duplicatesBufferSize = 10;
+                    }
+
                     duplicatesGrid.removeAllColumns();
                     duplicatesGrid.addColumn(new ComponentRenderer<>((grid -> {
                         MinimalDuplicate dup = duplicatesIterator.next();
@@ -333,6 +349,42 @@ public class ReportView extends VerticalLayout {
         Notification.show("Unable to retrieve reports", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         return null;
+    }
+
+    /**
+     * Method that opens a dialog pop-up with a file browser.
+     */
+    private void openFileSelect(GlobalPath item) {
+        FilesystemData rootData = new FilesystemData(File.listRoots()[0], false);
+        FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
+        Dialog dialog = new Dialog();
+        TreeGrid<File> fileBrowser = new TreeGrid<>();
+        fileBrowser.setItems(rootData.getChildren(File.listRoots()[0]));
+        fileBrowser.setDataProvider(fileSystem);
+        fileBrowser.addSelectionListener(event -> {
+            Optional<File> selected = event.getFirstSelectedItem();
+            if (selected.get().isDirectory() && selected.get().canWrite()) {
+                Action action = item.getAction();
+                action.setNewPath(selected.get().getAbsolutePath());
+                action.setType(ActionType.MOVE);
+                dialog.close();
+            } else {
+                Notification.show("Path selected is not a directory or it is not writeable", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+
+        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new Label("Select a folder"), fileBrowser);
+        layout.setMinWidth("50em");
+        layout.setAlignItems(Alignment.CENTER);
+        dialog.setCloseOnOutsideClick(false);
+        dialog.setCloseOnEsc(false);
+        dialog.add(layout);
+        dialog.open();
+
     }
 
 }
