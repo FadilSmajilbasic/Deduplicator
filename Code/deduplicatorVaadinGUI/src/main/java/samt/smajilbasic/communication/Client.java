@@ -315,14 +315,18 @@ public class Client {
         return response.getStatusCode();
     }
 
-	public HttpStatus insertSchedule(LocalDateTime value, String text) {
+	public HttpStatus insertSchedule(LocalDateTime dateTime, String repetition,int value) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        if(repetition.length() > 0) {
+            if(repetition.equals("Daily"))
+            values.add("monthly", 0);
+            values.add("weekly", 0);
+            values.add("monthly", 0);
+        }
 
-//        if(text.)values
-
-        values.add("repeated", value);
-        values.add("timeStart", Timestamp.valueOf(value).getTime());
+        values.add("repeated", (!repetition.equals("One off")));
+        values.add("timeStart", Timestamp.valueOf(dateTime).getTime());
 
 
         ResponseEntity<String> response = put("scheduler/",values);

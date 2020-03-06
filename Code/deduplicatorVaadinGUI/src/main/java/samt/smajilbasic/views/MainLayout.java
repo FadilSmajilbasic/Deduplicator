@@ -36,12 +36,12 @@ public class MainLayout extends AppLayout{
 private final Button logoutButton;
 
   public MainLayout() {
-    //Tasto apertura/chiusura menu
+    //Menu toggle button
     final DrawerToggle drawerToggle = new DrawerToggle();
     drawerToggle.addClassName("menu-toggle");
     addToNavbar(drawerToggle);
 
-    //Barra horrizontale in alto con il titolo
+    //Horizontal bar on top
     final HorizontalLayout top = new HorizontalLayout();
     top.setDefaultVerticalComponentAlignment(Alignment.CENTER);
     top.setClassName("menu-header");
@@ -57,7 +57,7 @@ private final Button logoutButton;
 
 
 
-    //Gli oggetti del menu
+    //Menu links
     addToDrawer(createMenuLink(MainView.class, MainView.VIEW_NAME, VaadinIcon.HOME.create()));
     addToDrawer(createMenuLink(PathView.class, PathView.VIEW_NAME, VaadinIcon.EDIT.create()));
     addToDrawer(createMenuLink(ScanView.class, ScanView.VIEW_NAME, VaadinIcon.BUG.create()));
@@ -65,14 +65,11 @@ private final Button logoutButton;
     addToDrawer(createMenuLink(SchedulerView.class, SchedulerView.VIEW_NAME, VaadinIcon.CALENDAR.create()));
     addToDrawer(createMenuLink(DashboardView.class, DashboardView.VIEW_NAME, VaadinIcon.DASHBOARD.create()));
 
-    //Il tasto di logout
+    //logout button
     logoutButton = createMenuButton("Logout", VaadinIcon.SIGN_OUT.create());
     logoutButton.addClickListener(e -> logout());
     logoutButton.getElement().setAttribute("title", "Logout (Ctrl+L)");
-    
-    
 
-    
   }
 
         private RouterLink createMenuLink(Class<? extends Component> viewClass, String caption, Icon icon) {
