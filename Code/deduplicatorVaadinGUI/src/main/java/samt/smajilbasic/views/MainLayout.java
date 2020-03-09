@@ -1,5 +1,6 @@
 package samt.smajilbasic.views;
 
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.router.RouterLink;
@@ -46,11 +47,12 @@ private final Button logoutButton;
     top.setDefaultVerticalComponentAlignment(Alignment.CENTER);
     top.setClassName("menu-header");
     final Label title = new Label("DeduplicatorGUI");
-    Label credits = new Label("Created by Fadil Smajilbasic 2020");
+    Label credits = new Label("Created by Fadil Smajilbasic ");
     HorizontalLayout container = new HorizontalLayout();
     container.setWidthFull();
     container.add(credits);
-    container.setAlignItems(Alignment.END);
+    container.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+    credits.setClassName("credits-label");
     top.setWidthFull();
     top.add(title,container);
     addToNavbar(top);
