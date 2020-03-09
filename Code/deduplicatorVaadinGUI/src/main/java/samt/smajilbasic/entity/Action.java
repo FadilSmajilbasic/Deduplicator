@@ -5,7 +5,7 @@ import samt.smajilbasic.ActionType;
 public class Action {
 
     private String newPath;
-    private ActionType type;
+    private String type;
     private Integer schedulerId;
 
     public String getNewPath() {
@@ -16,11 +16,11 @@ public class Action {
         this.newPath = newPath;
     }
 
-    public ActionType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(ActionType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
