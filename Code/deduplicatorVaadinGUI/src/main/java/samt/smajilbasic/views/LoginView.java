@@ -95,8 +95,8 @@ public class LoginView extends VerticalLayout {
         button.addClickShortcut(Key.ENTER);
 
         form = new FormLayout();
-
-        form.setResponsiveSteps(new ResponsiveStep("20em", 1), new ResponsiveStep("40em", 2));
+        passwordField.getStyle().set("margin-left","0px");
+        form.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("20em", 2));
         form.add(usernameTextField, passwordField);
         Div container = new Div(form);
         container.setWidth("50%");
