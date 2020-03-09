@@ -3,12 +3,21 @@ package samt.smajilbasic.views;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.HasValue.ValueChangeEvent;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -24,11 +33,15 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import org.apache.tomcat.jni.Global;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -64,7 +77,7 @@ public class ReportView extends VerticalLayout {
      */
     private Client client;
 
-    private JSONArray actions = new JSONArray();
+    private List<GlobalPath> actions = new ArrayList<GlobalPath>();
     /**
      * The encoder used to map the return values from the server to a GlobalPath
      * object.
@@ -84,34 +97,106 @@ public class ReportView extends VerticalLayout {
             reportSelect.addValueChangeListener(event -> {
                 updateGrid(event.getValue());
             });
-            Button button = new Button();
-            button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            button.setIcon(VaadinIcon.INFO.create());
+            Button infoButton = new Button();
+            infoButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            infoButton.setIcon(VaadinIcon.INFO.create());
 
-            button.addClickListener(event -> {
+            infoButton.addClickListener(event -> {
                 Dialog dialog = new Dialog();
                 dialog.add(new Label("report info"));
                 dialog.open();
             });
-            Div buttonContainer = new Div();
-            buttonContainer.add(button);
-            buttonContainer.setWidth("fit-content");
-
-            Button applyButton = new Button("Apply selected changes",event->{
-
+            Button applyButton = new Button("Apply selected changes", event -> {
+                checkActions();
             });
+            applyButton.setMinWidth("");
 
-            FormLayout form = new FormLayout();
-            form.setResponsiveSteps(new ResponsiveStep("0em", 2));
-            form.add(new HorizontalLayout(reportSelect,applyButton), buttonContainer);
-            Div container = new Div();
-            container.add(form);
-            container.setWidth("80%");
+            VerticalLayout verticalLayout = new VerticalLayout();
+            FormLayout formButtonsLayout = new FormLayout(reportSelect, applyButton, infoButton);
+            formButtonsLayout.setWidthFull();
+            verticalLayout.add(formButtonsLayout);
+            verticalLayout.setAlignItems(Alignment.START);
+            formButtonsLayout.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("25em", 3));
 
             duplicatesGrid = new Grid<Grid<GlobalPath>>();
             duplicatesGrid.setSizeFull();
-            add(container, duplicatesGrid);
+            add(verticalLayout, duplicatesGrid);
         }
+    }
+
+    private void checkActions() {
+        actions = new ArrayList<GlobalPath>();
+        ListDataProvider<Grid<GlobalPath>> insideGrids = (ListDataProvider<Grid<GlobalPath>>) duplicatesGrid
+                .getDataProvider();
+
+        Iterator<Grid<GlobalPath>> insideGridsIterator = insideGrids.getItems().iterator();
+
+        while (insideGridsIterator.hasNext()) {
+            Grid<GlobalPath> insideGrid = insideGridsIterator.next();
+            ListDataProvider<GlobalPath> provider = (ListDataProvider<GlobalPath>) insideGrid.getDataProvider();
+
+            Iterator<GlobalPath> items = provider.getItems().iterator();
+
+            while (items.hasNext()) {
+                GlobalPath item = items.next();
+                Action action = item.getAction();
+                if (action != null) {
+                    if (action.getType() != null) {
+                        try {
+                            System.out.println("Item: " + item.getPath());
+                            System.out.println("Action: " + encoder.getObjectMapper().writeValueAsString(action));
+                            actions.add(item);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+        Dialog applyDialog = new Dialog();
+        VerticalLayout applyDialogLayout = new VerticalLayout();
+        applyDialogLayout.setSizeFull();
+
+        DatePicker datePicker = new DatePicker();
+        TimePicker timePicker = new TimePicker();
+
+        LocalDateTime ldt = LocalDateTime.now();
+        ldt = ldt.plusMinutes(1);
+        datePicker.setValue(ldt.toLocalDate());
+        timePicker.setValue(ldt.toLocalTime());
+
+        timePicker.setLocale(Locale.GERMAN);
+        datePicker.setLocale(Locale.GERMAN);
+
+        timePicker.setMin(LocalTime.now().toString());
+
+        ValueChangeListener listener = new ValueChangeListener<ValueChangeEvent<?>>() {
+
+            @Override
+            public void valueChanged(ValueChangeEvent<?> event) {
+                LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
+                if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
+                    Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH,
+                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    datePicker.setValue(LocalDate.now());
+                    timePicker.setValue(LocalTime.now());
+                }
+            }
+        };
+
+        datePicker.addValueChangeListener(listener);
+        timePicker.addValueChangeListener(listener);
+
+        HorizontalLayout pickerLayout = new HorizontalLayout(datePicker, timePicker);
+
+        Button applyDialogConfirmButton = new Button("Confirm", event -> {
+
+            client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), actions);
+            applyDialog.close();
+        });
+
+        applyDialog.add(pickerLayout, applyDialogConfirmButton);
+        applyDialog.open();
     }
 
     /**
@@ -198,12 +283,18 @@ public class ReportView extends VerticalLayout {
                             insideGrid.setItems(getPathsFromDuplicate(value, duplicate.getHash()));
                             insideGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(2);
                             insideGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date modified")
-                                    .setFlexGrow(0);
+                                    .setFlexGrow(1);
+
                             insideGrid.addColumn(new ComponentRenderer<>(item -> {
                                 FlexLayout buttonLayout = new FlexLayout();
                                 Button deleteButton = new Button("Delete");
                                 Button ignoreButton = new Button("Ignore");
                                 Button moveButton = new Button("Move");
+                                deleteButton.setClassName("inside-grid-button");
+                                ignoreButton.setClassName("inside-grid-button");
+
+                                moveButton.setClassName("inside-grid-button");
+
                                 Action action = new Action();
                                 deleteButton.addClickListener(event -> {
                                     Notification.show("Delete: " + item.getPath());
@@ -233,7 +324,7 @@ public class ReportView extends VerticalLayout {
                                 buttonLayout.add();
                                 buttonLayout.add(deleteButton, ignoreButton, moveButton);
                                 return buttonLayout;
-                            })).setHeader("Manage");
+                            })).setHeader("Manage").setFlexGrow(1);
                             insideGrids.add(insideGrid);
 
                         } catch (Exception e) {
@@ -242,9 +333,8 @@ public class ReportView extends VerticalLayout {
                     }
                     Iterator<MinimalDuplicate> duplicatesIterator = duplicates.iterator();
 
-                    System.out.println("size: " + duplicates.size());
                     int duplicatesBufferSize = 0;
-                    if(duplicates.size() > 10){
+                    if (duplicates.size() > 10) {
                         duplicatesBufferSize = 10;
                     }
 
@@ -369,7 +459,8 @@ public class ReportView extends VerticalLayout {
                 action.setType(ActionType.MOVE);
                 dialog.close();
             } else {
-                Notification.show("Path selected is not a directory or it is not writeable", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+                Notification.show("Path selected is not a directory or it is not writeable",
+                        Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         });
