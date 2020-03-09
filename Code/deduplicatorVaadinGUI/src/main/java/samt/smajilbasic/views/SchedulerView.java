@@ -28,6 +28,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.ui.CheckBox;
 
 import com.vaadin.ui.CheckBoxGroup;
+import org.apache.tomcat.jni.Local;
 import samt.smajilbasic.Resources;
 import samt.smajilbasic.communication.Client;
 
@@ -53,30 +54,30 @@ public class SchedulerView extends VerticalLayout {
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
 
         if (client != null) {
-            DatePicker datePicker = new DatePicker();
-            TimePicker timePicker = new TimePicker();
+            DatePicker datePicker = new DatePicker("Start date");
+            TimePicker timePicker = new TimePicker("Start time");
 
-            datePicker.setValue(LocalDate.now());
-            timePicker.setValue(LocalTime.now());
+            LocalDateTime ldt = LocalDateTime.now();
+            ldt = ldt.plusMinutes(1);
+            datePicker.setValue(ldt.toLocalDate());
+            timePicker.setValue(ldt.toLocalTime());
 
-            timePicker.setLocale(Locale.getDefault());
-            datePicker.setLocale(Locale.getDefault());
+
+            timePicker.setLocale(Locale.GERMAN);
+            datePicker.setLocale(Locale.GERMAN);
+
+            timePicker.setMin(LocalTime.now().toString());
 
             ValueChangeListener listener = new ValueChangeListener<ValueChangeEvent<?>>() {
 
                 @Override
                 public void valueChanged(ValueChangeEvent<?> event) {
-                    if (datePicker.getValue().isBefore(LocalDate.now()) && !datePicker.getValue().isEqual(LocalDate.now()) ) {
-                        Notification.show("Date can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(),timePicker.getValue());
+                    if(inputs.isBefore(LocalDateTime.now()) && ! inputs.isEqual(LocalDateTime.now())){
+                        Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         datePicker.setValue(LocalDate.now());
-                    } else {
-                        if (timePicker.getValue().isBefore(LocalTime.now()) && !timePicker.getValue().isAfter(LocalTime.now()) ) {
-                            Notification.show("Time can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
-                                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                            timePicker.setValue(LocalTime.now());
-                        }
+                        timePicker.setValue(LocalTime.now());
                     }
-                    System.out.println("Value changed");
                 }
             };
 
@@ -93,25 +94,35 @@ public class SchedulerView extends VerticalLayout {
 
 
             String[] weekdayNames = DateFormatSymbols.getInstance().getWeekdays();
+            System.out.println("Weekday: " + weekdayNames.length);
             weekRadioButtonGroup.setItems(weekdayNames);
 
             radioButtonGroup.setItems("One off", "Daily", "Weekly", "Monthly");
             radioButtonGroup.setValue("One off");
 
+            DatePicker monthlyDatePicker = new DatePicker();
+            monthlyDatePicker.setMin(LocalDate.now());
+            monthlyDatePicker.setMax(LocalDate.now());
+            monthlyDatePicker.setVisible(false);
+
 
             radioButtonGroup.addValueChangeListener(event -> {
                         weekRadioButtonGroup.setVisible(false);
+                        monthlyDatePicker.setVisible(false);
                         if (event != null) {
                             if (radioButtonGroup.getItemPosition(event.getValue()) == 2) {
                                 weekRadioButtonGroup.setVisible(true);
-                            } else {
-
+                            } else if(radioButtonGroup.getItemPosition(event.getValue()) == 3) {
+                                monthlyDatePicker.setVisible(true);
                             }
 
                         }
                     }
             );
 
+            monthlyDatePicker.addValueChangeListener(event ->{
+                monthNumber = 0 & (1<<event.getValue().getDayOfMonth());
+            });
 
             weekRadioButtonGroup.addValueChangeListener(event -> {
                 weekNumber = weekNumber & (1 << weekRadioButtonGroup.getItemPosition(event.getValue()));
@@ -122,24 +133,10 @@ public class SchedulerView extends VerticalLayout {
 
             Button button = new Button("Set scan schedule", event -> {
 
-//                client.insertSchedule(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()),
-//                        radioButtonGroup.getValue());
+               client.insertSchedule(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()),weekNumber,monthNumber,
+                       radioButtonGroup.getValue());
             });
-            add(datePicker, timePicker,radioButtonGroup,weekRadioButtonGroup,button);
+            add(pickerLayout,radioButtonGroup,weekRadioButtonGroup,monthlyDatePicker,button);
         }
     }
 }
-// * @param monthly parametro da passare se lo {@link Scheduler} deve essere
-// * eseguito mensilmente.
-// * @param weekly parametro da passare se lo {@link Scheduler} deve essere
-// * eseguito settimanalmente.
-// * @param repeated parmetro da passare se lo scheduler dovrà essere ripetuto,
-// * valori: "true" o "false"
-// * @param timeStart la data e ora dalla quale partirà l'esecuzione formato
-// * timestamp -&gt; Long
-// * @return lo scheduler inserito oppure messaggio d'errore
-// */
-// @PutMapping()
-// public Object insert(@RequestParam String monthly, @RequestParam String
-// weekly, @RequestParam String repeated,
-// @RequestParam String timeStart) {
