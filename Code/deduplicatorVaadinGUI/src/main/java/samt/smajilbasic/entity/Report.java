@@ -1,39 +1,22 @@
-package samt.smajilbasic.deduplicator.entity;
+package samt.smajilbasic.entity;
 
+import java.io.File;
 import java.util.List;
-
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import org.springframework.lang.Nullable;
 
 /**
  * La classe Report rappresenta un rapporto di una scansione.
  */
-@Entity
 public class Report {
 
     /**
-     * L'attributo reportId contiene il percorso assoluto del file o cartella. Usa
-     * l'annotazione @Id per indicare che è una chiave primaria della tabella.
+     * L'attributo path conteine il percorso assoluto del file o cartella. 
      */
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer reportId;
 
     /**
-     * L'attributo duration indica la durata della scansione in millisecondi. Usa
-     * l'annotazione @Nullable per indicare a Spring che il valore può essere null.
+     * L'attributo duration indica la durata della scansione in millisecondi. 
      */
-    @Nullable
+    
     private Long duration;
 
     /**
@@ -43,44 +26,26 @@ public class Report {
     private Long start;
 
     /**
-     * L'attributo filesScanned indica il numero di file scansionati. Usa
-     * l'annotazione @Nullable per indicare a Spring che il valore può essere null.
+     * L'attributo filesScanned indica il numero di file scansionati.
      */
-    @Nullable
+    
     private Integer filesScanned;
 
     /**
      * L'attributo averageDuplicateCount indica il rapporto tra il numero di
-     * duplicati e il numero di file scansionati. Usa l'annotazione @Nullable per
-     * indicare a Spring che il valore può essere null.
+     * duplicati e il numero di file scansionati.
      */
-    @Nullable
+    
     private Float averageDuplicateCount;
 
     /**
-     * L'attributo user indica l'utente che ha iniziato la scansione. Usa
-     * l'annotazione @JoinColumn per impostare il nome della colonna nel database.
-     * Usa l'annotazione @ManyToOne per indicare che l'attributo è una foreign key e
-     * l'opzione FetchType.LAZY significa che l'inizializzazione deve essere
-     * ritardata al più tardi possibile. L'annotazione @JsonIgnoreProperties serve
-     * per evitare di creare un json infonito perchè {@link AuthenticationDetails}
-     * contiene un riferimento a Report.
+     * L'attributo user indica l'utente che ha iniziato la scansione.
      */
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user")
-    private AuthenticationDetails user;
+    private String user;
 
     /**
-     * L'attributo file contiene tutti i file scansionati in questo rapporto. Usa
-     * l'annotazione @OneToMany per indicare che l'attributo è una foreign key:
-     * l'opzione FetchType.LAZY significa che l'inizializzazione deve essere
-     * ritardata al più lungo possibile, L'annotazione {@link JsonManagedReference}
-     * indica a Spring che la proprità file fa parte di una referenza incrociata tra
-     * due attributi.
+     * L'attributo file contiene tutti i file scansionati in questo rapporto.
      */
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "report")
-    @JsonManagedReference
     private List<File> file;
 
     /**
@@ -92,7 +57,7 @@ public class Report {
     /**
      * Metodo costruttore che accetta come parametro l'utente.
      */
-    public Report(AuthenticationDetails user) {
+    public Report(String user) {
         setUser(user);
     }
 
@@ -163,7 +128,7 @@ public class Report {
      * Metodo getter per l'attributo user.
      * @return l'utente che ha inizializzato la sansione.
      */
-    public AuthenticationDetails getUser() {
+    public String getUser() {
         return user;
     }
 
@@ -171,7 +136,7 @@ public class Report {
      * Metodo setter per l'attributo user.
      * @param user l'utente da impostare.
      */
-    private void setUser(AuthenticationDetails user) {
+    private void setUser(String user) {
         if (user != null)
             this.user = user;
         else

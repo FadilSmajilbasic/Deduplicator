@@ -1,8 +1,11 @@
 
 package samt.smajilbasic.communication;
 
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -18,10 +21,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import samt.smajilbasic.GlobalPath;
+import samt.smajilbasic.Resources;
+import samt.smajilbasic.entity.Action;
+import samt.smajilbasic.entity.GlobalPath;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -30,14 +33,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 
 /**
- *
  * @author Fadil Smajilbasic
  */
 public class Client {
@@ -69,7 +76,7 @@ public class Client {
     /**
      * Il costruttore che riceve il username e la password per l'autenticazione
      * basic che verrà utilizzata in tutte le GUI. Il costruttore tenta di caricare
-     * 
+     *
      * @param username il username da impostare.
      * @param password la password da impostare.
      */
@@ -95,7 +102,7 @@ public class Client {
          * authType) -> true; SSLContext sslContext = SSLContextBuilder.create()
          * .loadKeyMaterial(keyStore, CA_PASS.toCharArray()) .loadTrustMaterial(null,
          * acceptingTrustStrategy) .build();
-         * 
+         *
          * .setSSLContext(sslContext)
          */
         HttpClient httpClient = HttpClients.custom().build();
@@ -107,7 +114,7 @@ public class Client {
         /*
          * } catch (UnrecoverableKeyException | NoSuchAlgorithmException |
          * KeyStoreException | KeyManagementException e) {
-         * 
+         *
          * System.out.println("Unable to create client: " + e.getMessage());
          * e.printStackTrace(); }
          */
@@ -144,8 +151,8 @@ public class Client {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
-            ResponseEntity<String> response = restTemplate.exchange(prefix + host + ":" + port + "/" + path,
-                    HttpMethod.GET, requestEntity, String.class);
+            ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
+                    String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
 
@@ -172,7 +179,7 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
+            System.out.println("[ERROR] Delete rce: " + rce.getMessage());
         }
 
         if (response != null) {
@@ -208,7 +215,8 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("rce: " + rce.getMessage());
+            System.out.println("[ERROR] Post rce: " + rce.getMessage());
+            rce.printStackTrace(System.out);
         }
         return response;
     }
@@ -226,7 +234,6 @@ public class Client {
         } catch (RestClientException rce) {
             System.out.println("Rest client exception: ");
             rce.printStackTrace(System.out);
-
         }
 
         return response;
@@ -236,7 +243,7 @@ public class Client {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", value);
-        values.add("ignorePath", type.equals("scan"));
+        values.add("ignorePath", type.equals("ignore"));
         return put("path/", values);
     }
 
@@ -272,33 +279,39 @@ public class Client {
     public JSONObject getStatus() {
 
         ResponseEntity<String> response = get("scan/status");
-
-        if (response.getStatusCode().equals(HttpStatus.OK)) {
-            try {
-              String body = response.getBody();
-              JSONParser parser = new JSONParser();
-              JSONObject resp = (JSONObject) parser.parse(body);
-              if (resp.get("fileCount") != null && resp.get("progress") != null && resp.get("timestamp") != null) {
-                return resp;
-              }else{
-                HashMap<String,String> error = new HashMap<String,String>();
-                error.put("message", "Response status format invalid");
+        if (response != null) {
+            if (response.getStatusCode().equals(HttpStatus.OK)) {
+                try {
+                    String body = response.getBody();
+                    JSONParser parser = new JSONParser();
+                    JSONObject resp = (JSONObject) parser.parse(body);
+                    if (resp.get("fileCount") != null && resp.get("progress") != null
+                            && resp.get("timestamp") != null) {
+                        return resp;
+                    } else {
+                        HashMap<String, String> error = new HashMap<String, String>();
+                        error.put("message", "Response status format invalid");
+                        return new JSONObject(error);
+                    }
+                } catch (ParseException pe) {
+                    HashMap<String, String> error = new HashMap<String, String>();
+                    error.put("message", "Unable to parse server status");
+                    return new JSONObject(error);
+                }
+            } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
+                HashMap<String, String> error = new HashMap<String, String>();
+                error.put("message", "Scan already running");
                 return new JSONObject(error);
-              }
-            } catch (ParseException pe) {
-                HashMap<String,String> error = new HashMap<String,String>();
-                error.put("message", "Unable to parse server status");
+            } else {
+                HashMap<String, String> error = new HashMap<String, String>();
+                error.put("message", "Unknown error");
                 return new JSONObject(error);
             }
-          } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
-            HashMap<String,String> error = new HashMap<String,String>();
-            error.put("message", "Scan already running");
+        } else {
+            HashMap<String, String> error = new HashMap<String, String>();
+            error.put("message", "Unable to get scan status");
             return new JSONObject(error);
-          }else{
-            HashMap<String,String> error = new HashMap<String,String>();
-            error.put("message", "Unknown error");
-            return new JSONObject(error);
-          }
+        }
     }
 
     public HttpStatus startScan() {
@@ -306,4 +319,69 @@ public class Client {
         return response.getStatusCode();
     }
 
+    public Object insertSchedule(LocalDateTime dateTime,Integer weekNumber,Integer monthNumber,String repetition) {
+
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+        if (repetition.length() > 0) {
+            if(weekNumber != null)
+                values.add("weekly", weekNumber);
+            else
+                values.add("weekly","");
+            if(monthNumber != null)
+                values.add("monthly", monthNumber);
+            else
+                values.add("monthly",monthNumber);
+        }
+
+        values.add("repeated", repetition.equals("One off"));
+        values.add("timeStart", Timestamp.valueOf(dateTime).getTime());
+
+
+        ResponseEntity<String> response = put("scheduler/", values);
+        if(response != null) {
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            } else {
+                return null;
+            }
+        }else{
+            return null;
+        }
+    }
+
+    public HttpStatus addActions(LocalDateTime time, List<GlobalPath> actions) {
+
+        Object response = insertSchedule(time,null,null, "One off");
+        if (response != null) {
+
+            try {
+                JSONObject responseJSON = (JSONObject) parser.parse(response.toString());
+                String schedulerId = responseJSON.get("id").toString();
+                for (GlobalPath path : actions) {
+                    Action action = path.getAction();
+                    MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+
+                    values.add("type", action.getType().toString());
+                    values.add("path", path.getPath());
+                    values.add("newPath", action.getNewPath());
+                    values.add("scheduler", schedulerId);
+
+
+                    ResponseEntity<String> addResponse = put("action/", values);
+                    if (addResponse.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
+                        Notification.show("Unable to add action of: " + path.getPath(), Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                }
+                return HttpStatus.OK;
+
+            } catch (ParseException e) {
+                e.printStackTrace();
+                Notification.show("Unable to parse server response", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return HttpStatus.BAD_REQUEST;
+            }
+        } else {
+            Notification.show("Unable to create scheduler to add actions", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+    }
 }
