@@ -116,11 +116,12 @@ public class ReportView extends VerticalLayout {
             formButtonsLayout.setWidthFull();
             verticalLayout.add(formButtonsLayout);
             verticalLayout.setAlignItems(Alignment.START);
-            formButtonsLayout.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("25em", 3));
+            formButtonsLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S,1),new ResponsiveStep(Resources.SIZE_MOBILE_M,2));
 
             duplicatesGrid = new Grid<Grid<GlobalPath>>();
             duplicatesGrid.setSizeFull();
             add(verticalLayout, duplicatesGrid);
+            setMinWidth(Resources.SIZE_MOBILE_S);
         }
     }
 

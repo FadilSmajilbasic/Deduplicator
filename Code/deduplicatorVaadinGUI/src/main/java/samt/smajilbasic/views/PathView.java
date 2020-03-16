@@ -124,6 +124,7 @@ public class PathView extends VerticalLayout {
             layout.setFlexGrow(1, pathTextField);
             layout.setWrapMode(WrapMode.WRAP);
             add(layout, pathGrid);
+            setMinWidth(Resources.SIZE_MOBILE_S);
             updatePaths();
         }
     }
@@ -296,7 +297,7 @@ public class PathView extends VerticalLayout {
                                     dialogModify.close();
                                     dialog.close();
                                 });
-                                pathLabelModfiy.setMinWidth("30em");
+                                pathLabelModfiy.setMinWidth(Resources.SIZE_MOBILE_S);
                                 group.setItems("scan", "ignore");
                                 group.setValue(event.getValue().isignoreFile() ? "ignore" : "scan");
                                 group.addValueChangeListener(groupModify -> type = groupModify.getValue());

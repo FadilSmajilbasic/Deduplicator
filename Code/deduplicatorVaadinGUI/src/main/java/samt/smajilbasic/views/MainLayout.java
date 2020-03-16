@@ -57,8 +57,6 @@ private final Button logoutButton;
     top.add(title,container);
     addToNavbar(top);
 
-
-
     //Menu links
     addToDrawer(createMenuLink(MainView.class, MainView.VIEW_NAME, VaadinIcon.HOME.create()));
     addToDrawer(createMenuLink(PathView.class, PathView.VIEW_NAME, VaadinIcon.EDIT.create()));

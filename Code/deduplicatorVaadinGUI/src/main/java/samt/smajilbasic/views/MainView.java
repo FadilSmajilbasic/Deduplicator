@@ -5,6 +5,7 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import samt.smajilbasic.Resources;
 
 /**
  * MainView
@@ -20,5 +21,6 @@ public class MainView extends VerticalLayout{
         super();
         this.setAlignItems(Alignment.CENTER);
         add(new Label("Welcome to Main View"),new Label("Select a section from the side menu"));
+        setMinWidth(Resources.SIZE_MOBILE_S);
     }
 }

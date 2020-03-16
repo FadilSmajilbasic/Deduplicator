@@ -144,6 +144,7 @@ public class ScanView extends VerticalLayout {
       add(form, progressBar);
 
       createStatusThread();
+      setMinWidth(Resources.SIZE_MOBILE_S);
       updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f);
     }
 

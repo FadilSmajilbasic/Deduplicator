@@ -22,6 +22,7 @@ import com.vaadin.flow.router.internal.BeforeEnterHandler;
 
 import org.springframework.http.HttpStatus;
 
+import samt.smajilbasic.Resources;
 import samt.smajilbasic.Validator;
 import samt.smajilbasic.authentication.AccessControl;
 import samt.smajilbasic.authentication.AccessControlFactory;
@@ -103,7 +104,7 @@ public class LoginView extends VerticalLayout {
         setAlignItems(Alignment.CENTER);
 
         add(container, button, advancedViewButton);
-
+        setMinWidth(Resources.SIZE_MOBILE_S);
     }
 
     /**

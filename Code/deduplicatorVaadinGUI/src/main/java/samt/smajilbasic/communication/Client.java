@@ -128,7 +128,7 @@ public class Client {
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange(prefix + host + ":" + port + "/login/", HttpMethod.GET, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Client exception: " + rce.getMessage());
