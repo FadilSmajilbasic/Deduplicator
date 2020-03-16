@@ -1,5 +1,6 @@
 package samt.smajilbasic.deduplicator;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.TimeZone;
 
@@ -14,6 +15,7 @@ import org.springframework.context.event.EventListener;
 
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
+import samt.smajilbasic.deduplicator.logger.MyLogger;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 
 @SpringBootApplication
@@ -38,9 +40,15 @@ public class DeduplicatorApplication {
 	void started() throws NoSuchAlgorithmException {
 		TimeZone.setDefault(TimeZone.getDefault());
 		if (!adr.existsById("admin"))
-			adr.save(new AuthenticationDetails("admin", "admin"));
+			adr.save(new AuthenticationDetails("admin", "administrator"));
 		if (!adr.existsById("scheduler"))
 			adr.save(new AuthenticationDetails("scheduler", "scheduler"));
+		try{
+			MyLogger.setup();
+		}catch(IOException ioe){
+			System.out.println("Unable to setup logger");
+			ioe.printStackTrace();
+		}
 	}
 
 	@EventListener(ApplicationReadyEvent.class)
