@@ -117,39 +117,46 @@ public class SchedulerController {
         Long date = Validator.isLong(timeStart);
         Scheduler scheduler = new Scheduler();
 
-        if (repeatedBool) {
-            scheduler.setRepeated(repeatedBool);
-            if (date > System.currentTimeMillis()) {
-                if (monthlyInt != null) {
-                    Integer dayMonth = getFirstPosition(monthlyInt, 31);
+        if (date != null) {
+            if (repeatedBool) {
+                scheduler.setRepeated(repeatedBool);
 
-                    scheduler.setMonthly(dayMonth);
+                if (date > System.currentTimeMillis()) {
+                    if (monthlyInt != null) {
+                        Integer dayMonth = getFirstPosition(monthlyInt, 31);
 
-                } else if (weeklyInt != null) {
-                    Integer dayWeek = getFirstPosition(weeklyInt, 7);
-                    scheduler.setWeekly(dayWeek);
+                        scheduler.setMonthly(dayMonth);
 
+                    } else if (weeklyInt != null) {
+                        Integer dayWeek = getFirstPosition(weeklyInt, 7);
+                        scheduler.setWeekly(dayWeek);
+
+                    } else {
+                        return new ResponseEntity<Response>(
+                                new Response("Schedule monthly and weekly parameters invalid"),
+                                HttpStatus.INTERNAL_SERVER_ERROR);
+                    }
                 } else {
-                    return new ResponseEntity<Response>(new Response("Schedule monthly and weekly parameters invalid"),
+                    return new ResponseEntity<Response>(new Response("Schedule hour parameter invalid"),
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {
-                return new ResponseEntity<Response>(new Response("Schedule hour parameter invalid"),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        } else {
 
-            scheduler.setTimeStart(date);
-            scheduler.setRepeated(repeatedBool);
+                scheduler.setTimeStart(date);
+                scheduler.setRepeated(repeatedBool);
+            }
+            schedulerRepository.save(scheduler);
+            BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+            ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
+            ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
+            synchronized (checker) {
+                checker.start();
+            }
+            return schedulerRepository.findById(scheduler.getSchedulerId());
+        } else {
+            return new ResponseEntity<Response>(new Response("timeStart parameter not set or invalid"),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        schedulerRepository.save(scheduler);
-        BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
-        ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
-        ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
-        synchronized (checker) {
-            checker.start();
-        }
-        return schedulerRepository.findById(scheduler.getSchedulerId());
     }
 
     /**
