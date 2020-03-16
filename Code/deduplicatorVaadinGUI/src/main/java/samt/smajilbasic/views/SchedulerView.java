@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.Temporal;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -16,6 +17,8 @@ import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -46,8 +49,8 @@ public class SchedulerView extends VerticalLayout {
      * The HTTP/HTTPS client used for the communication.
      */
     private Client client;
-    private int weekNumber;
-    private int monthNumber;
+    private int weekNumber = 0;
+    private int monthNumber = 0;
 
     public SchedulerView() {
         super();
@@ -68,12 +71,12 @@ public class SchedulerView extends VerticalLayout {
 
             timePicker.setMin(LocalTime.now().toString());
 
-            ValueChangeListener listener = new ValueChangeListener<ValueChangeEvent<?>>() {
+            ValueChangeListener<ValueChangeEvent<?>> listener = new ValueChangeListener<ValueChangeEvent<?>>() {
 
                 @Override
                 public void valueChanged(ValueChangeEvent<?> event) {
-                    LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(),timePicker.getValue());
-                    if(inputs.isBefore(LocalDateTime.now()) && ! inputs.isEqual(LocalDateTime.now())){
+                    LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
+                    if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
                         Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         datePicker.setValue(LocalDate.now());
                         timePicker.setValue(LocalTime.now());
@@ -84,8 +87,8 @@ public class SchedulerView extends VerticalLayout {
             datePicker.addValueChangeListener(listener);
             timePicker.addValueChangeListener(listener);
 
-            HorizontalLayout pickerLayout = new HorizontalLayout(datePicker, timePicker);
-
+            FormLayout pickerLayout = new FormLayout(datePicker, timePicker);
+            pickerLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S,1),new ResponsiveStep(Resources.SIZE_MOBILE_M,2));
             RadioButtonGroup<String> radioButtonGroup = new RadioButtonGroup<String>();
             radioButtonGroup.setLabel("Select repetition frequency");
 
@@ -94,49 +97,58 @@ public class SchedulerView extends VerticalLayout {
 
 
             String[] weekdayNames = DateFormatSymbols.getInstance().getWeekdays();
-            System.out.println("Weekday: " + weekdayNames.length);
+            weekdayNames = Arrays.copyOfRange(weekdayNames, 1, weekdayNames.length);
             weekRadioButtonGroup.setItems(weekdayNames);
 
             radioButtonGroup.setItems("One off", "Daily", "Weekly", "Monthly");
             radioButtonGroup.setValue("One off");
 
             DatePicker monthlyDatePicker = new DatePicker();
-            monthlyDatePicker.setMin(LocalDate.now());
-            monthlyDatePicker.setMax(LocalDate.now());
-            monthlyDatePicker.setVisible(false);
 
+            monthlyDatePicker.setMin(LocalDate.now().withDayOfMonth(1));
+            monthlyDatePicker.setMax(LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth()));
+            monthlyDatePicker.setVisible(false);
+            monthlyDatePicker.setLabel("Select day of month");
+            monthlyDatePicker.setLocale(Locale.GERMAN);
+
+            HorizontalLayout pickerSideLayouts = new HorizontalLayout();
 
             radioButtonGroup.addValueChangeListener(event -> {
                         weekRadioButtonGroup.setVisible(false);
                         monthlyDatePicker.setVisible(false);
                         if (event != null) {
-                            if (radioButtonGroup.getItemPosition(event.getValue()) == 2) {
-                                weekRadioButtonGroup.setVisible(true);
-                            } else if(radioButtonGroup.getItemPosition(event.getValue()) == 3) {
-                                monthlyDatePicker.setVisible(true);
+                            switch (radioButtonGroup.getItemPosition(event.getValue())) {
+                                case 2:
+                                    weekRadioButtonGroup.setVisible(true);
+                                    break;
+                                case 3:
+                                    monthlyDatePicker.setVisible(true);
+                                    break;
                             }
-
                         }
                     }
             );
 
-            monthlyDatePicker.addValueChangeListener(event ->{
-                monthNumber = 0 & (1<<event.getValue().getDayOfMonth());
+            monthlyDatePicker.addValueChangeListener(event -> {
+                monthNumber = (1 << (event.getValue().getDayOfMonth() - 1));
+                System.out.println("Month Number: " + monthNumber);
             });
 
             weekRadioButtonGroup.addValueChangeListener(event -> {
-                weekNumber = weekNumber & (1 << weekRadioButtonGroup.getItemPosition(event.getValue()));
+                weekNumber = (1 << weekRadioButtonGroup.getItemPosition(event.getValue()));
 
                 System.out.println("Week Number: " + weekNumber);
             });
 
-
             Button button = new Button("Set scan schedule", event -> {
 
-               client.insertSchedule(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()),weekNumber,monthNumber,
-                       radioButtonGroup.getValue());
+                client.insertSchedule(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), weekNumber, monthNumber,
+                        radioButtonGroup.getValue());
             });
-            add(pickerLayout,radioButtonGroup,weekRadioButtonGroup,monthlyDatePicker,button);
+            pickerSideLayouts.add(radioButtonGroup,weekRadioButtonGroup, monthlyDatePicker);
+
+            add(pickerLayout, pickerSideLayouts, button);
+            setMinWidth(Resources.SIZE_MOBILE_S);
         }
     }
 }
