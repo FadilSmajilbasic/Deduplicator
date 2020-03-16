@@ -60,3 +60,4 @@ out/
 .vscode/
 Code/deduplicatorVaadinGUI/node_modules/
 Code/deduplicatorVaadinGUI/target/
+Code/deduplicator/log.txt
