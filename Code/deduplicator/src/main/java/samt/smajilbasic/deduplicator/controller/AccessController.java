@@ -28,11 +28,11 @@ public class AccessController {
      * L'attributo USERNAME_LENGTH definische la lunghezza minima del username di un
      * utente
      */
-    private static final int USERNAME_LENGTH = 4;
+    public static final int USERNAME_LENGTH = 4;
     /**
      * L'attributo PASSWORD_LENGTH definische la lunghezza minima della password
      */
-    private static final int PASSWORD_LENGTH = 8;
+    public static final int PASSWORD_LENGTH = 8;
 
     /**
      * L'attributo adr serve al controller per interfacciarsi con la tabella
@@ -58,7 +58,7 @@ public class AccessController {
 
     }
 
-    @RequestMapping("/logout/sucess")
+    @RequestMapping("/logout/success")
     public ResponseEntity<Response> logoutSucess() {
         Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).log(Level.INFO, "User logged out");
         return new ResponseEntity<Response>(new Response("Logged out"), HttpStatus.OK);
