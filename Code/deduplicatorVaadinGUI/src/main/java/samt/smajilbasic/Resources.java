@@ -14,7 +14,7 @@ public abstract class Resources {
     public final static int NOTIFICATION_LENGTH = 2000;
     
     /**
-     * The attribute key used to store the username in the session.
+     * The key used to store the reference to the username in the session.
      */
     public static final String CURRENT_USER_SESSION_ATTRIBUTE_KEY = CurrentUser.class.getCanonicalName();
 
@@ -25,5 +25,8 @@ public abstract class Resources {
     public static final String SIZE_MOBILE_S = "320px";
     public static final String SIZE_TABLET = "768px";
     public static final String SIZE_LAPTOP = "1024px";
+
+    public static final int USERNAME_LENGTH = 4;
+    public static final int PASSWORD_LENGTH = 8;
 
 }
