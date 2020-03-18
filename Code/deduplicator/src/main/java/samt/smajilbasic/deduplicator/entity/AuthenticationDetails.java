@@ -3,10 +3,13 @@ package samt.smajilbasic.deduplicator.entity;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 

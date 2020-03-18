@@ -19,8 +19,7 @@ public class GlobalPath {
 	 * l'annotazione @Id per indicare che è una chiave primaria della tabella.
 	 */
 	@Id
-	@Lob
-	@Column
+	@Column()
 	private String path;
 
 	/**

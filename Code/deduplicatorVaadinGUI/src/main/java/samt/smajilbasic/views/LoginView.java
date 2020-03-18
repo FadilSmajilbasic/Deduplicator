@@ -86,7 +86,7 @@ public class LoginView extends VerticalLayout {
         portTextField.setValue(8443d);
         hostTextField.setValue("127.0.0.1");
         usernameTextField.setValue("admin");
-        passwordField.setValue("admin");
+        passwordField.setValue("administrator");
 
         Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
                 usernameTextField.getValue(), passwordField.getValue()));
@@ -142,13 +142,13 @@ public class LoginView extends VerticalLayout {
                         accessControl.signedIn(user, client);
                         UI.getCurrent().navigate("");
                         break;
+                    case UNAUTHORIZED:
+                        Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        break;
                     case SERVICE_UNAVAILABLE:
                         Notification
                                 .show("Server not reachable or an error occured", 2000, Notification.Position.TOP_END)
-                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        break;
-                    case UNAUTHORIZED:
-                        Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END)
                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
                         break;
                     default:
