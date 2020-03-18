@@ -26,6 +26,7 @@ import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -37,12 +38,10 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.net.ssl.SSLContext;
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * @author Fadil Smajilbasic
@@ -50,7 +49,6 @@ import javax.net.ssl.SSLContext;
 public class Client {
 
     private String username;
-
     private String password;
     private String host;
     RestTemplate restTemplate;
@@ -132,6 +130,9 @@ public class Client {
                     String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Client exception: " + rce.getMessage());
+            if(rce.getMessage().strip().equals("401")){
+                return HttpStatus.UNAUTHORIZED;
+            }
         }
 
         if (response != null) {
@@ -179,14 +180,10 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("[ERROR] Delete rce: " + rce.getMessage());
+            System.err.println("[ERROR] Delete rce: " + rce.getMessage());
         }
 
-        if (response != null) {
-            return response;
-        } else {
-            return new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
-        }
+        return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
 
     }
 
@@ -194,7 +191,7 @@ public class Client {
         HttpHeaders header = new HttpHeaders();
 
         String auth = username + ":" + password;
-        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(Charset.forName("US-ASCII")));
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.US_ASCII));
         String authHeader = "Basic " + new String(encodedAuth);
 
         header.add("Authorization", authHeader);
@@ -215,7 +212,7 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("[ERROR] Post rce: " + rce.getMessage());
+            System.err.println("[ERROR] Post rce: " + rce.getMessage());
             rce.printStackTrace(System.out);
         }
         return response;
@@ -232,7 +229,7 @@ public class Client {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
                     String.class);
         } catch (RestClientException rce) {
-            System.out.println("Rest client exception: ");
+            System.err.println("Rest client exception: " + rce.getMessage());
             rce.printStackTrace(System.out);
         }
 
@@ -383,5 +380,21 @@ public class Client {
             Notification.show("Unable to create scheduler to add actions", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public ResponseEntity<String> updatePassword(String newPassword) {
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+        System.out.println("oldPassword: " + this.password);
+        values.add("oldPassword",this.password);
+        values.add("newPassword",newPassword);
+        return put("/account/password",values);
     }
 }
