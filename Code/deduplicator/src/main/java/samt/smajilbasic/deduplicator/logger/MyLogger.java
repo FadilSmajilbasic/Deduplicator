@@ -14,7 +14,7 @@ public class MyLogger {
     static public void setup() throws IOException {
         Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-        fileHandler = new FileHandler("log.txt");
+        fileHandler = new FileHandler("log."+System.currentTimeMillis()+".txt");
         fileHandler.setFormatter(new LogFormatter());
         logger.addHandler(fileHandler);
     }
