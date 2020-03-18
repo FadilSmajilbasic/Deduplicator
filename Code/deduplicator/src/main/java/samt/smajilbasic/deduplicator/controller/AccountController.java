@@ -34,16 +34,6 @@ import org.springframework.web.servlet.ModelAndView;
 @RequestMapping(path = "/account")
 public class AccountController {
 
-    /**
-     * L'attributo USERNAME_LENGTH definische la lunghezza minima del username di un
-     * utente
-     */
-    private static final int USERNAME_LENGTH = 4;
-    /**
-     * L'attributo PASSWORD_LENGTH definische la lunghezza minima della password
-     */
-    private static final int PASSWORD_LENGTH = 8;
-
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     /**
@@ -84,8 +74,8 @@ public class AccountController {
     public Object insert(@RequestParam String username, @RequestParam String password) {
         username = username.trim();
         password = password.trim();
-        if (!username.equals("") && username.length() >= USERNAME_LENGTH) {
-            if (!password.equals("") && password.length() >= PASSWORD_LENGTH) {
+        if (!username.equals("") && username.length() >= AccessController.USERNAME_LENGTH) {
+            if (!password.equals("") && password.length() >= AccessController.PASSWORD_LENGTH) {
                 if (!adr.existsById(username)) {
                     try {
                         adr.save(new AuthenticationDetails(username, password));
@@ -101,14 +91,13 @@ public class AccountController {
 
                 }
             } else {
-                return new ResponseEntity<Response>(
-                        new Response("Password too short, should be at least " + PASSWORD_LENGTH + " charaters long"),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<Response>(new Response("Password too short, should be at least "
+                        + AccessController.PASSWORD_LENGTH + " charaters long"), HttpStatus.BAD_REQUEST);
 
             }
         } else {
-            return new ResponseEntity<Response>(
-                    new Response("Username too short, should be at least" + USERNAME_LENGTH + "charaters long"),
+            return new ResponseEntity<Response>(new Response(
+                    "Username too short, should be at least" + AccessController.USERNAME_LENGTH + "charaters long"),
                     HttpStatus.BAD_REQUEST);
 
         }
@@ -119,7 +108,7 @@ public class AccountController {
     public Object updatePassword(String oldPassword, String newPassword) {
         if (!oldPassword.isBlank()) {
             if (!newPassword.isBlank()) {
-                if (newPassword.length() >= PASSWORD_LENGTH) {
+                if (newPassword.length() >= AccessController.PASSWORD_LENGTH) {
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                     AuthenticationDetails internalUser = adr.findById(authentication.getName()).get();
                     if (internalUser != null) {
@@ -130,8 +119,7 @@ public class AccountController {
                                 adr.save(internalUser);
                                 Logger.getGlobal().log(Level.INFO,
                                         "Password updated successfully for user " + internalUser.getUsername());
-                                ModelAndView view = new ModelAndView("redirect:/logout");
-                                return view;
+                                return new ResponseEntity<>(HttpStatus.OK);
                             } catch (NoSuchAlgorithmException e) {
                                 Logger.getGlobal().log(Level.SEVERE, "BCrypt algorithm not available on server");
 
@@ -140,7 +128,10 @@ public class AccountController {
                                         HttpStatus.INTERNAL_SERVER_ERROR);
                             }
                         } else {
-                            Logger.getGlobal().log(Level.WARNING, "oldPassword parameter doesn't match the current password");
+                            Logger.getGlobal().log(Level.WARNING,
+                                    "oldPassword parameter doesn't match the current password");
+                            System.out.println(
+                                    "oldPassword: " + oldPassword + " internal: " + internalUser.getPassword());
                             return new ResponseEntity<Response>(
                                     new Response("oldPassword parameter doesn't match the current password"),
                                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -155,7 +146,7 @@ public class AccountController {
                     Logger.getGlobal().log(Level.WARNING, "New password too short");
                     return new ResponseEntity<Response>(
                             new Response("New password too short, please provide a password of at least "
-                                    + PASSWORD_LENGTH + " characters."),
+                                    + AccessController.PASSWORD_LENGTH + " characters."),
                             HttpStatus.INTERNAL_SERVER_ERROR);
                 }
 
@@ -174,7 +165,7 @@ public class AccountController {
     @PutMapping("/username")
     public Object updateUsername(String newUsername, String password) {
         if (!newUsername.isBlank()) {
-            if (newUsername.length() >= USERNAME_LENGTH) {
+            if (newUsername.length() >= AccessController.USERNAME_LENGTH) {
                 if (!password.isBlank()) {
                     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                     AuthenticationDetails internalUser = adr.findById(authentication.getName()).get();
@@ -185,8 +176,7 @@ public class AccountController {
                             insert(newUsername, password);
                             Logger.getGlobal().log(Level.INFO, "Username updated successfully from "
                                     + internalUser.getUsername() + " to " + newUsername);
-                            ModelAndView view = new ModelAndView("redirect:/logout");
-                            return view;
+                            return new ResponseEntity(HttpStatus.OK);
                         } else {
                             Logger.getGlobal().log(Level.WARNING, "Invalid user in database");
                             return new ResponseEntity<Response>(new Response("Invalid user in database"),
@@ -208,8 +198,8 @@ public class AccountController {
             } else {
                 Logger.getGlobal().log(Level.WARNING, "Username too short");
 
-                return new ResponseEntity<Response>(
-                        new Response("Username too short, should be at least" + USERNAME_LENGTH + "charaters long"),
+                return new ResponseEntity<Response>(new Response(
+                        "Username too short, should be at least" + AccessController.USERNAME_LENGTH + "charaters long"),
                         HttpStatus.BAD_REQUEST);
             }
         } else {
