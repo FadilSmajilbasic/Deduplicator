@@ -1,10 +1,16 @@
 package samt.smajilbasic.deduplicator.controller;
 
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import samt.smajilbasic.deduplicator.config.SecurityConfig;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +42,11 @@ public class AccountController {
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+    @Autowired
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager;
+
+    @Autowired
+    private SecurityConfig securityConfig;
     /**
      * L'attributo adr serve al controller per interfacciarsi con la tabella
      * AuthenticationDetails del database. Usa l'annotazione @Autowired per indicare
@@ -55,7 +66,6 @@ public class AccountController {
 
     @GetMapping("/all")
     public Iterable<AuthenticationDetails> getAll() {
-
         return adr.findAll();
     }
 
@@ -115,11 +125,17 @@ public class AccountController {
 
                         if (encoder.matches(oldPassword, internalUser.getPassword())) {
                             try {
-                                internalUser = new AuthenticationDetails(internalUser.getUsername(), newPassword);
+                                internalUser = new AuthenticationDetails(internalUser.getUsername(),newPassword);
                                 adr.save(internalUser);
-                                Logger.getGlobal().log(Level.INFO,
-                                        "Password updated successfully for user " + internalUser.getUsername());
-                                return new ResponseEntity<>(HttpStatus.OK);
+                                if(updatePasswordInMemory(internalUser.getUsername(),internalUser.getPassword())) {
+                                    Logger.getGlobal().log(Level.INFO,
+                                            "Password updated successfully for user " + internalUser.getUsername());
+                                    return new ResponseEntity<>(HttpStatus.OK);
+                                }else{
+                                    Logger.getGlobal().log(Level.SEVERE,
+                                            "An error occurred while updating the password of " + internalUser.getUsername());
+                                    return new ResponseEntity<Response>(new Response("An error occurred while updating the password"),HttpStatus.INTERNAL_SERVER_ERROR);
+                                }
                             } catch (NoSuchAlgorithmException e) {
                                 Logger.getGlobal().log(Level.SEVERE, "BCrypt algorithm not available on server");
 
@@ -171,7 +187,6 @@ public class AccountController {
                     AuthenticationDetails internalUser = adr.findById(authentication.getName()).get();
                     if (!internalUser.getUsername().equals("admin")) {
                         if (encoder.matches(password, internalUser.getPassword())) {
-
                             delete(internalUser.getUsername());
                             insert(newUsername, password);
                             Logger.getGlobal().log(Level.INFO, "Username updated successfully from "
@@ -248,6 +263,54 @@ public class AccountController {
             return new ResponseEntity<Response>(new Response("No user with username" + username), HttpStatus.NOT_FOUND);
         }
 
+    }
+
+
+    private boolean exists(String username) {
+        return inMemoryUserDetailsManager.userExists(username);
+    }
+
+    private boolean updatePasswordInMemory(String username,String password){
+        if(exists(username)) {
+            inMemoryUserDetailsManager.changePassword(inMemoryUserDetailsManager.loadUserByUsername(username).getPassword(), password);
+            return true;
+        }else{
+            Logger.getGlobal().log(Level.SEVERE,"Unable to update password of nonexistent user: " + username);
+            return false;
+        }
+    }
+
+    private boolean updateUsernameInMemory(String username,String newUsername){
+        if(exists(username)) {
+            UserDetails user =  inMemoryUserDetailsManager.loadUserByUsername(username);
+            if(deleteUser(username)) {
+                Function<String,String> passwordEncoder = new Function<String, String>() {
+                    @Override
+                    public String apply(String password) {
+                        return new BCryptPasswordEncoder().encode(password);
+                    }
+                };
+                inMemoryUserDetailsManager.createUser(User.builder().username(username).passwordEncoder(passwordEncoder).password(user.getPassword()).roles("USER").build());
+                return true;
+            }else{
+                Logger.getGlobal().log(Level.SEVERE,"Unable to delete user");
+                return false;
+            }
+
+        }else{
+            Logger.getGlobal().log(Level.SEVERE,"Unable to update username of nonexistent user: " + username);
+            return false;
+        }
+    }
+    private boolean deleteUser(String username){
+        if(exists(username)){
+            inMemoryUserDetailsManager.deleteUser(username);
+            Logger.getGlobal().log(Level.INFO,"Successfully deleted user " + username);
+            return true;
+        }else{
+            Logger.getGlobal().log(Level.SEVERE,"Unable to delete user");
+            return false;
+        }
     }
 
 }
