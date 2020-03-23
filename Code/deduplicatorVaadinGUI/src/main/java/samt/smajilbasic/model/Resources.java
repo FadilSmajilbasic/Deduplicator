@@ -1,4 +1,4 @@
-package samt.smajilbasic;
+package samt.smajilbasic.model;
 
 import samt.smajilbasic.authentication.CurrentUser;
 import samt.smajilbasic.communication.Client;
@@ -28,5 +28,8 @@ public abstract class Resources {
 
     public static final int USERNAME_LENGTH = 4;
     public static final int PASSWORD_LENGTH = 8;
+
+    public static final int DUPLICATES_BUFFER_LENGTH = 10;
+
 
 }

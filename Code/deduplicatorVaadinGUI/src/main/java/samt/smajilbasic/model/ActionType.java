@@ -1,4 +1,4 @@
-package samt.smajilbasic;
+package samt.smajilbasic.model;
 
 public interface ActionType {
     public static String  DELETE = "DELETE";

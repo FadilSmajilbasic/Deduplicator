@@ -1,4 +1,4 @@
-package samt.smajilbasic;
+package samt.smajilbasic.model;
 
 /**
  * PathType enum

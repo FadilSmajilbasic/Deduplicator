@@ -1,4 +1,4 @@
-package samt.smajilbasic;
+package samt.smajilbasic.model;
 
 import java.io.File;
 import java.nio.file.Files;
