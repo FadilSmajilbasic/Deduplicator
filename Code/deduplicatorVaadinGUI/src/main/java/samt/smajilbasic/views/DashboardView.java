@@ -1,7 +1,6 @@
 package samt.smajilbasic.views;
 
 import com.vaadin.flow.component.*;
-import com.vaadin.flow.component.HasValue.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -13,21 +12,18 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
-import jdk.jfr.Event;
+import com.vaadin.flow.shared.communication.PushMode;
+import com.vaadin.flow.shared.ui.Transport;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import samt.smajilbasic.Resources;
-import samt.smajilbasic.authentication.AccessControl;
+import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 
-import java.awt.event.MouseListener;
-import java.util.EventListener;
 
 /**
  * DashboardView
@@ -101,38 +97,32 @@ public class DashboardView extends FormLayout {
                             dialog.add(layout);
 
                             dialog.open();
-                            Command command = new Command() {
-                                @Override
-                                public void execute() {
-                                    bar.setValue(bar.getValue() + 1);
-                                }
+                            UI ui = UI.getCurrent();
+                            ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
+                            ui.getPushConfiguration().setTransport(Transport.WEBSOCKET);
+                            Command command = (Command) () ->{
+                                bar.setValue(bar.getValue() + 1);
+                                ui.push();
                             };
 
-                            Command closeDialog = new Command() {
-                                @Override
-                                public void execute() {
-                                    AccessControlFactory.getInstance().createAccessControl().signOut();
-                                    dialog.close();
-                                    System.out.println("finished");
-                                }
+                            Command closeDialog = (Command) () -> {
+                                System.out.println("close command");
+                                AccessControlFactory.getInstance().createAccessControl().signOut();
+                                dialog.close();
                             };
 
-                            Thread countdown = new Thread() {
-                                @Override
-                                public void run() {
-                                    long start = System.currentTimeMillis();
-                                    for (int i = 0; i < 5;) {
-                                        if (System.currentTimeMillis() - start > 1000) {
-                                            System.out.println("Update");
-                                            getUI().get().accessSynchronously(command);
-                                            start = System.currentTimeMillis();
-                                            i++;
-                                        }
+                            Thread countdown = new Thread(() -> {
+                                long start = System.currentTimeMillis();
+                                for (int i = 0; i < 5;) {
+                                    if (System.currentTimeMillis() - start > 1000) {
+                                        System.out.println("Update");
+                                        ui.access(command);
+                                        start = System.currentTimeMillis();
+                                        i++;
                                     }
-                                    getUI().get().accessSynchronously(closeDialog);
                                 }
-                            };
-
+                                ui.access(closeDialog);
+                            });
 
                             countdown.start();
 
@@ -161,12 +151,6 @@ public class DashboardView extends FormLayout {
         ComponentEventListener<KeyUpEvent> listener = new ComponentEventListener<KeyUpEvent>() {
             @Override
             public void onComponentEvent(KeyUpEvent event) {
-//                passwordField.setInvalid(false);
-//                newPasswordField.setInvalid(false);
-//                repeatedPasswordField.setInvalid(false);
-//                passwordField.setErrorMessage("");
-//                newPasswordField.setErrorMessage("");
-//                repeatedPasswordField.setErrorMessage("");
                 if (newPasswordField.getValue().equals(passwordField.getValue())) {
                     System.out.println("new: " + newPasswordField.getValue() + " old: " + passwordField.getValue());
                     if (newPasswordField.getErrorMessage() != null) {
