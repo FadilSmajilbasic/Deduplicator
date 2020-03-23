@@ -1,5 +1,8 @@
 package samt.smajilbasic.deduplicator.config;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -7,12 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configurers.provisioning.InMemoryUserDetailsManagerConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
 
 /**
@@ -22,6 +33,8 @@ import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
  * una classe che definisce delle configurazioni per Spring.
  */
 @Configuration
+@EnableWebSecurity
+@EnableWebMvc
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     /**
      * L'attributo authenticationEntryPoint definisce il punto d'entrata quando un
@@ -66,36 +79,33 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      *             in modo semplice.
      * @throws Exception
      */
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) {
-        PasswordEncoder encoder = passwordEncoder();
-
-        adr.findAll().forEach(user -> {
-            String type = "USER";
-            if (user.getUsername().equals("admin")) {
-                type = "ADMIN";
-            }
-
-            try {
-                auth.inMemoryAuthentication().passwordEncoder(encoder).withUser(user.getUsername())
-                        .password(user.getPassword()).roles(type);
-            } catch (Exception e) {
-                Logger.getGlobal().log(Level.SEVERE,
-                        "Unable to add user for http authentication: " + user.getUsername());
-                System.out.println("[ERROR] Unable to add user for http authentication: " + user.getUsername());
-                e.printStackTrace();
-            }
-        });
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) {
+        try {
+            auth.userDetailsService(getInMemoryUserDetailsManager());
+            Logger.getGlobal().log(Level.INFO,
+                    "userDetailsManager set");
+        }catch (Exception ex){
+            Logger.getGlobal().log(Level.SEVERE,
+                    "Unable to set inMemoryUserDetailsManagerConfigurer ");
+        }
     }
 
-    /**
-     * Il metodo passwordEncoder ritorna il encoder che verrà utilizzzato per le
-     * password.
-     * 
-     * @return il password encoder impostato ({@link BCryptPasswordEncoder})
-     */
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder()
+    {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public InMemoryUserDetailsManager getInMemoryUserDetailsManager()
+    {
+        User.UserBuilder builder = User.builder();
+        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+        adr.findAll().forEach(user -> {
+                manager.createUser(builder.username(user.getUsername()).password(user.getPassword()).roles("ADMIN").build());
+        });
+
+        return manager;
     }
 }
