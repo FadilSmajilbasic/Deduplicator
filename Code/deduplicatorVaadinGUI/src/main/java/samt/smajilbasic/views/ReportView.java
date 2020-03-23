@@ -1,17 +1,13 @@
 package samt.smajilbasic.views;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
@@ -23,7 +19,6 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -34,29 +29,26 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.timepicker.TimePicker;
-import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.provider.*;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-import org.apache.tomcat.jni.Global;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
-import org.vaadin.filesystemdataprovider.FilesystemData;
-import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
-import samt.smajilbasic.ActionType;
-import samt.smajilbasic.Resources;
+import org.springframework.lang.Nullable;
+import samt.smajilbasic.entity.MinimalDuplicate;
+import samt.smajilbasic.model.DuplicateGrid;
+import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
+import samt.smajilbasic.service.DuplicateGridService;
 
 /**
  * ReportView
@@ -84,57 +76,65 @@ public class ReportView extends VerticalLayout {
      */
     private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
 
-    private Grid<Grid<GlobalPath>> duplicatesGrid;
+    private Grid<DuplicateGrid> duplicatesGrid;
 
-    public ReportView() {
+    private Select<String> reportSelect;
+    private boolean forMainView = false;
+    public ReportView(){
+        this(false);
+    }
+
+    public ReportView(boolean forMainView) {
+        this.forMainView = forMainView;
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
-
+        duplicatesGrid = new Grid<DuplicateGrid>();
+        duplicatesGrid.setSizeFull();
         if (client != null) {
             this.setSizeFull();
-            Select<String> reportSelect = new Select<String>();
-            reportSelect.setItems(getReports());
-
-            reportSelect.addValueChangeListener(event -> {
-                updateGrid(event.getValue());
-            });
-            Button infoButton = new Button();
-            infoButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            infoButton.setIcon(VaadinIcon.INFO.create());
-
-            infoButton.addClickListener(event -> {
-                Dialog dialog = new Dialog();
-                dialog.add(new Label("report info"));
-                dialog.open();
-            });
-            Button applyButton = new Button("Apply selected changes", event -> {
-                checkActions();
-            });
-            applyButton.setMinWidth("");
-
             VerticalLayout verticalLayout = new VerticalLayout();
-            FormLayout formButtonsLayout = new FormLayout(reportSelect, applyButton, infoButton);
-            formButtonsLayout.setWidthFull();
-            verticalLayout.add(formButtonsLayout);
-            verticalLayout.setAlignItems(Alignment.START);
-            formButtonsLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S,1),new ResponsiveStep(Resources.SIZE_MOBILE_M,2));
+            if(!forMainView) {
+                reportSelect = new Select<String>();
+                reportSelect.setItems(getReports());
 
-            duplicatesGrid = new Grid<Grid<GlobalPath>>();
-            duplicatesGrid.setSizeFull();
+                reportSelect.addValueChangeListener(event -> {
+                    updateGrid(event.getValue());
+                });
+                Button infoButton = new Button();
+                infoButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                infoButton.setIcon(VaadinIcon.INFO.create());
+
+                infoButton.addClickListener(event -> {
+                    getReportInfo();
+                });
+                Button applyButton = new Button("Apply selected changes", event -> {
+                    checkActions();
+                });
+                applyButton.setMinWidth("");
+                FormLayout formButtonsLayout = new FormLayout(reportSelect, applyButton, infoButton);
+                formButtonsLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_M, 2));
+                formButtonsLayout.setWidthFull();
+                verticalLayout.add(formButtonsLayout);
+                verticalLayout.setAlignItems(Alignment.START);
+
+            }else{
+                updateGrid(getLastReportId());
+            }
             add(verticalLayout, duplicatesGrid);
             setMinWidth(Resources.SIZE_MOBILE_S);
         }
     }
 
+
     private void checkActions() {
         actions = new ArrayList<GlobalPath>();
-        ListDataProvider<Grid<GlobalPath>> insideGrids = (ListDataProvider<Grid<GlobalPath>>) duplicatesGrid
-                .getDataProvider();
+        ListDataProvider<DuplicateGrid> insideGrids = (ListDataProvider<DuplicateGrid>) duplicatesGrid
+            .getDataProvider();
 
-        Iterator<Grid<GlobalPath>> insideGridsIterator = insideGrids.getItems().iterator();
+        Iterator<DuplicateGrid> insideGridsIterator = insideGrids.getItems().iterator();
 
         while (insideGridsIterator.hasNext()) {
-            Grid<GlobalPath> insideGrid = insideGridsIterator.next();
-            ListDataProvider<GlobalPath> provider = (ListDataProvider<GlobalPath>) insideGrid.getDataProvider();
+            DuplicateGrid insideGrid = insideGridsIterator.next();
+            ListDataProvider<GlobalPath> provider = (ListDataProvider<GlobalPath>) insideGrid.getItem().getDataProvider();
 
             Iterator<GlobalPath> items = provider.getItems().iterator();
 
@@ -178,7 +178,7 @@ public class ReportView extends VerticalLayout {
                 LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
                 if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
                     Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH,
-                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     datePicker.setValue(LocalDate.now());
                     timePicker.setValue(LocalTime.now());
                 }
@@ -200,215 +200,86 @@ public class ReportView extends VerticalLayout {
         applyDialog.open();
     }
 
-    /**
-     * Class that describes the duplicate object returned by the API when querying
-     * all duplicates of a report.
-     */
-    private static final class MinimalDuplicate {
-        private String hash;
-        private String size;
-        private String count;
 
-        /**
-         * @return the hash
-         */
-        public String getHash() {
-            return hash;
-        }
+    private void updateGrid(String reportSelectValue) {
 
-        /**
-         * @param hash the hash to set
-         */
-        public void setHash(String hash) {
-            this.hash = hash;
-        }
+        String reportId = forMainView?reportSelectValue:reportSelect.getValue().split(":")[0];
+        if (reportId != null) {
+            if (!reportId.isBlank()) {
+                duplicateGridService = new DuplicateGridService(reportId, client);
+                DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(
+                    query -> {
+                        int offset = query.getOffset();
+                        int limit = query.getLimit();
+                        System.out.println("offset: " + offset + " and limit " + limit);
+                        List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
+                        return duplicates.stream();
+                    }, query -> getDuplicateGridService().getTotalDuplicatesCount());
+                duplicatesGrid.setDataProvider(dataProvider);
 
-        /**
-         * @return the size
-         */
-        public String getSize() {
-            return size;
-        }
 
-        /**
-         * @param size the size to set
-         */
-        public void setSize(String size) {
-            this.size = size;
-        }
+                duplicatesGrid.addColumn(new ComponentRenderer<VerticalLayout, DuplicateGrid>((grid -> {
+                    MinimalDuplicate dup = grid.getMinimalDuplicate();
+                    Label hashLabel = new Label("Duplicate: " + dup.getHash());
+                    Label sizeLabel = new Label("Size: " + dup.getSize());
+                    Label countLabel = new Label("Count: " + dup.getCount());
 
-        /**
-         * @return the count
-         */
-        public String getCount() {
-            return count;
-        }
+                    hashLabel.setClassName("duplicate-header-label");
+                    sizeLabel.setClassName("duplicate-header-label");
+                    countLabel.setClassName("duplicate-header-label");
 
-        /**
-         * @param count the count to set
-         */
-        public void setCount(String count) {
-            this.count = count;
-        }
+                    FlexLayout hLayout = new FlexLayout(hashLabel, sizeLabel, countLabel);
+                    hLayout.setFlexGrow(1, hashLabel);
+                    hLayout.setFlexGrow(1, sizeLabel);
+                    hLayout.setFlexGrow(1, countLabel);
 
-    }
+                    hLayout.setClassName("duplicate-header");
+                    hLayout.setWidthFull();
+                    VerticalLayout vLayout = new VerticalLayout();
+                    vLayout.add(hLayout);
+                    vLayout.add(grid.getItem());
+                    vLayout.setWidthFull();
+                    return vLayout;
+                }))).setHeader("Duplicates");
 
-    private void updateGrid(String value) {
-
-        if (!value.isEmpty() && value.length() > 0) {
-            System.out.println("path: " + value.split(":")[0]);
-            ResponseEntity<String> response = client.get("report/duplicate/" + value.split(":")[0] + "/");
-
-            if (response != null) {
-                try {
-                    JSONObject[] array = Utils.getArray((JSONArray) parser.parse(response.getBody()));
-                    List<MinimalDuplicate> duplicates = new ArrayList<MinimalDuplicate>();
-                    List<Grid<GlobalPath>> insideGrids = new ArrayList<Grid<GlobalPath>>();
-
-                    List<JSONObject> arrayList = new ArrayList<JSONObject>();
-                    for (JSONObject item : array) {
-                        arrayList.add(item);
-                    }
-                    Iterator<JSONObject> iterator = arrayList.iterator();
-
-                    while (iterator.hasNext()) {
-                        try {
-                            JSONObject obj = iterator.next();
-                            MinimalDuplicate duplicate = new MinimalDuplicate();
-                            System.out.println("dup: " + obj);
-                            duplicate.setHash(obj.get("hash").toString());
-                            duplicate.setSize(obj.get("size").toString());
-                            duplicate.setCount(obj.get("count").toString());
-                            duplicates.add(duplicate);
-                            Grid<GlobalPath> insideGrid = new Grid<GlobalPath>();
-                            insideGrid.setItems(getPathsFromDuplicate(value, duplicate.getHash()));
-                            insideGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(2);
-                            insideGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date modified")
-                                    .setFlexGrow(1);
-
-                            insideGrid.addColumn(new ComponentRenderer<>(item -> {
-                                FlexLayout buttonLayout = new FlexLayout();
-                                Button deleteButton = new Button("Delete");
-                                Button ignoreButton = new Button("Ignore");
-                                Button moveButton = new Button("Move");
-                                deleteButton.setClassName("inside-grid-button");
-                                ignoreButton.setClassName("inside-grid-button");
-
-                                moveButton.setClassName("inside-grid-button");
-
-                                Action action = new Action();
-                                deleteButton.addClickListener(event -> {
-                                    Notification.show("Delete: " + item.getPath());
-                                    deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    item.getAction().setType(ActionType.DELETE);
-
-                                });
-                                moveButton.addClickListener(event -> {
-                                    Notification.show("Move: " + item.getPath());
-                                    openFileSelect(item);
-                                    deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    moveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-                                });
-                                ignoreButton.addClickListener(event -> {
-                                    Notification.show("Ignore: " + item.getPath());
-                                    deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    ignoreButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                                    item.getAction().setType(ActionType.IGNORE);
-
-                                });
-                                item.setAction(action);
-                                buttonLayout.add();
-                                buttonLayout.add(deleteButton, ignoreButton, moveButton);
-                                return buttonLayout;
-                            })).setHeader("Manage").setFlexGrow(1);
-                            insideGrids.add(insideGrid);
-
-                        } catch (Exception e) {
-                            System.out.println(e.getMessage());
-                        }
-                    }
-                    Iterator<MinimalDuplicate> duplicatesIterator = duplicates.iterator();
-
-                    int duplicatesBufferSize = 0;
-                    if (duplicates.size() > 10) {
-                        duplicatesBufferSize = 10;
-                    }
-
-                    duplicatesGrid.removeAllColumns();
-                    duplicatesGrid.addColumn(new ComponentRenderer<>((grid -> {
-                        MinimalDuplicate dup = duplicatesIterator.next();
-                        Label hashLabel = new Label("Duplicate: " + dup.getHash());
-                        Label sizeLabel = new Label("Size: " + dup.getSize());
-                        Label countLabel = new Label("Count: " + dup.getCount());
-
-                        hashLabel.setClassName("duplicate-header-label");
-                        sizeLabel.setClassName("duplicate-header-label");
-                        countLabel.setClassName("duplicate-header-label");
-
-                        FlexLayout hLayout = new FlexLayout(hashLabel, sizeLabel, countLabel);
-                        hLayout.setFlexGrow(1, hashLabel);
-                        hLayout.setFlexGrow(1, sizeLabel);
-                        hLayout.setFlexGrow(1, countLabel);
-
-                        hLayout.setClassName("duplicate-header");
-                        hLayout.setWidthFull();
-                        VerticalLayout vLayout = new VerticalLayout();
-                        vLayout.add(hLayout);
-                        vLayout.add(grid);
-                        vLayout.setWidthFull();
-
-                        return vLayout;
-
-                    }))).setHeader("Duplicates");
-                    duplicatesGrid.setItems(insideGrids);
-                    duplicatesGrid.setSizeFull();
-
-                } catch (ParseException pe) {
-                    Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
+                duplicatesGrid.setSizeFull();
             } else {
                 Notification.show("Unable to retrieve reports", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
+
+        } else {
+            System.out.println("Empty value in select");
         }
 
     }
 
-    private List<GlobalPath> getPathsFromDuplicate(String report, String hash) {
-        ResponseEntity<String> response = client.get("report/duplicate/" + report.split(":")[0] + "/" + hash);
-        ObjectMapper objectMapper = encoder.getObjectMapper();
-        if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
-            try {
-                JSONObject[] array = Utils.getArray((JSONArray) parser.parse(response.getBody()));
-                List<GlobalPath> paths = new ArrayList<GlobalPath>();
+    private DuplicateGridService duplicateGridService;
 
-                for (JSONObject jsonObject : array) {
-                    try {
-                        paths.add(objectMapper.readValue(jsonObject.toJSONString(), GlobalPath.class));
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
-                }
-                return paths;
+    private DuplicateGridService getDuplicateGridService() {
+        return duplicateGridService;
+    }
 
-            } catch (ParseException pe) {
-                Notification
-                        .show("Unable to read paths from duplicate", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                return null;
-            }
-        } else {
-            Notification
-                    .show("Unable to retrieve paths from duplicate", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            return null;
-        }
+
+    private void getReportInfo() {
+        Dialog dialog = new Dialog();
+        VerticalLayout verticalLayout = new VerticalLayout();
+
+        Label durationLabel = new Label();
+        Label dateStartLabel = new Label();
+
+        Label filesScannedLabel = new Label();
+
+        Label averageDuplicateCountLabel = new Label();
+
+        Label userLabel = new Label();
+
+        Label idLabel = new Label();
+
+        verticalLayout.add(durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel, userLabel, idLabel);
+
+        dialog.add(verticalLayout);
+        dialog.open();
     }
 
     private List<String> getReports() {
@@ -433,50 +304,35 @@ public class ReportView extends VerticalLayout {
 
             } catch (ParseException pe) {
                 Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         }
         Notification.show("Unable to retrieve reports", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            .addThemeVariants(NotificationVariant.LUMO_ERROR);
         return null;
     }
 
-    /**
-     * Method that opens a dialog pop-up with a file browser.
-     */
-    private void openFileSelect(GlobalPath item) {
-        FilesystemData rootData = new FilesystemData(File.listRoots()[0], false);
-        FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
-        Dialog dialog = new Dialog();
-        TreeGrid<File> fileBrowser = new TreeGrid<>();
-        fileBrowser.setItems(rootData.getChildren(File.listRoots()[0]));
-        fileBrowser.setDataProvider(fileSystem);
-        fileBrowser.addSelectionListener(event -> {
-            Optional<File> selected = event.getFirstSelectedItem();
-            if (selected.get().isDirectory() && selected.get().canWrite()) {
-                Action action = item.getAction();
-                action.setNewPath(selected.get().getAbsolutePath());
-                action.setType(ActionType.MOVE);
-                dialog.close();
-            } else {
-                Notification.show("Path selected is not a directory or it is not writeable",
-                        Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+    private String getLastReportId() {
+        ResponseEntity<String> response = client.get("report/");
+
+        if (response != null) {
+            try {
+                JSONObject report = (JSONObject)parser.parse(response.getBody());
+
+                return String.valueOf(report.get("id"));
+
+            } catch (ParseException pe) {
+                Notification.show("Unable to get last report id", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return null;
             }
-        });
-
-        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
-
-        VerticalLayout layout = new VerticalLayout();
-        layout.add(new Label("Select a folder"), fileBrowser);
-        layout.setMinWidth("50em");
-        layout.setAlignItems(Alignment.CENTER);
-        dialog.setCloseOnOutsideClick(false);
-        dialog.setCloseOnEsc(false);
-        dialog.add(layout);
-        dialog.open();
-
+        }else {
+            Notification.show("Unable to get last report", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return null;
+        }
     }
+
 
 }
