@@ -13,17 +13,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterListener;
-import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.internal.BeforeEnterHandler;
 
 import org.springframework.http.HttpStatus;
 
-import samt.smajilbasic.Resources;
-import samt.smajilbasic.Validator;
+import samt.smajilbasic.model.Resources;
+import samt.smajilbasic.model.Validator;
 import samt.smajilbasic.authentication.AccessControl;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;

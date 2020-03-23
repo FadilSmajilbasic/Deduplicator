@@ -5,7 +5,7 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import samt.smajilbasic.Resources;
+import samt.smajilbasic.model.Resources;
 
 /**
  * MainView

@@ -41,7 +41,7 @@ import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.GlobalPath;
-import samt.smajilbasic.Resources;
+import samt.smajilbasic.model.Resources;
 
 /**
  * PathView is the view to manage paths.

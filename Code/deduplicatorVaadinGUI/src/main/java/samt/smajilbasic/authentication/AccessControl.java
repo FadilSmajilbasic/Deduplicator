@@ -3,7 +3,7 @@ package samt.smajilbasic.authentication;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinSession;
 
-import samt.smajilbasic.Resources;
+import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 
 /**

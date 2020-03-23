@@ -3,7 +3,7 @@ package samt.smajilbasic.authentication;
 import com.vaadin.flow.component.UI;
 
 import samt.smajilbasic.communication.Client;
-import samt.smajilbasic.Resources;
+import samt.smajilbasic.model.Resources;
 
 /**
  * Class for retrieving and setting the name and {@link Client} of the current user of the current

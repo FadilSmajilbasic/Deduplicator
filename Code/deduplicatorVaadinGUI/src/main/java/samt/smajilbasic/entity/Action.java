@@ -1,7 +1,5 @@
 package samt.smajilbasic.entity;
 
-import samt.smajilbasic.ActionType;
-
 public class Action {
 
     private String newPath;

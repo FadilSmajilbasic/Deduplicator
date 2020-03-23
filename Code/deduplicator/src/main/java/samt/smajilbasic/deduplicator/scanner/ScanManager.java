@@ -187,7 +187,6 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
             } else {
                 report.setAverageDuplicateCount(((float) duplicates.size() / (float) totalFiles));
             }
-
             report.setDuration((System.currentTimeMillis() - report.getStart()));
             report.setFilesScanned(totalFiles);
             reportRepository.save(report);
@@ -221,7 +220,7 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
         paused = false;
         pool.resume();
         synchronized (statusMonitor) {
-            statusMonitor.notify();
+            statusMonitor.notifyAll();
         }
     }
 

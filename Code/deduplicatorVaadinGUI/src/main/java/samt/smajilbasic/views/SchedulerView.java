@@ -4,14 +4,10 @@ import java.text.DateFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.Temporal;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Locale;
 
-import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.button.Button;
@@ -19,7 +15,6 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -28,11 +23,8 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.ui.CheckBox;
 
-import com.vaadin.ui.CheckBoxGroup;
-import org.apache.tomcat.jni.Local;
-import samt.smajilbasic.Resources;
+import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 
 /**

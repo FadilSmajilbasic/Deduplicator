@@ -4,9 +4,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import samt.smajilbasic.PathType;
-import samt.smajilbasic.Validator;
-
 /**
  * La classe GlobalPath descrive un percorso inserito dall'utente per la
  * scansione o per essere escluso dalla scansione.
