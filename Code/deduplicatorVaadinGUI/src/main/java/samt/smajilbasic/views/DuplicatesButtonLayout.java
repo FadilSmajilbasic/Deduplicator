@@ -56,6 +56,10 @@ public class DuplicatesButtonLayout extends FlexLayout {
 
         });
         item.setAction(action);
+        setFlexGrow(1,deleteButton);
+        setFlexGrow(1,moveButton);
+        setFlexGrow(1,ignoreButton);
+
         add(deleteButton, ignoreButton, moveButton);
     }
 

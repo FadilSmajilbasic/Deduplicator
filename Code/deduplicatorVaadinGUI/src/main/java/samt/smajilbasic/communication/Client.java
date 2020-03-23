@@ -293,7 +293,7 @@ public class Client {
             }
         } else {
             HashMap<String, String> error = new HashMap<String, String>();
-            error.put("message", "Unable to get scan status");
+            error.put("message", "Scan is not running");
             return new JSONObject(error);
         }
     }

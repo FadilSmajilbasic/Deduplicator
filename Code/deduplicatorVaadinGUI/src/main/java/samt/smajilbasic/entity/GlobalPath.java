@@ -121,7 +121,7 @@ public class GlobalPath {
 	public String getDateFormatted() {
 		DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 		Calendar cal = Calendar.getInstance();
-		cal.setTimeInMillis(date);
+		cal.setTimeInMillis(getDate());
 		return dateFormat.format(cal.getTime());
 	}
 

@@ -117,8 +117,8 @@ public class DuplicateGridService {
         }
     }
 
-    public void setReportId(String selectValue) {
-        this.reportId = selectValue.split(":")[0];
+    public void setReportId(String reportId) {
+        this.reportId = reportId;
     }
 
     public int getTotalDuplicatesCount() {

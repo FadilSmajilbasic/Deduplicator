@@ -152,9 +152,9 @@ public class ScanView extends VerticalLayout {
             createStatusThread();
             setMinWidth(Resources.SIZE_MOBILE_S);
             updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f, 0);
+            createStatusThread();
+            statusThread.start();
         }
-        createStatusThread();
-        statusThread.start();
     }
 
     /**
@@ -233,14 +233,12 @@ public class ScanView extends VerticalLayout {
                         }
                         JSONObject response = client.getStatus();
                         if (response != null) {
-                            int filesScanned = Integer.parseInt(response.get("fileCount").toString());
-                            int filesScannedDelta = filesScanned - filesScannedOld;
-                            float totFiles = (((float) filesScanned) / Float.parseFloat(response.get("progress").toString()));
-                            float pace = ((float) POLLING_DELAY) / (float) filesScannedDelta;
-                            float timeLeft = ((totFiles - filesScanned) * pace) / 1000;
-
-                            System.out.println("sec Left: " + timeLeft);
                             if (response.get("message") == null) {
+                                int filesScanned = Integer.parseInt(response.get("fileCount").toString());
+                                int filesScannedDelta = filesScanned - filesScannedOld;
+                                float totFiles = (((float) filesScanned) / Float.parseFloat(response.get("progress").toString()));
+                                float pace = ((float) POLLING_DELAY) / (float) filesScannedDelta;
+                                float timeLeft = ((totFiles - filesScanned) * pace) / 1000;
 
                                 Command command = new Command() {
                                     @Override
@@ -254,6 +252,10 @@ public class ScanView extends VerticalLayout {
                                 System.out.println("Got status" + scanProgress);
                                 scanProgress = Float.parseFloat(response.get("progress").toString());
                                 ui.access(command);
+                                filesScannedOld = filesScanned;
+                                synchronized (this) {
+                                    this.wait(POLLING_DELAY);
+                                }
                             } else {
                                 Command finalCommand = (Command) () -> {
                                     Notification.show(response.get("message").toString(), Resources.NOTIFICATION_LENGTH, Position.TOP_END)
@@ -264,11 +266,6 @@ public class ScanView extends VerticalLayout {
                                 ui.access(finalCommand);
                                 this.interrupt();
                             }
-                            filesScannedOld = filesScanned;
-                            synchronized (this) {
-                                this.wait(POLLING_DELAY);
-                            }
-
                         } else {
                             ui.access(() -> {
                                 Notification.show("Scan is not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
@@ -286,8 +283,6 @@ public class ScanView extends VerticalLayout {
                     });
                 } finally {
                     ui.access(() -> {
-                        Notification.show("Scan finished", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                         updateStatus(false, 0, null, 0f, 0);
                         ui.push();
                     });
