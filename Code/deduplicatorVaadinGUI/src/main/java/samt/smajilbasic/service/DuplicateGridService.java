@@ -13,6 +13,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.GlobalPath;
 import samt.smajilbasic.entity.MinimalDuplicate;
@@ -23,6 +24,8 @@ import samt.smajilbasic.views.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DuplicateGridService {
 
@@ -35,7 +38,8 @@ public class DuplicateGridService {
     private JSONObject[] duplicatesArray;
     private String reportId;
     private Client client;
-    ;
+    private boolean forMainView;
+    private List<GlobalPath> paths = new ArrayList<GlobalPath>();
     /**
      * The encoder used to map the return values from the server to a GlobalPath
      * object.
@@ -43,27 +47,32 @@ public class DuplicateGridService {
     private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
 
 
-    public DuplicateGridService(String selectValue, Client client) {
+    public DuplicateGridService(String selectValue, Client client,boolean forMainView) {
         this.client = client;
+        this.forMainView = forMainView;
         setReportId(selectValue);
         System.out.println("path: " + reportId);
         long start = System.currentTimeMillis();
         ResponseEntity<String> response = client.get("report/duplicate/" + reportId + "/");
         System.out.println("got data in " + (System.currentTimeMillis() - start) + "ms");
         if (response != null) {
-            try {
-                start = System.currentTimeMillis();
-                duplicatesArray = Utils.getArray((JSONArray) parser.parse(response.getBody()));
-                System.out.println("parsed data in " + (System.currentTimeMillis() - start) + "ms");
-                List<MinimalDuplicate> duplicates = new ArrayList<MinimalDuplicate>();
+            if(response.getStatusCode().equals(HttpStatus.OK)) {
+                try {
+                    duplicatesArray = Utils.getArray((JSONArray) parser.parse(response.getBody()));
+                    List<MinimalDuplicate> duplicates = new ArrayList<MinimalDuplicate>();
 
-            } catch (ParseException pe) {
+                } catch (ParseException pe) {
+                    Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
+                    Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            }else{
+                Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
                 Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         }
     }
-
 
     public List<DuplicateGrid> fetchInsideGrids(int offset, int limit) {
         List<DuplicateGrid> insideGrids = new ArrayList<DuplicateGrid>();
@@ -75,9 +84,10 @@ public class DuplicateGridService {
             duplicate.setSize(duplicatesArray[i].get("size").toString());
             duplicate.setCount(duplicatesArray[i].get("count").toString());
 
-            List<GlobalPath> paths = getPathsFromDuplicate(reportId, duplicate.getHash());
-            if (paths != null) {
-                DuplicateGrid grid = new DuplicateGrid(paths,duplicate);
+            List<GlobalPath> currPaths = getPathsFromDuplicate(reportId, duplicate.getHash());
+            if (currPaths != null) {
+                paths.addAll(currPaths);
+                DuplicateGrid grid = new DuplicateGrid(currPaths,duplicate,forMainView);
                 insideGrids.add(grid);
             } else {
                 System.err.println("Unable to fetch paths for duplicate");
@@ -98,7 +108,7 @@ public class DuplicateGridService {
                     try {
                         paths.add(objectMapper.readValue(jsonObject.toJSONString(), GlobalPath.class));
                     } catch (Exception e) {
-                        System.out.println(e.getMessage());
+                        Logger.getGlobal().log(Level.SEVERE,"Exception while mapping GlobalPath for duplicate representation: " + e.getMessage());
                     }
                 }
                 return paths;
@@ -125,4 +135,7 @@ public class DuplicateGridService {
         return duplicatesArray.length;
     }
 
+    public List<GlobalPath> getPaths() {
+        return paths;
+    }
 }
