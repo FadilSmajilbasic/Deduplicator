@@ -6,6 +6,9 @@ import com.vaadin.flow.server.VaadinSession;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * @author Vaadin Framework Simple UI example
  */
@@ -24,16 +27,16 @@ public class AccessControl implements AccessControlInterface {
     @Override
     public void signOut() {
         VaadinSession.getCurrent().getSession().invalidate();
-        CurrentUser.set(null, null);
         Client client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
-        client.post("/logout", null);
-        System.out.println("Logged out from client");
+        if(client != null)
+            client.post("/logout", null);
+        CurrentUser.set(null, null);
         UI.getCurrent().navigate("");
+        Logger.getGlobal().log(Level.INFO,"Successfully logged out");
     }
 
     @Override
     public boolean signedIn(String name, Client client) {
-
         CurrentUser.set(name, client);
         return false;
     }
