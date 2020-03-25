@@ -2,12 +2,14 @@
 package samt.smajilbasic.communication;
 
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -20,6 +22,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
@@ -29,6 +32,8 @@ import java.security.KeyStore;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Fadil Smajilbasic
@@ -103,6 +108,7 @@ public class Client {
          * System.out.println("Unable to create client: " + e.getMessage());
          * e.printStackTrace(); }
          */
+
         if (requestFactory != null)
             restTemplate = new RestTemplate(requestFactory);
     }
@@ -114,10 +120,10 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Client exception: " + rce.getMessage());
-            if(rce.getMessage().strip().equals("401")){
+            if (rce.getMessage().strip().equals("401")) {
                 return HttpStatus.UNAUTHORIZED;
             }
         }
@@ -126,10 +132,8 @@ public class Client {
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 this.host = host;
                 setPort(port);
-                return response.getStatusCode();
-            } else {
-                return response.getStatusCode();
             }
+            return response.getStatusCode();
         }
         return HttpStatus.SERVICE_UNAVAILABLE;
 
@@ -140,17 +144,16 @@ public class Client {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
-                    String.class, requestEntity);
+                String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
-
                 return response;
-
             } else {
+                Logger.getGlobal().log(Level.SEVERE,"Response status code is not OK");
                 return null;
             }
         } catch (RestClientException rce) {
-            System.out.println("[ERROR] Rest client exception: " + rce);
+            Logger.getGlobal().log(Level.SEVERE,"Rest client exception: " +rce);
         }
         return null;
     }
@@ -165,7 +168,7 @@ public class Client {
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Delete rce: " + rce.getMessage());
         }
@@ -197,7 +200,7 @@ public class Client {
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             System.err.println("[ERROR] Post rce: " + rce.getMessage());
             rce.printStackTrace(System.out);
@@ -214,7 +217,7 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             System.err.println("Rest client exception: " + rce.getMessage());
             rce.printStackTrace(System.out);
@@ -233,6 +236,7 @@ public class Client {
 
     public HttpStatus deletePath(GlobalPath value) {
 
+
         if (value != null) {
             ResponseEntity<String> response = delete("/path", value.getPath());
 
@@ -242,6 +246,7 @@ public class Client {
         }
 
     }
+
 
     public HttpStatus modifyPath(GlobalPath oldPath, String newIgnoreValue) {
         if (oldPath != null) {
@@ -264,36 +269,45 @@ public class Client {
 
         ResponseEntity<String> response = get("scan/status");
         if (response != null) {
+            Logger.getGlobal().log(Level.INFO,"response " + response.getStatusCode());
+
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 try {
                     String body = response.getBody();
                     JSONParser parser = new JSONParser();
                     JSONObject resp = (JSONObject) parser.parse(body);
                     if (resp.get("fileCount") != null && resp.get("progress") != null
-                            && resp.get("timestamp") != null) {
+                        && resp.get("timestamp") != null) {
                         return resp;
                     } else {
                         HashMap<String, String> error = new HashMap<String, String>();
                         error.put("message", "Response status format invalid");
+                        Logger.getGlobal().log(Level.SEVERE,"Response status format invalid");
                         return new JSONObject(error);
                     }
                 } catch (ParseException pe) {
                     HashMap<String, String> error = new HashMap<String, String>();
                     error.put("message", "Unable to parse server status");
+                    Logger.getGlobal().log(Level.SEVERE,"Unable to parse server status");
                     return new JSONObject(error);
                 }
             } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
                 HashMap<String, String> error = new HashMap<String, String>();
                 error.put("message", "Scan already running");
+                Logger.getGlobal().log(Level.WARNING,"Scan already running");
                 return new JSONObject(error);
             } else {
                 HashMap<String, String> error = new HashMap<String, String>();
                 error.put("message", "Unknown error");
+                Logger.getGlobal().log(Level.SEVERE,"Unknown error - Error code: " + response.getStatusCode());
+
                 return new JSONObject(error);
             }
         } else {
             HashMap<String, String> error = new HashMap<String, String>();
             error.put("message", "Scan is not running");
+            Logger.getGlobal().log(Level.WARNING,"Scan is not running");
+
             return new JSONObject(error);
         }
     }
@@ -303,39 +317,40 @@ public class Client {
         return response.getStatusCode();
     }
 
-    public Object insertSchedule(LocalDateTime dateTime,Integer weekNumber,Integer monthNumber,String repetition) {
+    public Object insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber, String repetition) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         if (repetition.length() > 0) {
-            if(weekNumber != null)
+            if (weekNumber != null)
                 values.add("weekly", weekNumber);
             else
-                values.add("weekly","");
-            if(monthNumber != null)
+                values.add("weekly", "");
+            if (monthNumber != null)
                 values.add("monthly", monthNumber);
             else
-                values.add("monthly",monthNumber);
+                values.add("monthly", monthNumber);
         }
 
         values.add("repeated", repetition.equals("One off"));
         values.add("timeStart", Timestamp.valueOf(dateTime).getTime());
 
-
         ResponseEntity<String> response = put("scheduler/", values);
-        if(response != null) {
+        if (response != null) {
             if (response.getStatusCode() == HttpStatus.OK) {
                 return response.getBody();
             } else {
+                Logger.getGlobal().log(Level.WARNING,"Response is not of status code OK");
                 return null;
             }
-        }else{
+        } else {
+            Logger.getGlobal().log(Level.SEVERE,"Response is null");
             return null;
         }
     }
 
     public HttpStatus addActions(LocalDateTime time, List<GlobalPath> actions) {
 
-        Object response = insertSchedule(time,null,null, "One off");
+        Object response = insertSchedule(time, null, null, "One off");
         if (response != null) {
 
             try {
@@ -350,10 +365,10 @@ public class Client {
                     values.add("newPath", action.getNewPath());
                     values.add("scheduler", schedulerId);
 
-
                     ResponseEntity<String> addResponse = put("action/", values);
                     if (addResponse.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
                         Notification.show("Unable to add action of: " + path.getPath(), Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.WARNING,"Unable to add action of: " + path.getPath());
                     }
                 }
                 return HttpStatus.OK;
@@ -361,10 +376,12 @@ public class Client {
             } catch (ParseException e) {
                 e.printStackTrace();
                 Notification.show("Unable to parse server response", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Logger.getGlobal().log(Level.SEVERE,"Unable to parse server response");
                 return HttpStatus.BAD_REQUEST;
             }
         } else {
             Notification.show("Unable to create scheduler to add actions", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Logger.getGlobal().log(Level.SEVERE,"Unable to create scheduler to add actions - Response is null");
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
     }
@@ -380,8 +397,8 @@ public class Client {
     public ResponseEntity<String> updatePassword(String newPassword) {
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
         System.out.println("oldPassword: " + this.password);
-        values.add("oldPassword",this.password);
-        values.add("newPassword",newPassword);
-        return put("/account/password",values);
+        values.add("oldPassword", this.password);
+        values.add("newPassword", newPassword);
+        return put("/account/password", values);
     }
 }
