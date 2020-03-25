@@ -4,6 +4,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Div;
@@ -24,12 +25,16 @@ import samt.smajilbasic.authentication.AccessControl;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * The Login view that the user uses to authenticate to the deduplicator
  * service.
  */
 @Route(value = "login")
 @PageTitle(value = "Deduplicator - Login")
+@CssImport(value = "./styles/login-form-style.css")
 public class LoginView extends VerticalLayout {
 
     private static final long serialVersionUID = 4944489863331319773L;
@@ -70,6 +75,10 @@ public class LoginView extends VerticalLayout {
         portTextField = new NumberField("Port");
         TextField usernameTextField = new TextField("Username");
         PasswordField passwordField = new PasswordField("Password");
+        usernameTextField.setRequired(true);
+        passwordField.setRequired(true);
+        hostTextField.setRequired(true);
+        portTextField.setRequiredIndicatorVisible(true);
 
         advancedViewButton = new Button("Advanced View", event -> {
             toggleView();
@@ -81,18 +90,19 @@ public class LoginView extends VerticalLayout {
         portTextField.setMax(65535);
         portTextField.setValue(8443d);
         hostTextField.setValue("127.0.0.1");
+        portTextField.setHasControls(true);
         usernameTextField.setValue("admin");
         passwordField.setValue("administrator");
 
         Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
-                usernameTextField.getValue(), passwordField.getValue()));
+            usernameTextField.getValue(), passwordField.getValue()));
 
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         button.addClickShortcut(Key.ENTER);
 
         form = new FormLayout();
-        passwordField.getStyle().set("margin-left","0px");
+        passwordField.getStyle().set("margin-left", "0px");
         form.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("20em", 2));
         form.add(usernameTextField, passwordField);
         Div container = new Div(form);
@@ -120,7 +130,7 @@ public class LoginView extends VerticalLayout {
     /**
      * The tyLogin method attempts to authenticate the {@link Client} to the
      * deduplicator service.
-     * 
+     *
      * @param host the host IP to conenct to.
      * @param port the port to connect to.
      * @param user the username to try to authenticate with.
@@ -128,37 +138,52 @@ public class LoginView extends VerticalLayout {
      */
     private void tryLogin(String host, int port, String user, String pass) {
 
-        if (Validator.isValidIP(host)) {
-            if (port > 0 && port <= 65535) {
-                client = new Client(user, pass);
-                HttpStatus resp = client.isAuthenticated(host, port);
+        if (!user.isBlank()) {
+            if (Validator.isValidIP(host)) {
+                if (port > 0 && port <= 65535) {
+                    client = new Client(user, pass);
+                    HttpStatus resp = client.isAuthenticated(host, port);
 
-                switch (resp) {
-                    case OK:
-                        accessControl.signedIn(user, client);
-                        UI.getCurrent().navigate("");
-                        break;
-                    case UNAUTHORIZED:
-                        Notification.show("Invalid credentials", 2000, Notification.Position.TOP_END)
+                    switch (resp) {
+                        case OK:
+                            Logger.getGlobal().log(Level.INFO, "User signed in successfully");
+                            accessControl.signedIn(user, client);
+                            UI.getCurrent().navigate("");
+                            break;
+                        case UNAUTHORIZED:
+                            Notification.show("Invalid credentials", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        break;
-                    case SERVICE_UNAVAILABLE:
-                        Notification
-                                .show("Server not reachable or an error occured", 2000, Notification.Position.TOP_END)
+                            Logger.getGlobal().log(Level.WARNING, "Invalid credentials");
+                            break;
+                        case SERVICE_UNAVAILABLE:
+                            Notification
+                                .show("Server not reachable", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        break;
-                    default:
-                        Notification.show("Unknown error occured", 2000, Notification.Position.TOP_END)
+                            Logger.getGlobal().log(Level.SEVERE, "Server not reachable");
+                            break;
+                        default:
+                            Notification.show("Unknown error occured", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        break;
+                            Logger.getGlobal().log(Level.SEVERE, "Unknown error occured");
+                            break;
+                    }
+                } else {
+                    Notification.show("Invalid port set", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Logger.getGlobal().log(Level.WARNING, "Invalid port set");
+
                 }
             } else {
-                Notification.show("Invalid port set", 2000, Notification.Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Invalid IP set", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Logger.getGlobal().log(Level.WARNING, "Invalid IP set");
+
             }
         } else {
-            Notification.show("Invalid IP set", 2000, Notification.Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Username can't be blank", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Logger.getGlobal().log(Level.WARNING, "Username can't be blank");
+
         }
     }
 }
