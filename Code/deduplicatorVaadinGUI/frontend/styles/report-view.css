@@ -1,11 +1,20 @@
-.duplicate-header-label{
-    padding: 0 0.3em;
-}
 .duplicate-header{
     background-color: lightgray;
-    border-radius: 5%;
 }
+
+.duplicate-header-label{
+    min-width: 5em;
+    white-space: pre-wrap;
+}
+
 .inside-grid-button{
-    margin: 5%;
-    min-width: auto;
+    padding : 0;
+}
+
+.inside-grid > vaadin-grid-cell-content {
+    display: block;
+    overflow: hidden;
+    word-wrap: break-word;
+    white-space: normal !important;
+    text-overflow: unset;
 }
