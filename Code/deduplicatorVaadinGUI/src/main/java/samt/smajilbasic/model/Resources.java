@@ -25,6 +25,9 @@ public abstract class Resources {
     public static final String SIZE_MOBILE_S = "320px";
     public static final String SIZE_TABLET = "768px";
     public static final String SIZE_LAPTOP = "1024px";
+    public static final String SIZE_LAPTOP_L = "1440px";
+    public static final String SIZE_LAPTOP_4K = "2560px";
+
 
     public static final int USERNAME_LENGTH = 4;
     public static final int PASSWORD_LENGTH = 8;
