@@ -24,6 +24,9 @@ import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  * DashboardView
@@ -64,6 +67,7 @@ public class DashboardView extends FormLayout {
     private void changePassword() {
         dialog.removeAll();
         dialog.setCloseOnOutsideClick(false);
+        dialog.setCloseOnEsc(false);
 
         VerticalLayout layout = new VerticalLayout();
         layout.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -88,6 +92,7 @@ public class DashboardView extends FormLayout {
                     if (response != null) {
                         if (response.getStatusCode().equals(HttpStatus.OK)) {
                             Notification.show("Successfully updated the password ", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                            Logger.getGlobal().log(Level.INFO,"Successfully updated the password ");
                             ProgressBar bar = new ProgressBar(0, 5, 0);
                             dialog.close();
                             layout.removeAll();
@@ -106,7 +111,6 @@ public class DashboardView extends FormLayout {
                             };
 
                             Command closeDialog = (Command) () -> {
-                                System.out.println("close command");
                                 AccessControlFactory.getInstance().createAccessControl().signOut();
                                 dialog.close();
                             };
@@ -130,16 +134,22 @@ public class DashboardView extends FormLayout {
                             System.err.println("Error: " + response.getStatusCode());
                             System.err.println("Error body: " + response.getBody());
                             Notification.show("Unable to update password - Unknown error", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Logger.getGlobal().log(Level.SEVERE,"Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
                         }
                     } else {
-                        Notification.show("Unable to update password - Unknown error", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("Unable to update password - Unable to get response", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.SEVERE,"Unable to update password - Unable to get response");
+
                     }
                 } else {
                     Notification.show("All fields must be valid", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Logger.getGlobal().log(Level.SEVERE,"Unable to update password - All fields must be valid");
+
                 }
             } else {
                 passwordField.setErrorMessage("Old value invalid");
                 passwordField.setInvalid(true);
+                Logger.getGlobal().log(Level.WARNING,"Unalbe to update password - old password value is invalid");
             }
         });
 
