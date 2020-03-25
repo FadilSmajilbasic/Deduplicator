@@ -3,6 +3,8 @@ package samt.smajilbasic.views;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -249,7 +251,7 @@ public class ScanView extends VerticalLayout {
                                         ui.push();
                                     }
                                 };
-                                System.out.println("Got status" + scanProgress);
+                                System.out.println("Got status " + scanProgress);
                                 scanProgress = Float.parseFloat(response.get("progress").toString());
                                 ui.access(command);
                                 filesScannedOld = filesScanned;
@@ -258,6 +260,8 @@ public class ScanView extends VerticalLayout {
                                 }
                             } else {
                                 Command finalCommand = (Command) () -> {
+                                    Logger.getGlobal().log(Level.INFO,"Scan is not running");
+
                                     Notification.show(response.get("message").toString(), Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f, 0);
@@ -268,6 +272,7 @@ public class ScanView extends VerticalLayout {
                             }
                         } else {
                             ui.access(() -> {
+                                Logger.getGlobal().log(Level.INFO,"Scan is not running");
                                 Notification.show("Scan is not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
                                 updateStatus(false, 0, null, 0f, 0);
                                 ui.push();
@@ -279,10 +284,14 @@ public class ScanView extends VerticalLayout {
                     ui.access(() -> {
                         Notification.show("Status update interrupted", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.INFO,"Status update interrupted");
                         ui.push();
                     });
                 } finally {
                     ui.access(() -> {
+                        Notification.show("Scan finished", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        Logger.getGlobal().log(Level.INFO,"Scan finished");
                         updateStatus(false, 0, null, 0f, 0);
                         ui.push();
                     });
