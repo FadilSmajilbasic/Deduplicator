@@ -6,8 +6,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
@@ -43,6 +47,7 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
 import org.springframework.lang.Nullable;
 import samt.smajilbasic.entity.MinimalDuplicate;
+import samt.smajilbasic.model.ActionType;
 import samt.smajilbasic.model.DuplicateGrid;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
@@ -69,18 +74,12 @@ public class ReportView extends VerticalLayout {
      */
     private Client client;
 
-    private List<GlobalPath> actions = new ArrayList<GlobalPath>();
-    /**
-     * The encoder used to map the return values from the server to a GlobalPath
-     * object.
-     */
-    private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
-
     private Grid<DuplicateGrid> duplicatesGrid;
 
     private Select<String> reportSelect;
     private boolean forMainView = false;
-    public ReportView(){
+
+    public ReportView() {
         this(false);
     }
 
@@ -92,12 +91,12 @@ public class ReportView extends VerticalLayout {
         if (client != null) {
             this.setSizeFull();
             VerticalLayout verticalLayout = new VerticalLayout();
-            if(!forMainView) {
+            if (!forMainView) {
                 reportSelect = new Select<String>();
                 reportSelect.setItems(getReports());
 
                 reportSelect.addValueChangeListener(event -> {
-                    updateGrid(event.getValue());
+                    initiateGrid(event.getValue());
                 });
                 Button infoButton = new Button();
                 infoButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -111,13 +110,13 @@ public class ReportView extends VerticalLayout {
                 });
                 applyButton.setMinWidth("");
                 FormLayout formButtonsLayout = new FormLayout(reportSelect, applyButton, infoButton);
-                formButtonsLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_M, 2));
+                formButtonsLayout.setResponsiveSteps(new ResponsiveStep("0", 1), new ResponsiveStep(Resources.SIZE_MOBILE_L, 3));
                 formButtonsLayout.setWidthFull();
                 verticalLayout.add(formButtonsLayout);
                 verticalLayout.setAlignItems(Alignment.START);
 
-            }else{
-                updateGrid(getLastReportId());
+            } else {
+                initiateGrid(getLastReportId());
             }
             add(verticalLayout, duplicatesGrid);
             setMinWidth(Resources.SIZE_MOBILE_S);
@@ -126,92 +125,94 @@ public class ReportView extends VerticalLayout {
 
 
     private void checkActions() {
-        actions = new ArrayList<GlobalPath>();
-        ListDataProvider<DuplicateGrid> insideGrids = (ListDataProvider<DuplicateGrid>) duplicatesGrid
-            .getDataProvider();
+        Logger.getGlobal().log(Level.INFO, "Check actions dialog opened");
+        if (duplicateGridService != null) {
 
-        Iterator<DuplicateGrid> insideGridsIterator = insideGrids.getItems().iterator();
+            List<GlobalPath> paths = new ArrayList<GlobalPath>(duplicateGridService.getPaths());
 
-        while (insideGridsIterator.hasNext()) {
-            DuplicateGrid insideGrid = insideGridsIterator.next();
-            ListDataProvider<GlobalPath> provider = (ListDataProvider<GlobalPath>) insideGrid.getItem().getDataProvider();
+            Grid<GlobalPath> actionsGrid = new Grid<GlobalPath>();
 
-            Iterator<GlobalPath> items = provider.getItems().iterator();
+            actionsGrid.setItems(paths);
 
-            while (items.hasNext()) {
-                GlobalPath item = items.next();
-                Action action = item.getAction();
-                if (action != null) {
-                    if (action.getType() != null) {
-                        try {
-                            System.out.println("Item: " + item.getPath());
-                            System.out.println("Action: " + encoder.getObjectMapper().writeValueAsString(action));
-                            actions.add(item);
-                        } catch (JsonProcessingException e) {
-                            e.printStackTrace();
-                        }
+            actionsGrid.addColumn(GlobalPath::getPath).setHeader("Path");
+            actionsGrid.addColumn(path -> {
+                if (path.getAction().getType().equals(ActionType.MOVE)) {
+                    return path.getAction().getNewPath();
+                } else {
+                    return "none";
+                }
+            }).setHeader("Move path");
+            actionsGrid.addColumn(path -> {
+                return path.getAction().getType();
+            }).setHeader("Action type");
+            actionsGrid.addColumn(globalPath -> {
+                return new Button("Delete", event -> {
+                    paths.remove(globalPath);
+                    actionsGrid.getDataProvider().refreshAll();
+                });
+            });
+
+            Dialog applyDialog = new Dialog();
+            VerticalLayout applyDialogLayout = new VerticalLayout();
+            applyDialogLayout.setSizeFull();
+
+            DatePicker datePicker = new DatePicker();
+            TimePicker timePicker = new TimePicker();
+
+            LocalDateTime ldt = LocalDateTime.now();
+            ldt = ldt.plusMinutes(1);
+            datePicker.setValue(ldt.toLocalDate());
+            timePicker.setValue(ldt.toLocalTime());
+
+            timePicker.setLocale(Locale.GERMAN);
+            datePicker.setLocale(Locale.GERMAN);
+
+            timePicker.setMin(LocalTime.now().toString());
+
+            ValueChangeListener<ValueChangeEvent<?>> listener = new ValueChangeListener<ValueChangeEvent<?>>() {
+                @Override
+                public void valueChanged(ValueChangeEvent<?> event) {
+                    LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
+                    if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
+                        Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH,
+                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.SEVERE, "Date and time can't be in the past");
+                        datePicker.setValue(LocalDate.now());
+                        timePicker.setValue(LocalTime.now());
                     }
                 }
-            }
+            };
+
+            datePicker.addValueChangeListener(listener);
+            timePicker.addValueChangeListener(listener);
+
+            HorizontalLayout pickerLayout = new HorizontalLayout(datePicker, timePicker);
+
+            Button applyDialogConfirmButton = new Button("Confirm", event -> {
+                Logger.getGlobal().log(Level.INFO, "Actions confirmed");
+                client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), duplicateGridService.getPaths());
+                applyDialog.close();
+            });
+
+            applyDialog.add(actionsGrid, pickerLayout, applyDialogConfirmButton);
+            applyDialog.open();
+        } else {
+            Notification.show("No duplicate loaded", Resources.NOTIFICATION_LENGTH, Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Logger.getGlobal().log(Level.SEVERE, "No duplicate loaded");
         }
-        Dialog applyDialog = new Dialog();
-        VerticalLayout applyDialogLayout = new VerticalLayout();
-        applyDialogLayout.setSizeFull();
-
-        DatePicker datePicker = new DatePicker();
-        TimePicker timePicker = new TimePicker();
-
-        LocalDateTime ldt = LocalDateTime.now();
-        ldt = ldt.plusMinutes(1);
-        datePicker.setValue(ldt.toLocalDate());
-        timePicker.setValue(ldt.toLocalTime());
-
-        timePicker.setLocale(Locale.GERMAN);
-        datePicker.setLocale(Locale.GERMAN);
-
-        timePicker.setMin(LocalTime.now().toString());
-
-        ValueChangeListener listener = new ValueChangeListener<ValueChangeEvent<?>>() {
-
-            @Override
-            public void valueChanged(ValueChangeEvent<?> event) {
-                LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
-                if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
-                    Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH,
-                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    datePicker.setValue(LocalDate.now());
-                    timePicker.setValue(LocalTime.now());
-                }
-            }
-        };
-
-        datePicker.addValueChangeListener(listener);
-        timePicker.addValueChangeListener(listener);
-
-        HorizontalLayout pickerLayout = new HorizontalLayout(datePicker, timePicker);
-
-        Button applyDialogConfirmButton = new Button("Confirm", event -> {
-
-            client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), actions);
-            applyDialog.close();
-        });
-
-        applyDialog.add(pickerLayout, applyDialogConfirmButton);
-        applyDialog.open();
     }
 
 
-    private void updateGrid(String reportSelectValue) {
+    private void initiateGrid(String reportSelectValue) {
 
-        String reportId = forMainView?reportSelectValue:reportSelect.getValue().split(":")[0];
+        String reportId = forMainView ? reportSelectValue : reportSelect.getValue().split(":")[0];
         if (reportId != null) {
             if (!reportId.isBlank()) {
-                duplicateGridService = new DuplicateGridService(reportId, client);
+                duplicateGridService = new DuplicateGridService(reportId, client, forMainView);
                 DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(
                     query -> {
                         int offset = query.getOffset();
                         int limit = query.getLimit();
-                        System.out.println("offset: " + offset + " and limit " + limit);
                         List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
                         return duplicates.stream();
                     }, query -> getDuplicateGridService().getTotalDuplicatesCount());
@@ -227,20 +228,18 @@ public class ReportView extends VerticalLayout {
                     hashLabel.setClassName("duplicate-header-label");
                     sizeLabel.setClassName("duplicate-header-label");
                     countLabel.setClassName("duplicate-header-label");
+                    FormLayout formLayout = new FormLayout(hashLabel, sizeLabel, countLabel);
 
-                    FlexLayout hLayout = new FlexLayout(hashLabel, sizeLabel, countLabel);
-                    hLayout.setFlexGrow(1, hashLabel);
-                    hLayout.setFlexGrow(1, sizeLabel);
-                    hLayout.setFlexGrow(1, countLabel);
+                    formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_TABLET, 3));
 
-                    hLayout.setClassName("duplicate-header");
-                    hLayout.setWidthFull();
+                    formLayout.setClassName("duplicate-header");
+                    formLayout.setSizeFull();
                     VerticalLayout vLayout = new VerticalLayout();
-                    vLayout.add(hLayout);
+                    vLayout.add(formLayout);
                     vLayout.add(grid.getItem());
                     vLayout.setWidthFull();
                     return vLayout;
-                }))).setHeader("Duplicates");
+                })));
 
                 duplicatesGrid.setSizeFull();
             } else {
@@ -251,6 +250,7 @@ public class ReportView extends VerticalLayout {
         } else {
             System.out.println("Empty value in select");
         }
+        Logger.getGlobal().log(Level.INFO, "Grid initiated");
 
     }
 
@@ -318,7 +318,7 @@ public class ReportView extends VerticalLayout {
 
         if (response != null) {
             try {
-                JSONObject report = (JSONObject)parser.parse(response.getBody());
+                JSONObject report = (JSONObject) parser.parse(response.getBody());
 
                 return String.valueOf(report.get("id"));
 
@@ -327,7 +327,7 @@ public class ReportView extends VerticalLayout {
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
-        }else {
+        } else {
             Notification.show("Unable to get last report", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
