@@ -1,4 +1,4 @@
-package samt.smajilbasic.deduplicator.logger;
+package samt.smajilbasic.logger;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -15,16 +15,16 @@ public class LogFormatter extends Formatter {
     public String format(LogRecord record) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("[" + record.getLevel().getName() + "] ");
+        builder.append("[").append(record.getLevel().getName()).append("]").append("\t");
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSS");
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(record.getMillis());
-        builder.append(sdf.format(cal.getTime()) + " ");
+        builder.append(sdf.format(cal.getTime())).append(" ");
 
         builder.append(record.getMessage());
-        if (record.getLevel().equals(Level.SEVERE)) {
-            builder.append(" at " + record.getSourceClassName() + " at " + record.getSourceMethodName());
+        if (record.getLevel().equals(Level.SEVERE) || record.getLevel().equals(Level.WARNING) ) {
+            builder.append(" at ").append(record.getSourceMethodName()).append(" in ").append(record.getSourceClassName());
         }
         builder.append("\n");
 

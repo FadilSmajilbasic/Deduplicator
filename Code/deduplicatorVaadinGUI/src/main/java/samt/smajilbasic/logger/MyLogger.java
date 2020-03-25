@@ -1,4 +1,4 @@
-package samt.smajilbasic.deduplicator.logger;
+package samt.smajilbasic.logger;
 
 import java.io.File;
 import java.io.IOException;
