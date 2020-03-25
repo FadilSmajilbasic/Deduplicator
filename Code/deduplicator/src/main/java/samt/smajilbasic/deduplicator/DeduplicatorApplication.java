@@ -46,7 +46,7 @@ public class DeduplicatorApplication {
 		try{
 			MyLogger.setup();
 		}catch(IOException ioe){
-			System.out.println("Unable to setup logger");
+			System.err.println("Unable to setup logger");
 			ioe.printStackTrace();
 		}
 	}

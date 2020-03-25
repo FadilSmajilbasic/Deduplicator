@@ -27,7 +27,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
  *
  * @author Vaadin Framework Simple UI example
  */
-@PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 @CssImport(value = "./styles/menu-buttons.css")

@@ -67,7 +67,7 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
      */
     private Integer totalFiles = 0;
 
-    public float scanProgress = 0;
+    public float scanProgress = 0f;
     /**
      * L'attributo DEFAULT_THREAD_COUNT contiene il numero predefinito di thread che
      * possono essere eseguite contemporaneamente.

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.vaadin.flow.component.dependency.CssImport;
 import org.springframework.http.HttpStatus;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.FocusNotifier;
@@ -48,6 +49,7 @@ import samt.smajilbasic.model.Resources;
  */
 @Route(value = "path", layout = MainLayout.class)
 @PageTitle(value = "Deduplicator - Path")
+@CssImport(value = "./styles/report-view.css")
 public class PathView extends VerticalLayout {
 
     public static String VIEW_NAME = "Paths";
@@ -248,18 +250,18 @@ public class PathView extends VerticalLayout {
 
                 for (JSONObject jsonObject : array) {
                     try {
-                        paths.add(encoder.getObjectMapper().readValue(jsonObject.toJSONString(), GlobalPath.class));
+                        paths.add( encoder.getObjectMapper().readValue( jsonObject.toJSONString().replace("date","lastModified"), GlobalPath.class));
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
                 }
 
                 pathGrid.setItems(paths);
-
+                pathGrid.setClassName("inside-grid");
                 if (pathGrid.getColumns().size() == 0) {
-                    pathGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(1);
-                    pathGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date added").setFlexGrow(0);
-                    pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(0);
+                    pathGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(8);
+                    pathGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date added").setFlexGrow(1);
+                    pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(1);
                     
                     pathGrid.asSingleSelect().addValueChangeListener(event -> {
                         if (event.getValue() != null) {
