@@ -1,6 +1,8 @@
 package samt.smajilbasic.views;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
@@ -10,6 +12,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
+import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
 import org.json.simple.JSONArray;
@@ -29,6 +32,7 @@ import java.util.List;
 /**
  * MainView
  */
+@PWA(name = "Deduplicator GUI", shortName = "Deduplicator", description = "Deduplicator GUI to control the deduplicator service.", enableInstallPrompt = true)
 @Route(value = "", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
 @PageTitle(value = "Deduplicator - Home")
@@ -46,23 +50,22 @@ public class MainView extends VerticalLayout {
 	public MainView() {
         this.setSizeFull();
         this.setAlignItems(Alignment.CENTER);
-        add(new Label("Welcome to Main View"),new Label("Select a section from the side menu"),new Label("The results of the last scan:"));
+        add(new Label("Welcome to Main View"),new Label("Select a section from the side menu"));
         setMinWidth(Resources.SIZE_MOBILE_S);
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
         UI ui = UI.getCurrent();
         ui.getPushConfiguration().setPushMode(PushMode.MANUAL);
         ui.getPushConfiguration().setTransport(Transport.WEBSOCKET);
-        Command updateTable = new Command() {
-            @Override
-            public void execute() {
-                if (client != null) {
-                    ReportView report = new ReportView(true);
-                    report.setSizeFull();
-                    add(report);
-                }
+        Command updateTable = (Command) () -> {
+            if (client != null) {
+                ReportView report = new ReportView(true);
+                report.setSizeFull();
+                add(report);
             }
         };
-        ui.accessSynchronously(updateTable); // TODO: fix synchronous access
+        Button lastReportButton = new Button("Load last report",event -> ui.access(updateTable));
+        lastReportButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        add(lastReportButton);
     }
 
 
