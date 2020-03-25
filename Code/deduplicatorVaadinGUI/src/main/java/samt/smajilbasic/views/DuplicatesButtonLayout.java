@@ -3,6 +3,7 @@ package samt.smajilbasic.views;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -18,47 +19,63 @@ import samt.smajilbasic.entity.GlobalPath;
 
 import java.io.File;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class DuplicatesButtonLayout extends FlexLayout {
+public class DuplicatesButtonLayout extends FormLayout {
 
-    public DuplicatesButtonLayout(GlobalPath item){
+    public DuplicatesButtonLayout(GlobalPath item) {
         Button deleteButton = new Button("Delete");
         Button ignoreButton = new Button("Ignore");
         Button moveButton = new Button("Move");
+
         deleteButton.setClassName("inside-grid-button");
         ignoreButton.setClassName("inside-grid-button");
-
         moveButton.setClassName("inside-grid-button");
 
         Action action = new Action();
         deleteButton.addClickListener(event -> {
             Notification.show("Delete: " + item.getPath());
-            deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
             moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            item.getAction().setType(ActionType.DELETE);
+            if(event.getSource().getThemeName()==null){
+                deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                item.getAction().setType(ActionType.DELETE);
+            } else {
+                deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                item.getAction().setType(null);
+            }
 
         });
         moveButton.addClickListener(event -> {
             Notification.show("Move: " + item.getPath());
-            openFileSelect(item);
             deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
             ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            moveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            if(event.getSource().getThemeName()==null) {
+                moveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                openFileSelect(item);
+                item.getAction().setType(ActionType.MOVE);
+            } else {
+                moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                item.getAction().setType(null);
+            }
 
         });
         ignoreButton.addClickListener(event -> {
             Notification.show("Ignore: " + item.getPath());
             deleteButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            ignoreButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             moveButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            item.getAction().setType(ActionType.IGNORE);
 
+            if(event.getSource().getThemeName()==null){
+                ignoreButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                item.getAction().setType(ActionType.IGNORE);
+            } else {
+                ignoreButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                item.getAction().setType(null);
+            }
         });
         item.setAction(action);
-        setFlexGrow(1,deleteButton);
-        setFlexGrow(1,moveButton);
-        setFlexGrow(1,ignoreButton);
+        setResponsiveSteps( new ResponsiveStep("0", 1),new ResponsiveStep(Resources.SIZE_MOBILE_S, 3));
 
         add(deleteButton, ignoreButton, moveButton);
     }
@@ -85,6 +102,7 @@ public class DuplicatesButtonLayout extends FlexLayout {
                 Notification.show("Path selected is not a directory or it is not writeable",
                     Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Logger.getGlobal().log(Level.SEVERE, "Move dialog - path selected is not a directory or it is not writeable");
             }
         });
 
@@ -93,7 +111,7 @@ public class DuplicatesButtonLayout extends FlexLayout {
         VerticalLayout layout = new VerticalLayout();
         layout.add(new Label("Select a folder"), fileBrowser);
         layout.setMinWidth("50em");
-        layout.setAlignItems(Alignment.CENTER);
+//        layout.setAlignItems(Alignment.CENTER);
         dialog.setCloseOnOutsideClick(false);
         dialog.setCloseOnEsc(false);
         dialog.add(layout);
