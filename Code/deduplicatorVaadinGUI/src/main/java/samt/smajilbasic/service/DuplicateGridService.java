@@ -1,11 +1,8 @@
 package samt.smajilbasic.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
-import org.apache.tomcat.jni.Global;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -13,14 +10,12 @@ import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.GlobalPath;
 import samt.smajilbasic.entity.MinimalDuplicate;
 import samt.smajilbasic.model.DuplicateGrid;
 import samt.smajilbasic.model.Resources;
-import samt.smajilbasic.views.DuplicatesButtonLayout;
-import samt.smajilbasic.views.Utils;
+import samt.smajilbasic.model.Utils;
 
 import java.util.ArrayList;
 import java.util.List;

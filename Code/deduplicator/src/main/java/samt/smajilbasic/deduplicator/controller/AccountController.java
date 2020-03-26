@@ -115,7 +115,7 @@ public class AccountController {
     }
 
     @PutMapping("/password")
-    public Object updatePassword(String oldPassword, String newPassword) {
+    public Object updatePassword( @RequestParam String oldPassword,@RequestParam String newPassword) {
         if (!oldPassword.isBlank()) {
             if (!newPassword.isBlank()) {
                 if (newPassword.length() >= AccessController.PASSWORD_LENGTH) {
@@ -179,7 +179,7 @@ public class AccountController {
     }
 
     @PutMapping("/username")
-    public Object updateUsername(String newUsername, String password) {
+    public Object updateUsername(@RequestParam String newUsername, @RequestParam String password) {
         if (!newUsername.isBlank()) {
             if (newUsername.length() >= AccessController.USERNAME_LENGTH) {
                 if (!password.isBlank()) {
@@ -199,7 +199,6 @@ public class AccountController {
                         }
                     } else {
                         Logger.getGlobal().log(Level.WARNING, "Unable to change username of admin");
-
                         return new ResponseEntity<Response>(new Response("Unable to change username of admin"),
                                 HttpStatus.INTERNAL_SERVER_ERROR);
                     }

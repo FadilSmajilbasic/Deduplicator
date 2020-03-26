@@ -8,10 +8,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
@@ -28,7 +25,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.notification.Notification.Position;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -43,16 +39,14 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
 
-import org.springframework.lang.Nullable;
 import samt.smajilbasic.entity.MinimalDuplicate;
 import samt.smajilbasic.model.ActionType;
 import samt.smajilbasic.model.DuplicateGrid;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
-import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
+import samt.smajilbasic.model.Utils;
 import samt.smajilbasic.service.DuplicateGridService;
 
 /**
