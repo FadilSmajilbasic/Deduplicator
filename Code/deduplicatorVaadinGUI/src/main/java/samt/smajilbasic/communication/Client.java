@@ -2,14 +2,15 @@
 package samt.smajilbasic.communication;
 
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.TrustStrategy;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -17,18 +18,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import samt.smajilbasic.authentication.AccessControlFactory;
+import samt.smajilbasic.configuration.ConfigProperties;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
 
+import javax.net.ssl.SSLContext;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -38,17 +44,20 @@ import java.util.logging.Logger;
 /**
  * @author Fadil Smajilbasic
  */
+@Component
 public class Client {
 
     private String username;
     private String password;
     private String host;
-    RestTemplate restTemplate;
+    private RestTemplate restTemplate;
 
     private int port;
-    private final String CA_PASS = "Password&1";
     private KeyStore keyStore;
     private static final String prefix = "http://";
+
+    @Autowired
+    private ConfigProperties props;
 
     /**
      * @param port the port to set
@@ -63,9 +72,14 @@ public class Client {
 
     JSONParser parser = new JSONParser();
 
+
+    public Client(){
+
+    }
+
     /**
      * Il costruttore che riceve il username e la password per l'autenticazione
-     * basic che verrà utilizzata in tutte le GUI. Il costruttore tenta di caricare
+     * basic che verrà utilizzata in tutte le GUI.
      *
      * @param username il username da impostare.
      * @param password la password da impostare.
@@ -74,40 +88,57 @@ public class Client {
         this.username = username;
         this.password = password;
 
-        /*
-         * InputStream in =
-         * getClass().getResourceAsStream("../resource/deduplicator.p12"); try{ KeyStore
-         * keyStore = KeyStore.getInstance("PKCS12"); keyStore.load(in,
-         * CA_PASS.toCharArray()); }catch(IOException e){ StackTraceElement[] output =
-         * e.getStackTrace(); for (StackTraceElement element : output) {
-         * System.out.println(element.toString()); } } catch (KeyStoreException e) {
-         * e.printStackTrace(System.out); } catch (NoSuchAlgorithmException e) {
-         * e.printStackTrace(System.out); } catch (CertificateException e) {
-         * e.printStackTrace(System.out); }
-         */
         HttpComponentsClientHttpRequestFactory requestFactory = null;
-        // try {
-        /*
-         * TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String
-         * authType) -> true; SSLContext sslContext = SSLContextBuilder.create()
-         * .loadKeyMaterial(keyStore, CA_PASS.toCharArray()) .loadTrustMaterial(null,
-         * acceptingTrustStrategy) .build();
-         *
-         * .setSSLContext(sslContext)
-         */
-        HttpClient httpClient = HttpClients.custom().build();
+        try {
+            FileInputStream in = new FileInputStream(new File("deduplicator.p12"));
 
-        requestFactory = new HttpComponentsClientHttpRequestFactory();
+            String caPassword = props.getCAPassword();
+            System.out.println("CA_PASS " + caPassword);
+            try {
+                keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(in,
+                    caPassword.toCharArray());
+            } catch (IOException e) {
+                StackTraceElement[] output =
+                    e.getStackTrace();
+                for (StackTraceElement element : output) {
+                    System.out.println(element.toString());
+                }
+            } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+                e.printStackTrace(System.out);
+            }
 
-        requestFactory.setHttpClient(httpClient);
 
-        /*
-         * } catch (UnrecoverableKeyException | NoSuchAlgorithmException |
-         * KeyStoreException | KeyManagementException e) {
-         *
-         * System.out.println("Unable to create client: " + e.getMessage());
-         * e.printStackTrace(); }
-         */
+            try {
+
+                TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String
+                    authType) -> true;
+                SSLContext sslContext = SSLContextBuilder.create()
+                    .loadKeyMaterial(keyStore, caPassword.toCharArray()).loadTrustMaterial(null,
+                        acceptingTrustStrategy).build();
+
+                HttpClient httpClient = HttpClients.custom().setSSLContext(sslContext).build();
+
+                requestFactory = new HttpComponentsClientHttpRequestFactory();
+
+                requestFactory.setHttpClient(httpClient);
+
+
+            } catch (UnrecoverableKeyException | NoSuchAlgorithmException |
+                KeyStoreException | KeyManagementException e) {
+
+                System.out.println("Unable to create client: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } catch (FileNotFoundException fne) {
+            try {
+                System.out.println("curr dir: " +   new java.io.File( "." ).getCanonicalPath());
+            }catch (IOException ioe){
+                System.out.println("ioe");
+            }
+            System.out.println("File not found");
+            Logger.getGlobal().log(Level.SEVERE,"File not found");
+        }
 
         if (requestFactory != null)
             restTemplate = new RestTemplate(requestFactory);
@@ -149,11 +180,11 @@ public class Client {
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 return response;
             } else {
-                Logger.getGlobal().log(Level.SEVERE,"Response status code is not OK");
+                Logger.getGlobal().log(Level.SEVERE, "Response status code is not OK");
                 return null;
             }
         } catch (RestClientException rce) {
-            Logger.getGlobal().log(Level.SEVERE,"Rest client exception: " +rce);
+            Logger.getGlobal().log(Level.SEVERE, "Rest client exception: " + rce);
         }
         return null;
     }
@@ -269,7 +300,7 @@ public class Client {
 
         ResponseEntity<String> response = get("scan/status");
         if (response != null) {
-            Logger.getGlobal().log(Level.INFO,"response " + response.getStatusCode());
+            Logger.getGlobal().log(Level.INFO, "response " + response.getStatusCode());
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 try {
@@ -282,31 +313,31 @@ public class Client {
                     } else {
                         HashMap<String, String> error = new HashMap<String, String>();
                         error.put("message", "Response status format invalid");
-                        Logger.getGlobal().log(Level.SEVERE,"Response status format invalid");
+                        Logger.getGlobal().log(Level.SEVERE, "Response status format invalid");
                         return new JSONObject(error);
                     }
                 } catch (ParseException pe) {
                     HashMap<String, String> error = new HashMap<String, String>();
                     error.put("message", "Unable to parse server status");
-                    Logger.getGlobal().log(Level.SEVERE,"Unable to parse server status");
+                    Logger.getGlobal().log(Level.SEVERE, "Unable to parse server status");
                     return new JSONObject(error);
                 }
             } else if (response.getStatusCode().equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
                 HashMap<String, String> error = new HashMap<String, String>();
                 error.put("message", "Scan already running");
-                Logger.getGlobal().log(Level.WARNING,"Scan already running");
+                Logger.getGlobal().log(Level.WARNING, "Scan already running");
                 return new JSONObject(error);
             } else {
                 HashMap<String, String> error = new HashMap<String, String>();
                 error.put("message", "Unknown error");
-                Logger.getGlobal().log(Level.SEVERE,"Unknown error - Error code: " + response.getStatusCode());
+                Logger.getGlobal().log(Level.SEVERE, "Unknown error - Error code: " + response.getStatusCode());
 
                 return new JSONObject(error);
             }
         } else {
             HashMap<String, String> error = new HashMap<String, String>();
             error.put("message", "Scan is not running");
-            Logger.getGlobal().log(Level.WARNING,"Scan is not running");
+            Logger.getGlobal().log(Level.WARNING, "Scan is not running");
 
             return new JSONObject(error);
         }
@@ -339,11 +370,11 @@ public class Client {
             if (response.getStatusCode() == HttpStatus.OK) {
                 return response.getBody();
             } else {
-                Logger.getGlobal().log(Level.WARNING,"Response is not of status code OK");
+                Logger.getGlobal().log(Level.WARNING, "Response is not of status code OK");
                 return null;
             }
         } else {
-            Logger.getGlobal().log(Level.SEVERE,"Response is null");
+            Logger.getGlobal().log(Level.SEVERE, "Response is null");
             return null;
         }
     }
@@ -368,7 +399,7 @@ public class Client {
                     ResponseEntity<String> addResponse = put("action/", values);
                     if (addResponse.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
                         Notification.show("Unable to add action of: " + path.getPath(), Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        Logger.getGlobal().log(Level.WARNING,"Unable to add action of: " + path.getPath());
+                        Logger.getGlobal().log(Level.WARNING, "Unable to add action of: " + path.getPath());
                     }
                 }
                 return HttpStatus.OK;
@@ -376,12 +407,12 @@ public class Client {
             } catch (ParseException e) {
                 e.printStackTrace();
                 Notification.show("Unable to parse server response", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                Logger.getGlobal().log(Level.SEVERE,"Unable to parse server response");
+                Logger.getGlobal().log(Level.SEVERE, "Unable to parse server response");
                 return HttpStatus.BAD_REQUEST;
             }
         } else {
             Notification.show("Unable to create scheduler to add actions", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-            Logger.getGlobal().log(Level.SEVERE,"Unable to create scheduler to add actions - Response is null");
+            Logger.getGlobal().log(Level.SEVERE, "Unable to create scheduler to add actions - Response is null");
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
     }
@@ -396,9 +427,15 @@ public class Client {
 
     public ResponseEntity<String> updatePassword(String newPassword) {
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
-        System.out.println("oldPassword: " + this.password);
         values.add("oldPassword", this.password);
         values.add("newPassword", newPassword);
         return put("/account/password", values);
+    }
+
+    public ResponseEntity<String> updateUsername(String username) {
+        MultiValueMap<String, Object> values = new LinkedMultiValueMap<String, Object>();
+        values.add("password", this.password);
+        values.add("newUsername", username);
+        return put("/account/username", values);
     }
 }
