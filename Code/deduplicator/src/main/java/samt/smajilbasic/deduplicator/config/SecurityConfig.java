@@ -57,23 +57,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable().authorizeRequests().anyRequest().authenticated() // richiesta autorizzazione per ogni
-                                                                               // controller e ogni tipo di richiesta
-                .and().httpBasic() // abilita autenticazione basic
-                .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)// definizione punto
-                                                                                             // d'entrata in caso che
-                                                                                             // l'utente non è
-                                                                                             // autenticato
-                .and().logout().clearAuthentication(true).logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/access/logout/success").invalidateHttpSession(true).deleteCookies("JSESSIONID");
-        // .and().requiresChannel().anyRequest().requiresSecure(); // richiesta utilizzo
-        // protocollo sicuro (TSL) per ogni tipo di
+        http.csrf().disable().authorizeRequests().anyRequest().authenticated()
+            .and().httpBasic() // abilita autenticazione basic
+            .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
+            .and().logout().clearAuthentication(true).logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+            .logoutSuccessUrl("/access/logout/success").invalidateHttpSession(true).deleteCookies("JSESSIONID")
+            .and().requiresChannel().anyRequest().requiresSecure(); // richiesta utilizzo protocollo sicuro (TSL) per ogni tipo di
     }
 
     /**
      * Il metodo configureGlobal salva le credenziali dei utenti nella memoria
      * interna che saranno accessibili in tutto il progetto.
-     * 
+     *
      * @param auth aiuta a creare un
      *             {@link org.springframework.security.authentication.AuthenticationManager}
      *             in modo semplice.
@@ -84,26 +79,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         try {
             auth.userDetailsService(getInMemoryUserDetailsManager());
             Logger.getGlobal().log(Level.INFO,
-                    "userDetailsManager set");
-        }catch (Exception ex){
+                "userDetailsManager set");
+        } catch (Exception ex) {
             Logger.getGlobal().log(Level.SEVERE,
-                    "Unable to set inMemoryUserDetailsManagerConfigurer ");
+                "Unable to set inMemoryUserDetailsManagerConfigurer ");
         }
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder()
-    {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public InMemoryUserDetailsManager getInMemoryUserDetailsManager()
-    {
+    public InMemoryUserDetailsManager getInMemoryUserDetailsManager() {
         User.UserBuilder builder = User.builder();
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
         adr.findAll().forEach(user -> {
-                manager.createUser(builder.username(user.getUsername()).password(user.getPassword()).roles("ADMIN").build());
+            manager.createUser(builder.username(user.getUsername()).password(user.getPassword()).roles("ADMIN").build());
         });
 
         return manager;
