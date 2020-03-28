@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
@@ -24,6 +26,11 @@ import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 
@@ -67,11 +74,15 @@ public class SchedulerView extends VerticalLayout {
 
                 @Override
                 public void valueChanged(ValueChangeEvent<?> event) {
-                    LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
-                    if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
-                        Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        datePicker.setValue(LocalDate.now());
-                        timePicker.setValue(LocalTime.now());
+                    if (!timePicker.getValue().toString().isBlank() && !datePicker.getValue().toString().isBlank()) {
+                        LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
+                        if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
+                            Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            datePicker.setValue(LocalDate.now());
+                            timePicker.setValue(LocalTime.now());
+                        }
+                    } else {
+                        Notification.show("Date and time can't be empty", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 }
             };
@@ -80,13 +91,12 @@ public class SchedulerView extends VerticalLayout {
             timePicker.addValueChangeListener(listener);
 
             FormLayout pickerLayout = new FormLayout(datePicker, timePicker);
-            pickerLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S,1),new ResponsiveStep(Resources.SIZE_MOBILE_M,2));
+            pickerLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_M, 2));
             RadioButtonGroup<String> radioButtonGroup = new RadioButtonGroup<String>();
             radioButtonGroup.setLabel("Select repetition frequency");
 
             RadioButtonGroup<String> weekRadioButtonGroup = new RadioButtonGroup<String>();
             weekRadioButtonGroup.setVisible(false);
-
 
             String[] weekdayNames = DateFormatSymbols.getInstance().getWeekdays();
             weekdayNames = Arrays.copyOfRange(weekdayNames, 1, weekdayNames.length);
@@ -106,19 +116,19 @@ public class SchedulerView extends VerticalLayout {
             HorizontalLayout pickerSideLayouts = new HorizontalLayout();
 
             radioButtonGroup.addValueChangeListener(event -> {
-                        weekRadioButtonGroup.setVisible(false);
-                        monthlyDatePicker.setVisible(false);
-                        if (event != null) {
-                            switch (radioButtonGroup.getItemPosition(event.getValue())) {
-                                case 2:
-                                    weekRadioButtonGroup.setVisible(true);
-                                    break;
-                                case 3:
-                                    monthlyDatePicker.setVisible(true);
-                                    break;
-                            }
+                    weekRadioButtonGroup.setVisible(false);
+                    monthlyDatePicker.setVisible(false);
+                    if (event != null) {
+                        switch (radioButtonGroup.getItemPosition(event.getValue())) {
+                            case 2:
+                                weekRadioButtonGroup.setVisible(true);
+                                break;
+                            case 3:
+                                monthlyDatePicker.setVisible(true);
+                                break;
                         }
                     }
+                }
             );
 
             monthlyDatePicker.addValueChangeListener(event -> {
@@ -128,16 +138,25 @@ public class SchedulerView extends VerticalLayout {
 
             weekRadioButtonGroup.addValueChangeListener(event -> {
                 weekNumber = (1 << weekRadioButtonGroup.getItemPosition(event.getValue()));
-
-                System.out.println("Week Number: " + weekNumber);
             });
 
             Button button = new Button("Set scan schedule", event -> {
 
-                client.insertSchedule(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), weekNumber, monthNumber,
-                        radioButtonGroup.getValue());
+                ResponseEntity<String> response = client.insertScheduledScan(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), weekNumber, monthNumber, radioButtonGroup.getValue());
+                if (response != null) {
+                    if (response.getStatusCode().equals(HttpStatus.OK)) {
+                        Logger.getGlobal().log(Level.INFO, "Schedule added successfully");
+                        Notification.show("Schedule added successfully", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    } else {
+                        Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
+                        Notification.show("Unable to add scheduler ", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                } else {
+                    Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
+                    Notification.show("Unable to add scheduler ", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
             });
-            pickerSideLayouts.add(radioButtonGroup,weekRadioButtonGroup, monthlyDatePicker);
+            pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);
 
             add(pickerLayout, pickerSideLayouts, button);
             setMinWidth(Resources.SIZE_MOBILE_S);
