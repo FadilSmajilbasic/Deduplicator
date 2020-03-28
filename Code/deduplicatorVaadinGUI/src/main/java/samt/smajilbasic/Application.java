@@ -9,16 +9,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScans;
+import org.springframework.stereotype.Component;
 import samt.smajilbasic.logger.MyLogger;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.IOException;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 /**
  * The entry point of the Spring Boot application.
  */
 @SpringBootApplication
-@ComponentScan
 public class Application extends SpringBootServletInitializer {
 
     @Autowired
@@ -36,6 +40,13 @@ public class Application extends SpringBootServletInitializer {
         }catch(IOException ioe){
             System.out.println("Unable to setup logger");
             ioe.printStackTrace();
+        }
+    }
+
+    @PreDestroy
+    public void closeLogFileHandler(){
+        for (Handler handler : Logger.getGlobal().getHandlers()) {
+            handler.close();
         }
     }
 
