@@ -1,9 +1,11 @@
 package samt.smajilbasic.views;
 
+import com.vaadin.event.dd.acceptcriteria.Not;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -13,26 +15,29 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
-import org.apache.juli.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.vaadin.filesystemdataprovider.FilesystemData;
+import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
+import org.vaadin.olli.FileDownloadWrapper;
+import samt.smajilbasic.SpringContext;
 import samt.smajilbasic.configuration.ConfigProperties;
+import samt.smajilbasic.logger.MyLogger;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,13 +52,13 @@ public class DashboardView extends FormLayout {
     public static final String VIEW_NAME = "Dashboard";
     private Client client;
 
-    @Autowired
-    private ConfigProperties props;
+    private ConfigProperties props = SpringContext.getBean(ConfigProperties.class);
 
     public DashboardView() {
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
 
         if (client != null) {
+
             setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_M, 2));
             VerticalLayout leftSide = new VerticalLayout(new Label("User: " + AccessControlFactory.getInstance().createAccessControl().getName()));
             FormLayout leftSideFormLayout = new FormLayout();
@@ -64,11 +69,28 @@ public class DashboardView extends FormLayout {
             Button clearLogsButton = new Button("Clear logs", event -> clearLogs());
             Button changeUsernameButton = new Button("Change username", event -> changeUsername());
             Button downloadLogsButton = new Button("Download logs");
-//            Button changeMYSQLButton = new Button("Change MYSQL database credentials");
+            FileDownloadWrapper buttonWrapper = new FileDownloadWrapper(files[files.length - 1].getName(), files[files.length - 1].getAbsoluteFile());
+            buttonWrapper.wrapComponent(downloadLogsButton);
+            File logPath = new File(props.getLogPath());
+            File[] files = logPath.listFiles();
+            if (files == null) {
+                Logger.getGlobal().log(Level.SEVERE, "log files path invalid");
+                Notification.show("log files path invalid", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                clearLogsButton.setEnabled(false);
+                downloadLogsButton.setEnabled(false);
+            } else {
+                if (files.length == 0) {
+                    Logger.getGlobal().log(Level.SEVERE, "No log files found");
+                    Notification.show("Not log files found", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    clearLogsButton.setEnabled(false);
+                    downloadLogsButton.setEnabled(false);
+                }
+            }
+
             Button changeLogFileLocationButton = new Button("Change log file location");
 
             FormLayout rightSide = new FormLayout(new Label("Refresh interval: "));
-            leftSide.add(changePasswordButton, clearLogsButton, changeUsernameButton, downloadLogsButton, changeLogFileLocationButton);
+            leftSide.add(changePasswordButton, clearLogsButton, changeUsernameButton, buttonWrapper, changeLogFileLocationButton);
             setMinWidth(Resources.SIZE_MOBILE_S);
             add(leftSide, rightSide);
         }
@@ -299,5 +321,54 @@ public class DashboardView extends FormLayout {
         });
 
         countdown.start();
+    }
+
+    /**
+     * Defines the default root path for the fileBrowser.
+     */
+    private File root = new File(".");
+
+    private String newLogPath;
+
+    private void openFileSelect() {
+
+        FilesystemData rootData = new FilesystemData(root, false);
+        FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
+
+        TreeGrid<File> fileBrowser = new TreeGrid<>();
+        fileBrowser.setItems(rootData.getChildren(root));
+        fileBrowser.setDataProvider(fileSystem);
+        fileBrowser.addSelectionListener(event -> {
+            Optional<File> selected = event.getFirstSelectedItem();
+            selected.ifPresent(file -> newLogPath = file.getAbsolutePath());
+        });
+
+        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
+        fileBrowser.setSelectionMode(Grid.SelectionMode.SINGLE);
+        Dialog dialog = new Dialog();
+        Button confirmButton = new Button("Close", button -> {
+            dialog.close();
+            Notification.show("New log path set as " + newLogPath, Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+        });
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(new Label("Select file or folder"), fileBrowser, confirmButton);
+        layout.setMinWidth("50em");
+        layout.setAlignItems(FlexComponent.Alignment.CENTER);
+        dialog.setCloseOnOutsideClick(false);
+        dialog.add(layout);
+        dialog.open();
+    }
+
+    private void updateLogger(){
+        props.setLogPath(newLogPath);
+        MyLogger logger = new MyLogger();
+        try {
+            logger.setup();
+        }catch (IOException ioe){
+            Notification.show("New log path set as " + newLogPath, Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+        }
     }
 }
