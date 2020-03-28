@@ -29,7 +29,7 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
  * come primo pezzo del percorso "/scheduler". Usa l'annotazione @RestController
  * per indicare a spring che questa classe è un controller e che dovrà essere
  * inizializzata all'avvio dell'applicazione.
- * 
+ *
  * @author Fadil Smajilbasic
  */
 @RestController
@@ -55,7 +55,7 @@ public class SchedulerController {
     /**
      * Il metodo getAll risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler</b>(localhost:8080/scheduler/).
-     * 
+     *
      * @return tutti i {@link Scheduler} che si trovano nel database.
      */
     @GetMapping()
@@ -67,10 +67,10 @@ public class SchedulerController {
      * Il metodo get risponde alla richiesta di tipo GET sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler/&lt;id&gt;</b>
      * (localhost:8080/scheduler/11).
-     * 
+     *
      * @param id l'id dello {@link Scheduler}.
      * @return l'elemento richiesto della tabella Scheduler, messaggio d'errore
-     *         altrimenti.
+     * altrimenti.
      */
     @GetMapping(value = "/{id}")
     public Object get(@PathVariable String id) {
@@ -85,18 +85,18 @@ public class SchedulerController {
      * Il metodo insert risponde alla richiesta di tipo PUT sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler</b>(localhost:8080/scheduler/). Il
      * metodo inserisce un nuovo {@link Scheduler} nel database Scheduler.
-     * 
+     * <p>
      * I parametri vengono trattati in modo binario: Se bisogna eseguire lo
      * scheduler ogni 15 del mese, come parametro monthly si dovrà passare il numero
      * 32768 (2^15 -&gt; 000000000000000000100000000000000). Se bisogna eseguire lo
      * scheduler ogni 3 giorno della settimana, come parametro weekly bisogna
      * mettere 8 (2^3).
-     * 
+     * <p>
      * I parametri vengono accettati in modo binario per permette di aggiungere più
      * giorni di esecuzione, è fatto in modo per permettere uno sviluppo futuro.
-     * 
+     * <p>
      * Il parametro hour accetta l'ora di esecuzione in minuti partendo da 0 a 1439
-     * 
+     *
      * @param monthly   parametro da passare se lo {@link Scheduler} deve essere
      *                  eseguito mensilmente.
      * @param weekly    parametro da passare se lo {@link Scheduler} deve essere
@@ -109,18 +109,17 @@ public class SchedulerController {
      */
     @PutMapping()
     public Object insert(@RequestParam String monthly, @RequestParam String weekly, @RequestParam String repeated,
-            @RequestParam String timeStart) {
+                         @RequestParam String timeStart) {
 
         Integer monthlyInt = Validator.isInt(monthly);
         Integer weeklyInt = Validator.isInt(weekly);
-        Boolean repeatedBool = (repeated.equals("true")) ? true : false;
+        boolean repeatedBool = (repeated.equals("true"));
         Long date = Validator.isLong(timeStart);
         Scheduler scheduler = new Scheduler();
 
         if (date != null) {
+            scheduler.setRepeated(repeatedBool);
             if (repeatedBool) {
-                scheduler.setRepeated(repeatedBool);
-
                 if (date > System.currentTimeMillis()) {
                     if (monthlyInt != null) {
                         Integer dayMonth = getFirstPosition(monthlyInt, 31);
@@ -133,21 +132,17 @@ public class SchedulerController {
 
                     } else {
                         return new ResponseEntity<Response>(
-                                new Response("Schedule monthly and weekly parameters invalid"),
-                                HttpStatus.INTERNAL_SERVER_ERROR);
+                            new Response("Schedule monthly and weekly parameters invalid"),
+                            HttpStatus.INTERNAL_SERVER_ERROR);
                     }
                 } else {
                     return new ResponseEntity<Response>(new Response("Schedule hour parameter invalid"),
-                            HttpStatus.INTERNAL_SERVER_ERROR);
+                        HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-            } else {
-
-                scheduler.setTimeStart(date);
-                scheduler.setRepeated(repeatedBool);
             }
+            scheduler.setTimeStart(date);
             schedulerRepository.save(scheduler);
             BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
-            ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
             ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
             synchronized (checker) {
                 checker.start();
@@ -155,7 +150,7 @@ public class SchedulerController {
             return schedulerRepository.findById(scheduler.getSchedulerId());
         } else {
             return new ResponseEntity<Response>(new Response("timeStart parameter not set or invalid"),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -163,7 +158,7 @@ public class SchedulerController {
      * Il metodo delete risponde alla richiesta di tipo DELETE sull'indirizzo
      * <b>&lt;indirizzo-server&gt;/scheduler/stopTimers</b>(localhost:8080/scheduler/stopTimers/).
      * Il metodo ferma tutti i timer della lista timers.
-     * 
+     *
      * @return il messaggio con status OK 200.
      */
     @DeleteMapping("/{id}")
@@ -176,18 +171,18 @@ public class SchedulerController {
                 return scheduler;
             } else {
                 return new ResponseEntity<Response>(new Response("Unable to find scheduler with id: " + id),
-                        HttpStatus.INTERNAL_SERVER_ERROR);
+                    HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } else {
             return new ResponseEntity<Response>(new Response("Invalid parameter: " + id),
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+                HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Il metodo getFirstPosition ritorna la posizione del primo bit a 1 in un
      * intero.
-     * 
+     *
      * @param number il numero da scansionare.
      * @param max    la grandezza del numero in bit (1-32).
      * @return la posizione del primo bit a 1 oppure 0 se non ci sono.
@@ -204,7 +199,7 @@ public class SchedulerController {
     /**
      * Il metodo getPositions ritorna una lista di posizioni dei bit a 1 nel numero
      * passato come parametro.
-     * 
+     *
      * @param number il numero da scansionare
      * @param max    la grandezza del numero in bit (1-32)
      * @return le posizioni di tutti i bit a 1 oppure 0 se non ci sono.

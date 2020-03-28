@@ -184,7 +184,7 @@ public class ReportView extends VerticalLayout {
 
             Button applyDialogConfirmButton = new Button("Confirm", event -> {
                 Logger.getGlobal().log(Level.INFO, "Actions confirmed");
-                client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), duplicateGridService.getPaths());
+                client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), duplicateGridService.getPaths(), null);
                 applyDialog.close();
             });
 

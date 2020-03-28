@@ -21,6 +21,8 @@ import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.GlobalPathRepository;
 import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * ActionsManager
  */
@@ -28,31 +30,30 @@ import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 public class ActionsManager implements Runnable {
 
     @Autowired
-    ActionRepository actionRepository;
+    private ActionRepository actionRepository;
 
     @Autowired
-    GlobalPathRepository globalPathRepository;
+    private GlobalPathRepository globalPathRepository;
     @Autowired
-    SchedulerRepository schedulerRepository;
+    private SchedulerRepository schedulerRepository;
 
     @Autowired
-    ApplicationContext context;
+    private ApplicationContext context;
 
-    Scheduler actionScheduler;
+    private Scheduler actionScheduler;
 
-    List<Action> actions = new ArrayList<>();
+    private List<Action> actions = new ArrayList<>();
 
-    AuthenticationDetails user;
+    private AuthenticationDetails user;
 
     public ActionsManager() {
-        super();
     }
 
     @Override
     public void run() {
         try {
             System.out.println("WORKER STARTED");
-            if (actionScheduler.equals(null)) {
+            if (actionScheduler == null) {
                 actions = actionRepository.findActionsFromScheduler(actionScheduler);
                 System.out.println("[INFO] Found actions: " + actions.size());
             } else {
@@ -74,7 +75,7 @@ public class ActionsManager implements Runnable {
                                     executed = true;
                                 } else {
                                     System.out.println("[ERROR] Unable to move file: " + action.getFilePath()
-                                            + " to destination: " + action.getNewFilePath());
+                                        + " to destination: " + action.getNewFilePath());
                                 }
                             } else if (action.getActionType().equals(ActionType.DELETE)) {
                                 if (this.delete(action.getFilePath())) {
@@ -87,9 +88,9 @@ public class ActionsManager implements Runnable {
                                 GlobalPath path = new GlobalPath(action.getFilePath(), true);
                                 globalPathRepository.save(path);
 
-                                if (globalPathRepository.findById(path.getPath()).get() != null) {
+                                if (globalPathRepository.findById(path.getPath()).isPresent()) {
                                     System.out.println(
-                                            "[INFO] File set on ignored list succesfully: " + action.getFilePath());
+                                        "[INFO] File set on ignored list succesfully: " + action.getFilePath());
                                     executed = true;
                                 } else {
                                     System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
@@ -100,16 +101,12 @@ public class ActionsManager implements Runnable {
                                 controller.start(null);
 
                                 if (actionScheduler != null) {
-
                                     if (executed) {
                                         action.setExecuted();
                                         System.out.println("setting executed");
                                         actionScheduler.executed();
                                         schedulerRepository.save(actionScheduler);
                                     }
-
-                                } else {
-
                                 }
 
                             } else {
@@ -159,7 +156,12 @@ public class ActionsManager implements Runnable {
      * @param actionScheduler the actionScheduler to set
      */
     public void setActionScheduler(Scheduler actionScheduler) {
+        System.out.println("Action scheduler is " + (actionScheduler == null ? "null" : "not null"));
         this.actionScheduler = actionScheduler;
+    }
+
+    public Scheduler getActionScheduler() {
+        return actionScheduler;
     }
 
     /**

@@ -22,7 +22,7 @@ public class MyAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx)
-            throws IOException, ServletException {
+            throws IOException {
         response.addHeader("WWW-Authenticate", "Basic realm=" + getRealmName() + "");
         response.addHeader("Content-Type", "application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -31,7 +31,7 @@ public class MyAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         setRealmName("Deduplicator");
         super.afterPropertiesSet();
     }

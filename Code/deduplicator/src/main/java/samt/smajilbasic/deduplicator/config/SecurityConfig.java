@@ -1,8 +1,5 @@
 package samt.smajilbasic.deduplicator.config;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -10,17 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configurers.provisioning.InMemoryUserDetailsManagerConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -58,11 +51,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable().authorizeRequests().anyRequest().authenticated()
-            .and().httpBasic() // abilita autenticazione basic
+            .and().httpBasic()
             .and().exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
             .and().logout().clearAuthentication(true).logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
             .logoutSuccessUrl("/access/logout/success").invalidateHttpSession(true).deleteCookies("JSESSIONID")
-            .and().requiresChannel().anyRequest().requiresSecure(); // richiesta utilizzo protocollo sicuro (TSL) per ogni tipo di
+            .and().requiresChannel().anyRequest().requiresSecure();
     }
 
     /**
