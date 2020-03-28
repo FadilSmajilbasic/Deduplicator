@@ -1,13 +1,12 @@
 package samt.smajilbasic.deduplicator.timer;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.apache.juli.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -51,87 +50,85 @@ public class ScheduleChecker extends Thread {
     /**
      * Metodo costruttore vuoto.
      */
-    public ScheduleChecker() {
-        super();
-    }
+    public ScheduleChecker(){}
 
     public void run() {
 
         Iterable<Scheduler> result = schedulerRepository.findAll();
         List<Scheduler> schedulers = new ArrayList<Scheduler>();
-
         result.forEach(schedulers::add);
-
-        ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(schedulers.size()); // pool di
+        ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(1); // pool di
                                                                                                             // esecuzione
                                                                                                             // delle
                                                                                                             // thread
-
         schedulers.forEach(schedule -> {
-            BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
-            ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
-            ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
-            Long startDate = schedule.getTimeStart();
+            try {
+                BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+                ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
+                ActionsManager actionsManager = (ActionsManager) context.getBean("actionsManager");
+                Long startDate = schedule.getTimeStart();
 
-            Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            Calendar currCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            startCalendar.setTimeInMillis(startDate);
+                Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                Calendar currCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                startCalendar.setTimeInMillis(startDate);
 
-            startCalendar.add(Calendar.MONTH, 1); // Correzione del Calendario
-            startCalendar.add(Calendar.HOUR_OF_DAY, 2); // Correzione dell'ora
+                if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) {
+                    actionsManager.setActionScheduler(schedule);
+                    System.out.println("inside action manager: " + (actionsManager.getActionScheduler() == null));
 
-            if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) { // controllo se lo scheduler è già stato
-                                                                                // eseguit oppure se è impostato per
-                                                                                // essere ripetuto
-
-                actionsManager.setActionScheduler(schedule);
-                
-                System.out.println("Action manager scheduled: " + startCalendar.get(Calendar.DAY_OF_MONTH) + "."
+                    System.out.println("Action manager scheduled: " + startCalendar.get(Calendar.DAY_OF_MONTH) + "."
                         + startCalendar.get(Calendar.MONTH) + " " + startCalendar.get(Calendar.HOUR_OF_DAY) + ":"
                         + startCalendar.get(Calendar.MINUTE));
 
-                System.out.println(
+                    System.out.println(
                         "Current time: " + currCal.get(Calendar.DAY_OF_MONTH) + "." + currCal.get(Calendar.MONTH) + " "
-                                + currCal.get(Calendar.HOUR_OF_DAY) + ":" + currCal.get(Calendar.MINUTE));
-                Long delay = startCalendar.getTimeInMillis() - currCal.getTimeInMillis();
-                delay = delay < 0 ? 0 : delay;
-                actionsManager.setActionScheduler(schedule);
+                            + currCal.get(Calendar.HOUR_OF_DAY) + ":" + currCal.get(Calendar.MINUTE));
 
-                if (schedule.isRepeated()) {
+                    long delay = startCalendar.getTimeInMillis() - currCal.getTimeInMillis();
+                    delay = delay < 0 ? 0 : delay;
+                    System.out.println("delay: " + delay + " is repeated: " + schedule.isRepeated());
 
-                    long difference = 0;
-                    Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                    if (schedule.isRepeated()) {
 
-                    boolean passed = false;
-                    if (startCalendar.getTime().before(new Date())) {
-                        passed = true;
-                    }
-                    boolean monthly = false;
-                    if (schedule.getMonthly() != null) {
-                        nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH),
+                        long difference = 0;
+                        Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+                        boolean passed = false;
+                        if (startCalendar.getTime().before(new Date())) {
+                            passed = true;
+                        }
+                        boolean monthly = false;
+                        if (schedule.getMonthly() != null) {
+                            nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH),
                                 schedule.getMonthly());
-                        difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
-                        monthly = true;
-                    } else {
-                        difference = Math.abs(schedule.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
-                    }
-                    long initialDelay = startCalendar.getTimeInMillis() + difference;
-                    if (passed)
-                        initialDelay = 0;
+                            difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
+                            monthly = true;
+                        } else {
+                            difference = Math.abs(schedule.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                        }
+                        long initialDelay = startCalendar.getTimeInMillis() + difference;
+                        if (passed)
+                            initialDelay = 0;
 
-                    scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, monthly ? 30 : 7, 
-                            TimeUnit.DAYS); //Aggiungo l'actionManager al pool per l'esecuzione
+                        scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, monthly ? 30 : 7,
+                            TimeUnit.DAYS);
+                    } else {
+                        Logger.getGlobal().log(Level.INFO,"scheduling one off scheduler");
+                        scheduledExecutor.schedule(actionsManager, delay, TimeUnit.MILLISECONDS);
+                    }
                 } else {
-                    scheduledExecutor.schedule(actionsManager, delay, TimeUnit.MILLISECONDS);
+                    Logger.getGlobal().log(Level.INFO,"Scheduler already executed" );
                 }
-            } else {
-                System.out.println("[INFO] Scheduler already executed");
+            }catch (Exception ex){
+                Logger.getGlobal().log(Level.SEVERE,"An exception occurred: " + ex.getMessage());
             }
         });
         try {
             scheduledExecutor.awaitTermination(DEFAULT_TERMINATION_TIMEOUT, TimeUnit.SECONDS);
         } catch (Exception ex) {
-            System.out.println("execuztion exeption: " + ex.getMessage());
+            Logger.getGlobal().log(Level.SEVERE,"An execution exeption: " + ex.getMessage());
+
+            System.out.println("execution exeption: " + ex.getMessage());
         }
     }
 }
