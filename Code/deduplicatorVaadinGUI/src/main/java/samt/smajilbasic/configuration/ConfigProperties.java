@@ -1,6 +1,5 @@
 package samt.smajilbasic.configuration;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -15,6 +14,12 @@ public class ConfigProperties {
 
     @NotBlank
     private String CAPassword;
+
+    @NotBlank
+    private String refreshInterval;
+
+    @NotBlank
+    private String notificationLength;
 
     public String getLogPath() {
         return logPath;
@@ -31,5 +36,21 @@ public class ConfigProperties {
 
     public void setCAPassword(String CAPassword) {
         this.CAPassword = CAPassword;
+    }
+
+    public String getRefreshInterval() {
+        return refreshInterval;
+    }
+
+    public void setRefreshInterval(String refreshInterval) {
+        this.refreshInterval = refreshInterval;
+    }
+
+    public String getNotificationLength() {
+        return notificationLength;
+    }
+
+    public void setNotificationLength(String notificationLength) {
+        this.notificationLength = notificationLength;
     }
 }
