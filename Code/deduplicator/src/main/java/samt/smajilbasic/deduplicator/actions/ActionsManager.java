@@ -2,10 +2,13 @@ package samt.smajilbasic.deduplicator.actions;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -51,94 +54,99 @@ public class ActionsManager implements Runnable {
 
     @Override
     public void run() {
-        try {
-            System.out.println("WORKER STARTED");
-            if (actionScheduler == null) {
-                actions = actionRepository.findActionsFromScheduler(actionScheduler);
-                System.out.println("[INFO] Found actions: " + actions.size());
-            } else {
-                System.out.println("[INFO] Unable to find actions, actionScheduler not set");
-            }
-
-            if (actions != null) {
-                if (actions.size() > 0) {
-                    System.out.println("Actions not null");
-                    for (Action action : actions) {
-                        System.out.println("executing action: " + action.getActionType());
-
-                        if (!action.isExecuted()) {
-                            boolean executed = false;
-                            if (action.getActionType().equals(ActionType.MOVE)) {
-
-                                if (this.move(action.getFilePath(), action.getNewFilePath())) {
-                                    System.out.println("[INFO] File moved succesfully: " + action.getFilePath());
-                                    executed = true;
-                                } else {
-                                    System.out.println("[ERROR] Unable to move file: " + action.getFilePath()
-                                        + " to destination: " + action.getNewFilePath());
-                                }
-                            } else if (action.getActionType().equals(ActionType.DELETE)) {
-                                if (this.delete(action.getFilePath())) {
-                                    System.out.println("[INFO] File deleted succesfully: " + action.getFilePath());
-                                    executed = true;
-                                } else {
-                                    System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
-                                }
-                            } else if (action.getActionType().equals(ActionType.IGNORE)) {
-                                GlobalPath path = new GlobalPath(action.getFilePath(), true);
-                                globalPathRepository.save(path);
-
-                                if (globalPathRepository.findById(path.getPath()).isPresent()) {
-                                    System.out.println(
-                                        "[INFO] File set on ignored list succesfully: " + action.getFilePath());
-                                    executed = true;
-                                } else {
-                                    System.out.println("[ERROR] Unable to delete file: " + action.getFilePath());
-                                }
-                            } else if (action.getActionType().equals(ActionType.SCAN)) {
-                                System.out.println("scan");
-                                ScanController controller = (ScanController) context.getBean("scanController");
-                                controller.start(null);
-
-                                if (actionScheduler != null) {
-                                    if (executed) {
-                                        action.setExecuted();
-                                        System.out.println("setting executed");
-                                        actionScheduler.executed();
-                                        schedulerRepository.save(actionScheduler);
-                                    }
-                                }
-
-                            } else {
-                                System.out.println("[ERROR] Invalid type");
-                            }
-
-                            actionScheduler.executed();
-
-                            actionRepository.save(action);
-                            schedulerRepository.save(actionScheduler);
-                        } else {
-                            System.out.println("[INFO] Action " + action.getId() + " already executed ");
-                        }
-                    }
-                } else {
-                    System.out.println("[INFO] No action to execute set");
-                }
-            } else {
-                System.out.println("[INFO] action is null");
-            }
-        } catch (Exception npe) {
-            npe.printStackTrace(System.out);
+        Logger.getGlobal().log(Level.INFO, "WORKER STARTED");
+        if (actionScheduler != null) {
+            actions = actionRepository.findActionsFromScheduler(actionScheduler);
+        } else {
+            Logger.getGlobal().log(Level.WARNING, "Unable to find actions, actionScheduler not set ");
         }
 
-        System.out.println("finished working");
+        if (actions != null) {
+            if (actions.size() > 0) {
+                Logger.getGlobal().log(Level.INFO, "actions size: " + actions.size());
+                for (Action action : actions) {
+                    Logger.getGlobal().log(Level.INFO, "Executing action: " + action.getActionType());
+
+                    if (!action.isExecuted()) {
+                        boolean executed = false;
+                        if (action.getActionType().equals(ActionType.MOVE)) {
+
+                            if (this.move(action.getFilePath(), action.getNewFilePath())) {
+                                Logger.getGlobal().log(Level.INFO, "File moved successfully from " + action.getFilePath() + " to " + action.getNewFilePath());
+                            } else {
+                                Logger.getGlobal().log(Level.SEVERE, "Unable to move file: " + action.getFilePath() + " to destination: " + action.getNewFilePath());
+                            }
+                            executed = true;
+                        } else if (action.getActionType().equals(ActionType.DELETE)) {
+                            if (this.delete(action.getFilePath())) {
+                                Logger.getGlobal().log(Level.INFO, "File deleted successfully: " + action.getFilePath());
+                            } else {
+                                Logger.getGlobal().log(Level.SEVERE, "Unable to delete file: " + action.getFilePath());
+                            }
+                            executed = true;
+                        } else if (action.getActionType().equals(ActionType.IGNORE)) {
+                            if (!globalPathRepository.existsById(action.getFilePath())) {
+                                GlobalPath path = new GlobalPath(action.getFilePath(), true);
+                                globalPathRepository.save(path);
+                            } else {
+                                Logger.getGlobal().log(Level.WARNING, "Path already present in global_path: " + action.getFilePath());
+                            }
+
+                            if (globalPathRepository.findById(action.getFilePath()).isPresent()) {
+                                Logger.getGlobal().log(Level.INFO, "File set on ignored list successfully: " + action.getFilePath());
+                            } else {
+                                Logger.getGlobal().log(Level.SEVERE, "Unable to ignore file: " + action.getFilePath());
+                            }
+                            executed = true;
+                        } else if (action.getActionType().equals(ActionType.SCAN)) {
+                            ScanController controller = (ScanController) context.getBean("scanController");
+                            controller.start(null);
+                            executed = true;
+                        } else {
+                            Logger.getGlobal().log(Level.SEVERE, "Invalid action type");
+                        }
+                        if (executed) {
+                            action.setExecuted();
+                            actionScheduler.executed();
+                        }
+                    } else {
+                        Logger.getGlobal().log(Level.INFO, "Action " + action.getId() + " already executed - " + action.getActionType());
+                    }
+                }
+                if (actionScheduler != null) {
+                    actionScheduler.executed();
+                    schedulerRepository.save(actionScheduler);
+                }
+
+            } else {
+                Logger.getGlobal().log(Level.WARNING, "No action to execute set");
+
+            }
+        } else {
+            Logger.getGlobal().log(Level.WARNING, "Action is null");
+        }
+        Logger.getGlobal().log(Level.INFO, "Actions manager finished");
+
     }
 
     private boolean move(String oldPath, String newPath) {
         try {
-            Files.move(Paths.get(oldPath), Paths.get(newPath), StandardCopyOption.REPLACE_EXISTING);
-            return true;
+            if (oldPath != null) {
+                if (newPath != null) {
+                    Path old = Paths.get(oldPath);
+                    Path newP = Paths.get(newPath + old.getFileName());
+                    Files.move(old, newP, StandardCopyOption.REPLACE_EXISTING);
+                    return true;
+                } else {
+                    Logger.getGlobal().log(Level.SEVERE, "newPath is null");
+                    return false;
+                }
+            } else {
+                Logger.getGlobal().log(Level.SEVERE, "oldPath is null");
+                return false;
+            }
         } catch (IOException e) {
+            Logger.getGlobal().log(Level.SEVERE, "IOException while moving file from " + oldPath + " to " + newPath);
             return false;
         }
     }
@@ -147,7 +155,7 @@ public class ActionsManager implements Runnable {
         try {
             return Files.deleteIfExists(Paths.get(path));
         } catch (Exception ex) {
-            System.out.println("[ERROR] Unable to delete file: " + path + " reason: " + ex.getMessage());
+            Logger.getGlobal().log(Level.SEVERE, "Unable to delete file: " + path + " reason: " + ex.getMessage());
             return false;
         }
     }
@@ -156,12 +164,11 @@ public class ActionsManager implements Runnable {
      * @param actionScheduler the actionScheduler to set
      */
     public void setActionScheduler(Scheduler actionScheduler) {
-        System.out.println("Action scheduler is " + (actionScheduler == null ? "null" : "not null"));
         this.actionScheduler = actionScheduler;
     }
 
     public Scheduler getActionScheduler() {
-        return actionScheduler;
+        return this.actionScheduler;
     }
 
     /**
