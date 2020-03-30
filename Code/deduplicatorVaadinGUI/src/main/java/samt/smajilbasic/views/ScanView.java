@@ -26,6 +26,8 @@ import com.vaadin.flow.shared.ui.Transport;
 import org.json.simple.JSONObject;
 import org.springframework.http.HttpStatus;
 
+import samt.smajilbasic.SpringContext;
+import samt.smajilbasic.configuration.ConfigProperties;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 
@@ -77,7 +79,7 @@ public class ScanView extends VerticalLayout {
     /**
      * The delay at which the statusThread will poll the scan status.
      */
-    private final int POLLING_DELAY = 500;
+    private final int POLLING_DELAY;
     /**
      * The thread that polls the scan status data.
      */
@@ -108,7 +110,7 @@ public class ScanView extends VerticalLayout {
      * The monitor that the statusThread waits onto. When the statusThread needs to
      * resume the program calls the notifyAll method of this monitor.
      */
-    private Object statusMonitor = new Object();
+    private final Object statusMonitor = new Object();
 
     private final UI ui;
 
@@ -116,6 +118,14 @@ public class ScanView extends VerticalLayout {
      * The ScanView constructor.
      */
     public ScanView() {
+        int polling_delay_temp;
+        try {
+            polling_delay_temp = Integer.parseInt(SpringContext.getBean(ConfigProperties.class).getRefreshInterval());
+        } catch (Exception ex) {
+            polling_delay_temp = 500;
+        }
+        POLLING_DELAY = polling_delay_temp;
+
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
         ui = UI.getCurrent();
         if (client != null) {
@@ -151,13 +161,13 @@ public class ScanView extends VerticalLayout {
 
             add(form, progressBar);
 
-            createStatusThread();
             setMinWidth(Resources.SIZE_MOBILE_S);
             updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f, 0);
-            createStatusThread();
+            createStatusThread(true);
             statusThread.start();
         }
     }
+
 
     /**
      * The resumeScan method resumes a paused scan.
@@ -165,7 +175,7 @@ public class ScanView extends VerticalLayout {
     private void resumeScan() {
         HttpStatus resp = client.post("scan/resume", null).getStatusCode();
         if (resp.equals(HttpStatus.OK)) {
-            Notification.show("Scan resumend", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
+            Notification.show("Scan resumed", new Resources().getNotificationLength(), Position.TOP_END);
             pauseButton.setVisible(true);
             resumeButton.setVisible(false);
             paused = false;
@@ -173,7 +183,7 @@ public class ScanView extends VerticalLayout {
                 statusMonitor.notifyAll();
             }
         } else {
-            Notification.show("Scan not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Scan not running", new Resources().getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -220,7 +230,7 @@ public class ScanView extends VerticalLayout {
      * The recreateStatusThread creates a new statusThread after it gets
      * interrupted.
      */
-    private void createStatusThread() {
+    private void createStatusThread(boolean silent) {
         statusThread = new Thread() {
 
             @Override
@@ -242,14 +252,11 @@ public class ScanView extends VerticalLayout {
                                 float pace = ((float) POLLING_DELAY) / (float) filesScannedDelta;
                                 float timeLeft = ((totFiles - filesScanned) * pace) / 1000;
 
-                                Command command = new Command() {
-                                    @Override
-                                    public void execute() {
-                                        updateStatus(true, filesScanned,
-                                            Long.parseLong(response.get("timestamp").toString()),
-                                            Float.parseFloat(response.get("progress").toString()), (int) timeLeft);
-                                        ui.push();
-                                    }
+                                Command command = (Command) () -> {
+                                    updateStatus(true, filesScanned,
+                                        Long.parseLong(response.get("timestamp").toString()),
+                                        Float.parseFloat(response.get("progress").toString()), (int) timeLeft);
+                                    ui.push();
                                 };
                                 System.out.println("Got status " + scanProgress);
                                 scanProgress = Float.parseFloat(response.get("progress").toString());
@@ -260,10 +267,11 @@ public class ScanView extends VerticalLayout {
                                 }
                             } else {
                                 Command finalCommand = (Command) () -> {
-                                    Logger.getGlobal().log(Level.INFO,"Scan is not running");
+                                    Logger.getGlobal().log(Level.INFO, "Scan is not running");
 
-                                    Notification.show(response.get("message").toString(), Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    if (!silent)
+                                        Notification.show(response.get("message").toString(), new Resources().getNotificationLength(), Position.TOP_END)
+                                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f, 0);
                                     ui.push();
                                 };
@@ -272,9 +280,10 @@ public class ScanView extends VerticalLayout {
                             }
                         } else {
                             ui.access(() -> {
-                                Logger.getGlobal().log(Level.INFO,"Scan is not running");
-                                Notification.show("Scan is not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
-                                updateStatus(false, 0, null, 0f, 0);
+                                Logger.getGlobal().log(Level.INFO, "Scan is not running");
+                                if (!silent)
+                                    Notification.show("Scan is not running", new Resources().getNotificationLength(), Position.TOP_END);
+                                updateStatus(false, 0, Calendar.getInstance().getTime().getTime(), 0f, 0);
                                 ui.push();
                             });
                             this.interrupt();
@@ -282,16 +291,19 @@ public class ScanView extends VerticalLayout {
                     }
                 } catch (InterruptedException ie) {
                     ui.access(() -> {
-                        Notification.show("Status update interrupted", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        Logger.getGlobal().log(Level.INFO,"Status update interrupted");
+                        if (!silent)
+                            Notification.show("Status update interrupted", new Resources().getNotificationLength(), Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.INFO, "Status update interrupted");
                         ui.push();
                     });
                 } finally {
+
                     ui.access(() -> {
-                        Notification.show("Scan finished", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                        Logger.getGlobal().log(Level.INFO,"Scan finished");
+                        if (!silent)
+                            Notification.show("Scan finished", new Resources().getNotificationLength(), Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        Logger.getGlobal().log(Level.INFO, "Scan finished");
                         updateStatus(false, 0, null, 0f, 0);
                         ui.push();
                     });
@@ -306,12 +318,12 @@ public class ScanView extends VerticalLayout {
     private void pauseScan() {
         HttpStatus resp = client.post("scan/pause", null).getStatusCode();
         if (resp.equals(HttpStatus.OK)) {
-            Notification.show("Scan paused", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
+            Notification.show("Scan paused", new Resources().getNotificationLength(), Position.TOP_END);
             pauseButton.setVisible(false);
             resumeButton.setVisible(true);
             paused = true;
         } else {
-            Notification.show("Scan not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Scan not running", new Resources().getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
@@ -322,13 +334,13 @@ public class ScanView extends VerticalLayout {
     private void stopScan() {
         HttpStatus resp = client.post("scan/stop", null).getStatusCode();
         if (resp.equals(HttpStatus.OK)) {
-            Notification.show("Scan stopped", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
+            Notification.show("Scan stopped", new Resources().getNotificationLength(), Position.TOP_END);
             statusThread.interrupt();
             statusThread = null;
             pauseButton.setVisible(false);
             resumeButton.setVisible(false);
         } else {
-            Notification.show("Scan not running", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Scan not running", new Resources().getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
@@ -340,14 +352,14 @@ public class ScanView extends VerticalLayout {
         HttpStatus resp = client.startScan();
         paused = false;
         if (resp == HttpStatus.OK) {
-            Notification.show("Scan started", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
-            createStatusThread();
+            Notification.show("Scan started", new Resources().getNotificationLength(), Position.TOP_END);
+            createStatusThread(false);
             statusThread.start();
         } else if (resp == HttpStatus.ALREADY_REPORTED) {
-            Notification.show("Scan already running", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Scan already running", new Resources().getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (resp == HttpStatus.INTERNAL_SERVER_ERROR) {
-            Notification.show("Unable to start scan", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+            Notification.show("Unable to start scan", new Resources().getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
 
         }
