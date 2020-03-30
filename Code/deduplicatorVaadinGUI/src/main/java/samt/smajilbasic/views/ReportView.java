@@ -87,7 +87,7 @@ public class ReportView extends VerticalLayout {
             VerticalLayout verticalLayout = new VerticalLayout();
             if (!forMainView) {
                 reportSelect = new Select<String>();
-                reportSelect.setItems(getReports());
+                reportSelect.setItems(Objects.requireNonNullElse(getReports(), new ArrayList<String>()));
 
                 reportSelect.addValueChangeListener(event -> {
                     initiateGrid(event.getValue());
@@ -125,26 +125,28 @@ public class ReportView extends VerticalLayout {
             List<GlobalPath> paths = new ArrayList<GlobalPath>(duplicateGridService.getPaths());
 
             Grid<GlobalPath> actionsGrid = new Grid<GlobalPath>();
+            paths.removeIf(globalPath -> globalPath.getAction().getType() == null);
 
             actionsGrid.setItems(paths);
 
-            actionsGrid.addColumn(GlobalPath::getPath).setHeader("Path");
+            actionsGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(2);
             actionsGrid.addColumn(path -> {
                 if (path.getAction().getType().equals(ActionType.MOVE)) {
                     return path.getAction().getNewPath();
                 } else {
                     return "none";
                 }
-            }).setHeader("Move path");
-            actionsGrid.addColumn(path -> {
-                return path.getAction().getType();
-            }).setHeader("Action type");
-            actionsGrid.addColumn(globalPath -> {
-                return new Button("Delete", event -> {
-                    paths.remove(globalPath);
+            }).setHeader("Move path").setFlexGrow(2);
+            actionsGrid.addColumn(path -> path.getAction().getType()).setHeader("Action type").setFlexGrow(1);
+
+            actionsGrid.addColumn(new ComponentRenderer<Button, GlobalPath>(
+                path -> new Button("Delete", event -> {
+                    paths.remove(path);
                     actionsGrid.getDataProvider().refreshAll();
-                });
-            });
+                })
+            )).setHeader("Delete action").setFlexGrow(1);
+
+            actionsGrid.setClassName("inside-grid");
 
             Dialog applyDialog = new Dialog();
             VerticalLayout applyDialogLayout = new VerticalLayout();
@@ -168,7 +170,7 @@ public class ReportView extends VerticalLayout {
                 public void valueChanged(ValueChangeEvent<?> event) {
                     LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
                     if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
-                        Notification.show("Date and time can't be in the past", Resources.NOTIFICATION_LENGTH,
+                        Notification.show("Date and time can't be in the past", new Resources().getNotificationLength(),
                             Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         Logger.getGlobal().log(Level.SEVERE, "Date and time can't be in the past");
                         datePicker.setValue(LocalDate.now());
@@ -184,67 +186,71 @@ public class ReportView extends VerticalLayout {
 
             Button applyDialogConfirmButton = new Button("Confirm", event -> {
                 Logger.getGlobal().log(Level.INFO, "Actions confirmed");
-                client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), duplicateGridService.getPaths(), null);
+                client.addActions(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), paths, null);
                 applyDialog.close();
             });
 
             applyDialog.add(actionsGrid, pickerLayout, applyDialogConfirmButton);
+            actionsGrid.setMinWidth("50em");
             applyDialog.open();
         } else {
-            Notification.show("No duplicate loaded", Resources.NOTIFICATION_LENGTH, Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("No duplicate loaded", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.SEVERE, "No duplicate loaded");
         }
     }
 
-
     private void initiateGrid(String reportSelectValue) {
-
+        duplicatesGrid.removeAllColumns();
         String reportId = forMainView ? reportSelectValue : reportSelect.getValue().split(":")[0];
         if (reportId != null) {
             if (!reportId.isBlank()) {
                 duplicateGridService = new DuplicateGridService(reportId, client, forMainView);
-                DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(
-                    query -> {
-                        int offset = query.getOffset();
-                        int limit = query.getLimit();
-                        List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
-                        return duplicates.stream();
-                    }, query -> getDuplicateGridService().getTotalDuplicatesCount());
-                duplicatesGrid.setDataProvider(dataProvider);
+                if (duplicateGridService.getTotalDuplicatesCount() > 0) {
+                    DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(
+                        query -> {
+                            int offset = query.getOffset();
+                            int limit = query.getLimit();
+                            List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
+                            return duplicates.stream();
+                        }, query -> getDuplicateGridService().getTotalDuplicatesCount());
+                    duplicatesGrid.setDataProvider(dataProvider);
 
+                    duplicatesGrid.addColumn(new ComponentRenderer<VerticalLayout, DuplicateGrid>((grid -> {
+                        MinimalDuplicate dup = grid.getMinimalDuplicate();
+                        Label hashLabel = new Label("Duplicate: " + dup.getHash());
+                        Label sizeLabel = new Label("Size: " + dup.getSize());
+                        Label countLabel = new Label("Count: " + dup.getCount());
 
-                duplicatesGrid.addColumn(new ComponentRenderer<VerticalLayout, DuplicateGrid>((grid -> {
-                    MinimalDuplicate dup = grid.getMinimalDuplicate();
-                    Label hashLabel = new Label("Duplicate: " + dup.getHash());
-                    Label sizeLabel = new Label("Size: " + dup.getSize());
-                    Label countLabel = new Label("Count: " + dup.getCount());
+                        hashLabel.setClassName("duplicate-header-label");
+                        sizeLabel.setClassName("duplicate-header-label");
+                        countLabel.setClassName("duplicate-header-label");
+                        FormLayout formLayout = new FormLayout(hashLabel, sizeLabel, countLabel);
 
-                    hashLabel.setClassName("duplicate-header-label");
-                    sizeLabel.setClassName("duplicate-header-label");
-                    countLabel.setClassName("duplicate-header-label");
-                    FormLayout formLayout = new FormLayout(hashLabel, sizeLabel, countLabel);
+                        formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_TABLET, 3));
 
-                    formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_TABLET, 3));
+                        formLayout.setClassName("duplicate-header");
+                        formLayout.setSizeFull();
+                        VerticalLayout vLayout = new VerticalLayout();
+                        vLayout.add(formLayout);
+                        vLayout.add(grid.getItem());
+                        vLayout.setWidthFull();
+                        return vLayout;
+                    })));
+                    Logger.getGlobal().log(Level.INFO, "Grid initiated");
 
-                    formLayout.setClassName("duplicate-header");
-                    formLayout.setSizeFull();
-                    VerticalLayout vLayout = new VerticalLayout();
-                    vLayout.add(formLayout);
-                    vLayout.add(grid.getItem());
-                    vLayout.setWidthFull();
-                    return vLayout;
-                })));
-
-                duplicatesGrid.setSizeFull();
+                    duplicatesGrid.setSizeFull();
+                } else {
+                    Notification.show("No duplicates found for selected report", new Resources().getNotificationLength(), Position.TOP_END);
+                    Logger.getGlobal().log(Level.INFO, "No duplicates found for selected report");
+                }
             } else {
-                Notification.show("Unable to retrieve reports", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+                Notification.show("Unable to retrieve reports", new Resources().getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
         } else {
             System.out.println("Empty value in select");
         }
-        Logger.getGlobal().log(Level.INFO, "Grid initiated");
 
     }
 
@@ -258,16 +264,12 @@ public class ReportView extends VerticalLayout {
     private void getReportInfo() {
         Dialog dialog = new Dialog();
         VerticalLayout verticalLayout = new VerticalLayout();
-
+        reportSelect.getValue();
         Label durationLabel = new Label();
         Label dateStartLabel = new Label();
-
         Label filesScannedLabel = new Label();
-
         Label averageDuplicateCountLabel = new Label();
-
         Label userLabel = new Label();
-
         Label idLabel = new Label();
 
         verticalLayout.add(durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel, userLabel, idLabel);
@@ -297,12 +299,12 @@ public class ReportView extends VerticalLayout {
                 return reports;
 
             } catch (ParseException pe) {
-                Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+                Notification.show("Unable to read status", new Resources().getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         }
-        Notification.show("Unable to retrieve reports", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
+        Notification.show("Unable to retrieve reports", new Resources().getNotificationLength(), Position.TOP_END)
             .addThemeVariants(NotificationVariant.LUMO_ERROR);
         return null;
     }
@@ -317,12 +319,12 @@ public class ReportView extends VerticalLayout {
                 return String.valueOf(report.get("id"));
 
             } catch (ParseException pe) {
-                Notification.show("Unable to get last report id", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                Notification.show("Unable to get last report id", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
-            Notification.show("Unable to get last report", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+            Notification.show("Unable to get last report", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
