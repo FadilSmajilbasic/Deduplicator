@@ -1,11 +1,14 @@
 package samt.smajilbasic.deduplicator.controller;
 
+import java.io.File;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.juli.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -28,6 +31,7 @@ import samt.smajilbasic.deduplicator.PathType;
 import samt.smajilbasic.deduplicator.Validator;
 import samt.smajilbasic.deduplicator.entity.Action;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
+import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.exception.Response;
 import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.repository.AuthenticationDetailsRepository;
@@ -158,16 +162,13 @@ public class ActionController {
         String currentUser = authentication.getName();
 
         Integer schedulerIdInt = Validator.isInt(scheduler);
-        Logger.getGlobal().log(Level.INFO, "schedulerIdInt: " + schedulerIdInt);
-        if (schedulerRepository.existsById(schedulerIdInt)) {
+        if (!schedulerRepository.existsById(schedulerIdInt)) {
             return new ResponseEntity<Response>(new Response("Scheduler id invalid"), HttpStatus.BAD_REQUEST);
-
         }
         type = Validator.getActionType(type);
 
         if (type == null) {
             return new ResponseEntity<Response>(new Response("Action type invalid"), HttpStatus.BAD_REQUEST);
-
         }
         if (type.equals(ActionType.MOVE) && (newPath.trim().equalsIgnoreCase("") || newPath == null)) {
             return new ResponseEntity<Response>(new Response("New path not set while having type = MOVE"),
@@ -178,18 +179,19 @@ public class ActionController {
             return new ResponseEntity<Response>(new Response("File path invalid"), HttpStatus.BAD_REQUEST);
 
         }
-
-        if (Validator.getPathType(newPath) != PathType.Directory && !type.equals(ActionType.SCAN)) {
+        if (Validator.getPathType(newPath) != PathType.Directory && type.equals(ActionType.MOVE)) {
             return new ResponseEntity<Response>(new Response("New path is invalid or not a directory"),
                 HttpStatus.INTERNAL_SERVER_ERROR);
 
         }
+        if (type.equals(ActionType.MOVE) && newPath.charAt(newPath.length() - 1) != File.separatorChar) {
+            newPath += File.separator;
+        }
+
         Action action = new Action(type, path, newPath, adr.findById(currentUser).get(),
             schedulerRepository.findById(schedulerIdInt).get());
         actionRepository.save(action);
 
-        ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
-        checker.start();
         return action;
 
     }
