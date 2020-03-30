@@ -17,6 +17,10 @@ public class LogFormatter extends Formatter {
 
         builder.append("[").append(record.getLevel().getName()).append("]").append("\t");
 
+        if(record.getLevel().equals(Level.INFO)){
+            builder.append("\t");
+        }
+        
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSS");
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(record.getMillis());
