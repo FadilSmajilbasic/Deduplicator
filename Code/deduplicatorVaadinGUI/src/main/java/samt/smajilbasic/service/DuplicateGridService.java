@@ -54,16 +54,14 @@ public class DuplicateGridService {
             if(response.getStatusCode().equals(HttpStatus.OK)) {
                 try {
                     duplicatesArray = Utils.getArray((JSONArray) parser.parse(response.getBody()));
-                    List<MinimalDuplicate> duplicates = new ArrayList<MinimalDuplicate>();
-
                 } catch (ParseException pe) {
                     Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
-                    Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                    Notification.show("Unable to read status", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             }else{
                 Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
-                Notification.show("Unable to read status", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                Notification.show("Unable to read status", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         }
@@ -110,13 +108,13 @@ public class DuplicateGridService {
 
             } catch (ParseException pe) {
                 Notification
-                    .show("Unable to read paths from duplicate", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                    .show("Unable to read paths from duplicate", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
             Notification
-                .show("Unable to retrieve paths from duplicate", Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                .show("Unable to retrieve paths from duplicate", new Resources().getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
