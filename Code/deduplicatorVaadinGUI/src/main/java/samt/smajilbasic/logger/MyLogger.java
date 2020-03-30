@@ -29,22 +29,21 @@ public class MyLogger {
 
     public void setup() throws IOException {
         String logPath = props.getLogPath();
-        System.out.println("logPAth: " + logPath);
         Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         Path p = Paths.get(logPath);
         File logFolder = new File(p.toAbsolutePath().toString());
-        if(!logFolder.exists()){
-                if(Files.isWritable(Paths.get(logFolder.getParent()))){
-                    if(!logFolder.mkdir()){
-                        logPath = "";
-                    }else{
-                        Logger.getGlobal().log(Level.SEVERE,"Unable to make log directory");
-                        Logger.getGlobal().log(Level.INFO,"Writing logs to current working directory");
-                    }
-                }else {
-                    Logger.getGlobal().log(Level.SEVERE,"Unable to write to parent directory");
-                    Logger.getGlobal().log(Level.INFO,"Writing logs to current working directory");
+        if (!logFolder.exists()) {
+            if (Files.isWritable(Paths.get(logFolder.getParent()))) {
+                if (!logFolder.mkdir()) {
+                    logPath = "";
+                } else {
+                    Logger.getGlobal().log(Level.SEVERE, "Unable to make log directory");
+                    Logger.getGlobal().log(Level.INFO, "Writing logs to current working directory");
                 }
+            } else {
+                Logger.getGlobal().log(Level.SEVERE, "Unable to write to parent directory");
+                Logger.getGlobal().log(Level.INFO, "Writing logs to current working directory");
+            }
         }
         FileHandler fileHandler = new FileHandler(logPath + "log." + System.currentTimeMillis() + ".txt");
         fileHandler.setFormatter(new LogFormatter());
