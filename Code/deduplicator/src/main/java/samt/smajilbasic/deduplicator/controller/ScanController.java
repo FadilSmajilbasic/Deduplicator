@@ -30,6 +30,7 @@ import samt.smajilbasic.deduplicator.repository.ReportRepository;
 import samt.smajilbasic.deduplicator.scanner.ScanListener;
 import samt.smajilbasic.deduplicator.scanner.ScanManager;
 
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -120,13 +121,16 @@ public class ScanController implements ScanListener {
         if (gpr.count() > 0) {
             if (!currentScan.isAlive()) {
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                String authenticatedUser = authentication.getName();
-                AuthenticationDetails internalUser = adr.findById(authenticatedUser).get();
-
-                report = new Report(internalUser);
+                if (authentication != null) {
+                    Optional<AuthenticationDetails> tempUser = adr.findById(authentication.getName());
+                    report = tempUser.map(Report::new).orElseGet(() -> new Report(adr.findById("scheduler").get()));
+                } else {
+                    Logger.getGlobal().log(Level.WARNING, "No user set");
+//                    return new ResponseEntity<Response>(new Response("No user set"), HttpStatus.INTERNAL_SERVER_ERROR);
+                    report = new Report();
+                }
                 report.setStart(System.currentTimeMillis());
                 reportRepository.save(report);
-
                 currentScan.setReportRepository(reportRepository);
                 currentScan.setReportId(report.getId());
                 currentScan.setThreadCount(threadCount);
@@ -134,10 +138,12 @@ public class ScanController implements ScanListener {
                 currentScan.start();
                 return report;
             } else {
+                Logger.getGlobal().log(Level.WARNING, "Scan is already running");
                 return new ResponseEntity<Response>(new Response("Scan is already running"),
                     HttpStatus.ALREADY_REPORTED);
             }
         } else {
+            Logger.getGlobal().log(Level.SEVERE, "No path to scan set");
             return new ResponseEntity<Response>(new Response("No path to scan set"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
