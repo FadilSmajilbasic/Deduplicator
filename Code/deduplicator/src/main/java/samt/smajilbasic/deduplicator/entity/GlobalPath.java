@@ -108,7 +108,7 @@ public class GlobalPath {
 	 * Metodo setter per la variabile ignoreFile
 	 * @param ignoreFile true se il l'oggetto deve essere ignorato, false se deve essere preso in considerazione durante la scansione.
 	 */
-	private void setignoreFile(boolean ignoreFile) {
+	public void setignoreFile(boolean ignoreFile) {
 		this.ignoreFile = ignoreFile;
 	}
 

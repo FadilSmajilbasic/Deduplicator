@@ -2,8 +2,11 @@ package samt.smajilbasic.views;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vaadin.flow.component.dependency.CssImport;
 import org.springframework.http.HttpStatus;
@@ -143,20 +146,20 @@ public class PathView extends VerticalLayout {
             try {
                 resp = (JSONObject) parser.parse(response.getBody());
                 if (response.getStatusCode() == HttpStatus.OK) {
-                    Notification.show("Path successfully saved", Resources.NOTIFICATION_LENGTH, Position.TOP_END);
+                    Notification.show("Path successfully saved", new Resources().getNotificationLength(), Position.TOP_END);
                 } else {
 
                     System.out.println("[ERROR] saving path: " + resp.get("message").toString());
-                    Notification.show(resp.get("message").toString(), Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show(resp.get("message").toString(), new Resources().getNotificationLength(), Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } catch (ParseException pe) {
-                Notification.show("Unable to parse the response", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to parse the response", new Resources().getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to get response from server", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to get response from server", new Resources().getNotificationLength(), Position.TOP_END)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
         updatePaths();
@@ -169,11 +172,8 @@ public class PathView extends VerticalLayout {
     private void openRootSelect() {
         File[] rootsArray = File.listRoots();
         ArrayList<File> roots = new ArrayList<File>();
-        System.out.println("RootsArray: " + rootsArray.length);
 
-        for (File file : rootsArray) {
-            roots.add(file);
-        }
+        roots.addAll(Arrays.asList(rootsArray));
 
         if (roots.size() == 1) {
             root = roots.get(0);
@@ -251,7 +251,7 @@ public class PathView extends VerticalLayout {
 
                 for (JSONObject jsonObject : array) {
                     try {
-                        paths.add( encoder.getObjectMapper().readValue( jsonObject.toJSONString().replace("date","lastModified"), GlobalPath.class));
+                        paths.add(encoder.getObjectMapper().readValue(jsonObject.toJSONString().replace("date", "lastModified"), GlobalPath.class));
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
@@ -263,7 +263,7 @@ public class PathView extends VerticalLayout {
                     pathGrid.addColumn(GlobalPath::getPath).setHeader("Path").setFlexGrow(8);
                     pathGrid.addColumn(GlobalPath::getDateFormatted).setHeader("Date added").setFlexGrow(1);
                     pathGrid.addColumn(GlobalPath::isignoreFile).setHeader("Ignored").setFlexGrow(1);
-                    
+
                     pathGrid.asSingleSelect().addValueChangeListener(event -> {
                         if (event.getValue() != null) {
                             Dialog dialog = new Dialog();
@@ -291,9 +291,9 @@ public class PathView extends VerticalLayout {
                                         dialog.close();
                                     } catch (RuntimeException re) {
                                         Notification
-                                                .show("Invalid Path" + re.getMessage(), Resources.NOTIFICATION_LENGTH,
-                                                        Notification.Position.TOP_END)
-                                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                            .show("Invalid Path" + re.getMessage(), new Resources().getNotificationLength(),
+                                                Notification.Position.TOP_END)
+                                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     }
                                 });
                                 Button cancelButtonModify = new Button("Cancel", cancelEvent -> {
@@ -327,12 +327,12 @@ public class PathView extends VerticalLayout {
                 }
 
             } catch (ParseException pe) {
-                Notification.show("Unable to retrieve paths: " + pe.getMessage(), Resources.NOTIFICATION_LENGTH,
-                        Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to retrieve paths: " + pe.getMessage(), new Resources().getNotificationLength(),
+                    Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to retrieve paths", Resources.NOTIFICATION_LENGTH, Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to retrieve paths", new Resources().getNotificationLength(), Position.TOP_END)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
     }
@@ -341,7 +341,21 @@ public class PathView extends VerticalLayout {
      * Method that updates a path's type using the client.
      */
     private void modifyPath(GlobalPath oldPath, boolean newIgnoreValue) {
-        client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
+        HttpStatus response = client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
+        if (response.equals(HttpStatus.OK)) {
+            Logger.getGlobal().log(Level.INFO, "Successfully updated the path" + oldPath);
+            Notification.show("Successfully updated the path" + oldPath, new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        } else if (response.equals(HttpStatus.SERVICE_UNAVAILABLE)) {
+            Logger.getGlobal().log(Level.SEVERE, "Unable to get response from server");
+            Notification.show("Unable to get response from server", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        } else if (response.equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
+            Logger.getGlobal().log(Level.SEVERE, "Unable to update path - Unable to delete old value");
+            Notification.show("Unable to update path - Unable to delete old value", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        } else if (response.equals(HttpStatus.BAD_REQUEST)) {
+            Logger.getGlobal().log(Level.SEVERE, "Old path value invalid");
+            Notification.show("Old path value invalid", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
+
         updatePaths();
     }
 

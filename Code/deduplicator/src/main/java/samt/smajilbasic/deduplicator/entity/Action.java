@@ -17,7 +17,6 @@ import samt.smajilbasic.deduplicator.ActionType;
  * stato rilevato come duplicato.
  * Usa l'annotazione @Entity per segnalare a
  * Spring che si tratta di una classe che descrive una Tabella del database.
- * 
  */
 @Entity
 public class Action {
@@ -44,11 +43,11 @@ public class Action {
      */
     @Nullable
     private String newFilePath;
-    
+
     /**
      * L'attributo actionType specifica il tipo di azione. Può avere uno dei
      * segeunti valori: DELETE, MOVE, IGNORE, SCAN.
-     * 
+     * <p>
      * {@link samt.smajilbasic.deduplicator.ActionType}
      */
     private String actionType;
@@ -87,7 +86,7 @@ public class Action {
 
     /**
      * Costruttore della classe Action che riceve tutti i parametri.
-     * 
+     *
      * @param type      Il tipo di azione.
      * @param path      Il percorso del file.
      * @param newPath   Il nuovo percorso (nel caso che type sia MOVE).
@@ -106,7 +105,7 @@ public class Action {
 
     /**
      * Costruttore della classe Action che non riceve il nuovo percorso.
-     * 
+     *
      * @param type      Il tipo di azione.
      * @param path      Il percorso del file.
      * @param user      L'utente che ha aggiunto l'azione.
@@ -124,7 +123,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo actionType.
-     * 
+     *
      * @return il tipo di azione.
      */
     public String getActionType() {
@@ -133,7 +132,7 @@ public class Action {
 
     /**
      * Metodo setter per l'attributo actionType.
-     * 
+     *
      * @param actionType il tipo da impostare
      */
     public void setActionType(String actionType) {
@@ -142,7 +141,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo dateAdded.
-     * 
+     *
      * @return la data d'inserimento.
      */
     public Long getDateAdded() {
@@ -151,6 +150,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo executed.
+     *
      * @return true se l'azione è stata eseguira, false altrimenti
      */
     public boolean isExecuted() {
@@ -167,6 +167,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo filePath.
+     *
      * @return il percorso fel file.
      */
     public String getFilePath() {
@@ -175,6 +176,7 @@ public class Action {
 
     /**
      * Metodo setter per l'attributo filePath.
+     *
      * @param filePath il percorso del file da impostare.
      */
     public void setFilePath(String filePath) {
@@ -183,6 +185,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo id.
+     *
      * @return l'id dell'azione.
      */
     public Integer getId() {
@@ -191,6 +194,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo newFilePath.
+     *
      * @return il nuovo percorso, oppure null se il tipo di azione è diverso da MOVE.
      */
     public String getNewFilePath() {
@@ -200,10 +204,11 @@ public class Action {
     /**
      * Metodo setter per l'attributo newFilePath.
      * newFilePath verrà impostato su null nel caso che l'actionType sia diverso da null.
+     *
      * @param newFilePath il nuovo percorso da impostare.
      */
     public void setNewFilePath(String newFilePath) {
-        if(getActionType() == ActionType.MOVE)
+        if (actionType.equals(ActionType.MOVE))
             this.newFilePath = newFilePath;
         else
             this.newFilePath = null;
@@ -211,6 +216,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo scheduler.
+     *
      * @return lo scheduler.
      */
     public Scheduler getScheduler() {
@@ -219,6 +225,7 @@ public class Action {
 
     /**
      * Metodo setter per l'attributo scheduler.
+     *
      * @param scheduler lo scheduler da impostare.
      */
     public void setScheduler(Scheduler scheduler) {
@@ -227,6 +234,7 @@ public class Action {
 
     /**
      * Metodo getter per l'attributo user.
+     *
      * @return lo user che ha inserito l'azione.
      */
     public AuthenticationDetails getUser() {

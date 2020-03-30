@@ -100,7 +100,7 @@ public class DuplicatesButtonLayout extends FormLayout {
                 dialog.close();
             } else {
                 Notification.show("Path selected is not a directory or it is not writeable",
-                    Resources.NOTIFICATION_LENGTH, Notification.Position.TOP_END)
+                    new Resources().getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Move dialog - path selected is not a directory or it is not writeable");
             }

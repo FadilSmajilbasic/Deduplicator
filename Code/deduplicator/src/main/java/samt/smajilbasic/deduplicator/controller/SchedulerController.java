@@ -143,6 +143,7 @@ public class SchedulerController {
             scheduler.setTimeStart(date);
             schedulerRepository.save(scheduler);
             BeanDefinitionRegistry factory = (BeanDefinitionRegistry) context.getAutowireCapableBeanFactory();
+            ((DefaultListableBeanFactory) factory).destroySingleton("scheduleChecker");
             ScheduleChecker checker = (ScheduleChecker) context.getBean("scheduleChecker");
             synchronized (checker) {
                 checker.start();

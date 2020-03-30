@@ -71,8 +71,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(AuthenticationManagerBuilder auth) {
         try {
             auth.userDetailsService(getInMemoryUserDetailsManager());
-            Logger.getGlobal().log(Level.INFO,
-                "userDetailsManager set");
         } catch (Exception ex) {
             Logger.getGlobal().log(Level.SEVERE,
                 "Unable to set inMemoryUserDetailsManagerConfigurer ");
