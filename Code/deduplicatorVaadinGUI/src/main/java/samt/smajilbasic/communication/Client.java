@@ -90,30 +90,18 @@ public class Client {
 
         try {
             FileInputStream in = new FileInputStream(new File("deduplicator.p12"));
-
-            assert props != null;
             String caPassword = new String(Base64.getDecoder().decode(props.getCAPassword()));
-
             try {
                 keyStore = KeyStore.getInstance("PKCS12");
-                keyStore.load(in,
-                    caPassword.toCharArray());
-            } catch (IOException e) {
-                StackTraceElement[] output =
-                    e.getStackTrace();
-                for (StackTraceElement element : output) {
-                    System.out.println(element.toString());
-                }
-            } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+                keyStore.load(in, caPassword.toCharArray());
+            } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+                Logger.getGlobal().log(Level.SEVERE, "Unable to load SSL key into HTTPS client ");
                 e.printStackTrace(System.out);
             }
-
             try {
-                TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String
-                    authType) -> true;
-                SSLContext sslContext = SSLContextBuilder.create()
-                    .loadKeyMaterial(keyStore, caPassword.toCharArray()).loadTrustMaterial(null,
-                        acceptingTrustStrategy).build();
+                TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+                SSLContext sslContext = SSLContextBuilder.create().loadKeyMaterial(keyStore, caPassword.toCharArray())
+                        .loadTrustMaterial(null, acceptingTrustStrategy).build();
 
                 HttpClient httpClient = HttpClients.custom().setSSLContext(sslContext).build();
 
@@ -123,8 +111,8 @@ public class Client {
                 restTemplate = new RestTemplate(requestFactory);
                 return true;
 
-            } catch (UnrecoverableKeyException | NoSuchAlgorithmException |
-                KeyStoreException | KeyManagementException e) {
+            } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException
+                    | KeyManagementException e) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to create client: " + e.getMessage());
                 e.printStackTrace();
                 return false;
@@ -133,7 +121,6 @@ public class Client {
             Logger.getGlobal().log(Level.SEVERE, "CA certificate not found");
             return false;
         }
-
     }
 
     public HttpStatus isAuthenticated(String host, int port) throws RestClientException {
@@ -142,8 +129,8 @@ public class Client {
         ResponseEntity<String> response = null;
 
         try {
-            response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET, requestEntity,
-                String.class);
+            response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET,
+                    requestEntity, String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: " + rce.getMessage());
             if (rce.getMessage().startsWith("I/O error on GET request")) {
@@ -166,12 +153,26 @@ public class Client {
 
     }
 
+    private HttpHeaders createHeaders(boolean hasFormData) {
+        HttpHeaders header = new HttpHeaders();
+
+        String auth = username + ":" + password;
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.US_ASCII));
+        String authHeader = "Basic " + new String(encodedAuth);
+
+        header.add("Authorization", authHeader);
+
+        if (hasFormData) {
+            header.setContentType(MediaType.MULTIPART_FORM_DATA);
+        }
+        return header;
+    }
     public ResponseEntity<String> get(String path) {
 
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
-                String.class, requestEntity);
+                    String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 return response;
@@ -195,7 +196,7 @@ public class Client {
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
-                String.class);
+                    String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
             System.err.println("[ERROR] Delete rce: " + rce.getMessage());
@@ -205,32 +206,15 @@ public class Client {
 
     }
 
-    private HttpHeaders createHeaders(boolean hasFormData) {
-        HttpHeaders header = new HttpHeaders();
-
-        String auth = username + ":" + password;
-        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.US_ASCII));
-        String authHeader = "Basic " + new String(encodedAuth);
-
-        header.add("Authorization", authHeader);
-
-        if (hasFormData) {
-            header.setContentType(MediaType.MULTIPART_FORM_DATA);
-        }
-        return header;
-    }
-
     public ResponseEntity<String> post(String path, MultiValueMap<String, Object> values) {
-
         values = values == null ? new LinkedMultiValueMap<>() : values;
-
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
-                String.class);
+                    String.class);
         } catch (RestClientException rce) {
-            System.err.println("[ERROR] Post rce: " + rce.getMessage());
+            Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
             rce.printStackTrace(System.out);
         }
         return response;
@@ -245,7 +229,7 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
-                String.class);
+                    String.class);
         } catch (RestClientException rce) {
             try {
                 JSONObject resp = (JSONObject) parser.parse(rce.getMessage());
@@ -274,7 +258,6 @@ public class Client {
 
     public HttpStatus deletePath(GlobalPath value) {
 
-
         if (value != null) {
             ResponseEntity<String> response = delete("/path", value.getPath());
             return response.getStatusCode();
@@ -283,7 +266,6 @@ public class Client {
         }
 
     }
-
 
     public HttpStatus modifyPath(GlobalPath oldPath, String newIgnoreValue) {
         if (oldPath != null) {
@@ -313,7 +295,7 @@ public class Client {
                     String body = response.getBody();
                     JSONObject resp = (JSONObject) parser.parse(body);
                     if (resp.get("fileCount") != null && resp.get("progress") != null
-                        && resp.get("timestamp") != null) {
+                            && resp.get("timestamp") != null) {
                         return resp;
                     } else {
                         HashMap<String, String> error = new HashMap<String, String>();
@@ -348,12 +330,8 @@ public class Client {
         }
     }
 
-    public HttpStatus startScan() {
-        ResponseEntity<String> response = post("scan/start/", null);
-        return response.getStatusCode();
-    }
-
-    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber, String repetition) {
+    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
+            String repetition) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("weekly", Objects.requireNonNullElse(weekNumber, ""));
@@ -383,26 +361,35 @@ public class Client {
                 JSONObject responseJSON = (JSONObject) parser.parse(response.getBody());
                 schedulerId = responseJSON.get("schedulerId").toString();
             } catch (ParseException e) {
-                Notification.show("Unable to parse server response", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to parse server response", new Resources().getNotificationLength(),
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse server response");
                 return HttpStatus.BAD_REQUEST;
             } catch (NullPointerException npe) {
-                Notification.show("Unable to add action - insertScheduler response is null", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification
+                        .show("Unable to add action - insertScheduler response is null",
+                                new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to add action - insert scheduler response is null ");
                 return HttpStatus.BAD_REQUEST;
             }
         }
         for (GlobalPath path : actions) {
             Action action = path.getAction();
-            ResponseEntity<String> response = insertAction(action.getType(), path.getPath(), action.getNewPath(), schedulerId);
+            ResponseEntity<String> response = insertAction(action.getType(), path.getPath(), action.getNewPath(),
+                    schedulerId);
             if (response != null) {
-                Logger.getGlobal().log(Level.INFO, "Added action " + path.getPath() + " status: " + response.getStatusCode());
+                Logger.getGlobal().log(Level.INFO,
+                        "Added action " + path.getPath() + " status: " + response.getStatusCode());
                 if (response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
-                    Notification.show("Unable to add action of: " + path.getPath(), new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Unable to add action of: " + path.getPath(),
+                            new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.WARNING, "Unable to add action of: " + path.getPath());
                 }
             } else {
-                Logger.getGlobal().log(Level.SEVERE, "No response from server - unable to add action of " + path.getPath());
+                Logger.getGlobal().log(Level.SEVERE,
+                        "No response from server - unable to add action of " + path.getPath());
 
             }
 
@@ -444,7 +431,8 @@ public class Client {
 
     }
 
-    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber, String repetition) {
+    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
+            String repetition) {
         ResponseEntity<String> response = insertSchedule(dateTime, weekNumber, monthNumber, repetition);
         if (response != null) {
             ResponseEntity<String> responseEntity = response;
@@ -455,12 +443,14 @@ public class Client {
                 return insertAction("SCAN", null, null, schedulerId);
             } catch (ParseException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server");
-                Notification.show("Unable to parse response from server", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to parse response from server", new Resources().getNotificationLength(),
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
             Logger.getGlobal().log(Level.SEVERE, "Unable to insert scheduler");
-            Notification.show("Unable to insert scheduler", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to insert scheduler", new Resources().getNotificationLength(),
+                    Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
     }

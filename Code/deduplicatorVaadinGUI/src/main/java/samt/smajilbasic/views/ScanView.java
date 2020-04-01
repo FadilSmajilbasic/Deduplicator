@@ -349,7 +349,7 @@ public class ScanView extends VerticalLayout {
      * The startScan method start a scan and a new statusThread
      */
     private void startScan() {
-        HttpStatus resp = client.startScan();
+        HttpStatus resp = client.post("scan/start/", null).getStatusCode();
         paused = false;
         if (resp == HttpStatus.OK) {
             Notification.show("Scan started", new Resources().getNotificationLength(), Position.TOP_END);
