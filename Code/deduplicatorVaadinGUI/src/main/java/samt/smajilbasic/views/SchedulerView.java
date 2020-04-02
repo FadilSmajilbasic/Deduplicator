@@ -33,6 +33,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.properties.Settings;
 
 /**
  * SchedulerView
@@ -50,6 +51,7 @@ public class SchedulerView extends VerticalLayout {
     private Client client;
     private int weekNumber = 0;
     private int monthNumber = 0;
+    private Settings settings = new Settings();
 
     public SchedulerView() {
         super();
@@ -77,12 +79,12 @@ public class SchedulerView extends VerticalLayout {
                     if (!timePicker.getValue().toString().isBlank() && !datePicker.getValue().toString().isBlank()) {
                         LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
                         if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
-                            Notification.show("Date and time can't be in the past", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Notification.show("Date and time can't be in the past", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                             datePicker.setValue(LocalDate.now());
                             timePicker.setValue(LocalTime.now());
                         }
                     } else {
-                        Notification.show("Date and time can't be empty", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("Date and time can't be empty", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 }
             };
@@ -146,14 +148,14 @@ public class SchedulerView extends VerticalLayout {
                 if (response != null) {
                     if (response.getStatusCode().equals(HttpStatus.OK)) {
                         Logger.getGlobal().log(Level.INFO, "Schedule added successfully");
-                        Notification.show("Schedule added successfully", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        Notification.show("Schedule added successfully", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                     } else {
                         Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
-                        Notification.show("Unable to add scheduler ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("Unable to add scheduler ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 } else {
                     Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
-                    Notification.show("Unable to add scheduler ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Unable to add scheduler ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             });
             pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);

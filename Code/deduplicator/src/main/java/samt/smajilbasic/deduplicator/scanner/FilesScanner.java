@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * FilesScanner
@@ -30,7 +32,7 @@ public class FilesScanner extends Thread {
 
         paths.iterator().forEachRemaining(pathsLinkedList::add);
 
-        boolean test = true;
+        boolean test;
         long start = System.currentTimeMillis();
         try {
             while (pathsLinkedList.peek() != null) {
@@ -61,12 +63,13 @@ public class FilesScanner extends Thread {
 
                         }
                     } else {
-                        // System.err.println("[ERROR] FileScanner unable to read file: " + path);
+                        Logger.getGlobal().log(Level.SEVERE,"FileScanner unable to read file: " + path);
                     }
                 }
             }
         } catch (OutOfMemoryError oome) {
-            System.err.println("[ERROR] FileScanner too many files in the paths specified: " + scanPaths.size());
+            Logger.getGlobal().log(Level.SEVERE,"FileScanner too many files in the paths specified: " + scanPaths.size());
+
         }
 
         System.out.println("File scanner finished in " + (System.currentTimeMillis() - start) + "ms");

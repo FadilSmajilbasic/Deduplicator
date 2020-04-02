@@ -126,7 +126,6 @@ public class ScanController implements ScanListener {
                     report = tempUser.map(Report::new).orElseGet(() -> new Report(adr.findById("scheduler").get()));
                 } else {
                     Logger.getGlobal().log(Level.WARNING, "No user set");
-//                    return new ResponseEntity<Response>(new Response("No user set"), HttpStatus.INTERNAL_SERVER_ERROR);
                     report = new Report();
                 }
                 report.setStart(System.currentTimeMillis());
@@ -239,12 +238,12 @@ public class ScanController implements ScanListener {
     public ResponseEntity<?> getStatus() {
         try {
             if (currentScan != null) {
-                System.out.println("report id " + currentScan.getReportId());
                 Object scanStatus = new Object() {
                     public int fileCount = fileRepository.findByReport(report);
                     public float progress = currentScan.scanProgress;
                     public long timestamp = report.getStart();
                     public int reportId = report.getId();
+                    public int totalFiles = currentScan.totalFiles;
                 };
 
                 Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();

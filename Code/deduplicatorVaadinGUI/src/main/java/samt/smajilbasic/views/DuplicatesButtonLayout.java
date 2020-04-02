@@ -16,6 +16,7 @@ import samt.smajilbasic.model.ActionType;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.entity.GlobalPath;
+import samt.smajilbasic.properties.Settings;
 
 import java.io.File;
 import java.util.Optional;
@@ -23,6 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DuplicatesButtonLayout extends FormLayout {
+
+    private Settings settings = new Settings();
 
     public DuplicatesButtonLayout(GlobalPath item) {
         Button deleteButton = new Button("Delete");
@@ -100,7 +103,7 @@ public class DuplicatesButtonLayout extends FormLayout {
                 dialog.close();
             } else {
                 Notification.show("Path selected is not a directory or it is not writeable",
-                    new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    settings.getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Move dialog - path selected is not a directory or it is not writeable");
             }

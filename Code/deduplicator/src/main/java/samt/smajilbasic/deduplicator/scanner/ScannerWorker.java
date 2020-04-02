@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.persistence.EntityExistsException;
 
@@ -34,19 +36,18 @@ public class ScannerWorker extends Thread {
     public void run() {
         if (file.isFile()) {
             try {
+
                 RandomAccessFile fileRAF = new RandomAccessFile(file.getAbsolutePath(), "r");
                 String hash = getHash(fileRAF, "MD5");
                 long size = fileRAF.length();
                 Long lastModified = file.lastModified();
                 fileRAF.close();
                 samt.smajilbasic.deduplicator.entity.File record = new samt.smajilbasic.deduplicator.entity.File(
-                        file.getAbsolutePath(), lastModified, hash, size, report);
-
+                    file.getAbsolutePath(), lastModified, hash, size, report);
                 try {
                     fileRepository.save(record);
                 } catch (EntityExistsException eee) {
-                    System.err
-                            .println("[ERROR] Thread " + this.getName() + " File already exists: " + record.getPath());
+                    Logger.getGlobal().log(Level.SEVERE, "Thread " + this.getName() + " File already exists: " + record.getPath());
                     synchronized (listener) {
                         listener.fileNotSaved();
                     }
@@ -82,7 +83,7 @@ public class ScannerWorker extends Thread {
 
     /**
      * Metodo che restituisce il hash del file che gli viene passato come parametro.
-     * 
+     *
      * @param file il file dal quale verrà generato il hash.
      * @param mode il tipo di hash da generare.
      * @return il hash del cententuto del file in formato stringa.
@@ -100,8 +101,8 @@ public class ScannerWorker extends Thread {
             int unitsize;
             while (read < end) {
                 unitsize = (int) (((end - read) >= BUFFER_SIZE) ? BUFFER_SIZE : (end - read)); // controllo se sono
-                                                                                               // arrivato in fondo al
-                                                                                               // file.
+                // arrivato in fondo al
+                // file.
                 file.read(buffer, 0, unitsize); // leggo un chunk del file definito dall'attributo BUFFER_SIZE
                 messageDigest.update(buffer, 0, unitsize); // aggiorno il hash con i nuovi dati letti.
                 read += unitsize; // sposto il buffer al prossimo chunk di dati.

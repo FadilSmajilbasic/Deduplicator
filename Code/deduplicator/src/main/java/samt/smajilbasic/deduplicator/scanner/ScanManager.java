@@ -65,7 +65,7 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
     /**
      * L'attributo filesScanned contiene il numero di files scansionati.
      */
-    private Integer totalFiles = 0;
+    public Integer totalFiles = 0;
 
     public float scanProgress = 0f;
     /**
@@ -200,8 +200,8 @@ public class ScanManager extends Thread implements ScannerWorkerListener {
     private String calcuateProgress() {
         if (totalFiles != 0) {
             scanProgress = (1f
-                    - (((float) totalFiles - (float) fileRepository.findByReport(report) - getUnsuccessfulSaves())
-                            / (float) totalFiles));
+                - (((float) totalFiles - (float) fileRepository.findByReport(report) - getUnsuccessfulSaves())
+                / (float) totalFiles));
         } else {
             scanProgress = -1;
         }

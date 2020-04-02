@@ -41,12 +41,14 @@ import org.json.simple.parser.ParseException;
 import org.springframework.http.ResponseEntity;
 
 import samt.smajilbasic.entity.MinimalDuplicate;
+import samt.smajilbasic.entity.Report;
 import samt.smajilbasic.model.ActionType;
 import samt.smajilbasic.model.DuplicateGrid;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.GlobalPath;
 import samt.smajilbasic.model.Utils;
+import samt.smajilbasic.properties.Settings;
 import samt.smajilbasic.service.DuplicateGridService;
 
 /**
@@ -72,6 +74,7 @@ public class ReportView extends VerticalLayout {
 
     private Select<String> reportSelect;
     private boolean forMainView = false;
+    private Settings settings = new Settings();
 
     public ReportView() {
         this(false);
@@ -97,7 +100,11 @@ public class ReportView extends VerticalLayout {
                 infoButton.setIcon(VaadinIcon.INFO.create());
 
                 infoButton.addClickListener(event -> {
-                    getReportInfo();
+                    if (!Objects.requireNonNullElse(reportSelect.getValue(), "").isBlank()) {
+                        getReportInfo();
+                    } else {
+                        Notification.show("No report chosen", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
                 });
                 Button applyButton = new Button("Apply selected changes", event -> {
                     checkActions();
@@ -170,7 +177,7 @@ public class ReportView extends VerticalLayout {
                 public void valueChanged(ValueChangeEvent<?> event) {
                     LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
                     if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
-                        Notification.show("Date and time can't be in the past", new Resources().getNotificationLength(),
+                        Notification.show("Date and time can't be in the past", settings.getNotificationLength(),
                             Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         Logger.getGlobal().log(Level.SEVERE, "Date and time can't be in the past");
                         datePicker.setValue(LocalDate.now());
@@ -194,7 +201,7 @@ public class ReportView extends VerticalLayout {
             actionsGrid.setMinWidth("50em");
             applyDialog.open();
         } else {
-            Notification.show("No duplicate loaded", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("No duplicate loaded", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.SEVERE, "No duplicate loaded");
         }
     }
@@ -240,11 +247,11 @@ public class ReportView extends VerticalLayout {
 
                     duplicatesGrid.setSizeFull();
                 } else {
-                    Notification.show("No duplicates found for selected report", new Resources().getNotificationLength(), Position.TOP_END);
+                    Notification.show("No duplicates found for selected report", settings.getNotificationLength(), Position.TOP_END);
                     Logger.getGlobal().log(Level.INFO, "No duplicates found for selected report");
                 }
             } else {
-                Notification.show("Unable to retrieve reports", new Resources().getNotificationLength(), Position.TOP_END)
+                Notification.show("Unable to retrieve reports", settings.getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
@@ -264,18 +271,37 @@ public class ReportView extends VerticalLayout {
     private void getReportInfo() {
         Dialog dialog = new Dialog();
         VerticalLayout verticalLayout = new VerticalLayout();
-        reportSelect.getValue();
-        Label durationLabel = new Label();
-        Label dateStartLabel = new Label();
-        Label filesScannedLabel = new Label();
-        Label averageDuplicateCountLabel = new Label();
-        Label userLabel = new Label();
-        Label idLabel = new Label();
 
-        verticalLayout.add(durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel, userLabel, idLabel);
+        Report report = client.getReport(reportSelect.getValue().split(":")[0]);
+        if (report != null) {
 
-        dialog.add(verticalLayout);
-        dialog.open();
+            Calendar dateStartCalendar = Calendar.getInstance();
+            dateStartCalendar.setTimeInMillis(report.getStart());
+
+            Label durationLabel = new Label("Duration: " + report.getDuration() / 1000 + "s");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+            Label dateStartLabel = new Label("Date start : " + dateFormat.format(dateStartCalendar.getTime()));
+            Label filesScannedLabel = new Label("Files scanned: " + report.getFilesScanned().toString());
+            Label averageDuplicateCountLabel = new Label("Average duplicate count:  " + report.getAverageDuplicateCount().toString());
+            Label userLabel;
+            try {
+                userLabel = new Label("User: " + ((JSONObject) parser.parse(report.getUser())).get("username"));
+            } catch (ParseException pe) {
+                Logger.getGlobal().log(Level.WARNING, "Unable to parse user of report");
+                userLabel = new Label("User: unknown");
+            }
+            Label idLabel = new Label("Id: " + report.getId().toString());
+
+            verticalLayout.add(idLabel, durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel, userLabel,
+                new Button("Close", event -> dialog.close()));
+
+            dialog.add(verticalLayout);
+            dialog.open();
+        } else {
+            Notification.show("Unable to get report information", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Logger.getGlobal().log(Level.SEVERE, "Unable to get report information");
+
+        }
     }
 
     private List<String> getReports() {
@@ -299,12 +325,12 @@ public class ReportView extends VerticalLayout {
                 return reports;
 
             } catch (ParseException pe) {
-                Notification.show("Unable to read status", new Resources().getNotificationLength(), Position.TOP_END)
+                Notification.show("Unable to read status", settings.getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         }
-        Notification.show("Unable to retrieve reports", new Resources().getNotificationLength(), Position.TOP_END)
+        Notification.show("Unable to retrieve reports", settings.getNotificationLength(), Position.TOP_END)
             .addThemeVariants(NotificationVariant.LUMO_ERROR);
         return null;
     }
@@ -319,12 +345,12 @@ public class ReportView extends VerticalLayout {
                 return String.valueOf(report.get("id"));
 
             } catch (ParseException pe) {
-                Notification.show("Unable to get last report id", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                Notification.show("Unable to get last report id", settings.getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
-            Notification.show("Unable to get last report", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+            Notification.show("Unable to get last report", settings.getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }

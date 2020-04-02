@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -66,7 +67,7 @@ public class Report {
      * per evitare di creare un json infonito perchè {@link AuthenticationDetails}
      * contiene un riferimento a Report.
      */
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
     private AuthenticationDetails user;
@@ -98,7 +99,7 @@ public class Report {
 
     /**
      * Metodo getter per la variabile id.
-     * 
+     *
      * @return l'id del rapporto.
      */
     public Integer getId() {
@@ -107,7 +108,7 @@ public class Report {
 
     /**
      * Metodo getter della variabile duration.
-     * 
+     *
      * @return la durata della scansione in millisecondi.
      */
     public Long getDuration() {
@@ -116,7 +117,7 @@ public class Report {
 
     /**
      * Metodo setter per la variabile duration.
-     * 
+     *
      * @param duration la durata della scansione da impostare in millisecondi.
      */
     public void setDuration(Long duration) {
@@ -125,7 +126,7 @@ public class Report {
 
     /**
      * Metodo getter per l'attributo start;
-     * 
+     *
      * @return la data e ora d'avvio della scansione in formato timestamp.
      */
     public Long getStart() {
@@ -134,7 +135,7 @@ public class Report {
 
     /**
      * Metodo setter per l'attributo start.
-     * 
+     *
      * @param start la data e ora d'avvio della scansione in formato timestamp.
      */
     public void setStart(Long start) {
@@ -143,9 +144,9 @@ public class Report {
 
     /**
      * Metodo getter per l'attributo averageDuplicateCount.
-     * 
+     *
      * @return il rapporto tra il numero di duplicati e il numero di file
-     *         scansionati.
+     * scansionati.
      */
     public Float getAverageDuplicateCount() {
         return averageDuplicateCount;
@@ -153,6 +154,7 @@ public class Report {
 
     /**
      * Metodo setter per l'attributo averageDuplicateCount.
+     *
      * @param averageDuplicateCount il rapportdo dei duplicati e dei file trovati da impostare.
      */
     public void setAverageDuplicateCount(Float averageDuplicateCount) {
@@ -161,6 +163,7 @@ public class Report {
 
     /**
      * Metodo getter per l'attributo user.
+     *
      * @return l'utente che ha inizializzato la sansione.
      */
     public AuthenticationDetails getUser() {
@@ -169,6 +172,7 @@ public class Report {
 
     /**
      * Metodo setter per l'attributo user.
+     *
      * @param user l'utente da impostare.
      */
     private void setUser(AuthenticationDetails user) {
@@ -180,6 +184,7 @@ public class Report {
 
     /**
      * Metodo getter per l'attributo file.
+     *
      * @return la lista dei file scansionati.
      */
     public List<File> getFile() {
@@ -188,6 +193,7 @@ public class Report {
 
     /**
      * Metodo getter per l'attributo filesScanned.
+     *
      * @return il numero di file scansionati.
      */
     public Integer getFilesScanned() {
@@ -196,6 +202,7 @@ public class Report {
 
     /**
      * Metodo setter per l'attributo filesScanned.
+     *
      * @param filesScanned il numero di file che sono stati scansionati.
      */
     public void setFilesScanned(Integer filesScanned) {

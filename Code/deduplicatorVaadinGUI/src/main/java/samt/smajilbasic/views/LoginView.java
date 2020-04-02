@@ -30,10 +30,12 @@ import samt.smajilbasic.model.Validator;
 import samt.smajilbasic.authentication.AccessControl;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.properties.Settings;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,6 +80,8 @@ public class LoginView extends VerticalLayout {
     private FormLayout form;
 
     AccessControl accessControl;
+    private Settings settings = new Settings();
+    PasswordField certificatePassword;
 
     /**
      * Base constructor of the LoginView class. It creates the LoginView GUI with
@@ -102,11 +106,19 @@ public class LoginView extends VerticalLayout {
 
         certificateUpload = new Upload(buffer);
         certificateUpload.addSucceededListener(event -> {
-            Notification.show("File uploaded successfully", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Notification.show("File uploaded successfully", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             writeCertificate(buffer.getInputStream());
+        });
+        certificateUpload.addFailedListener(event -> {
+            Notification.show("Unable to upload file: " + event.getReason().getMessage(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        });
+        certificateUpload.addFileRejectedListener(event ->{
+            Notification.show("Unable to upload file: " + event.getErrorMessage(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         });
         certificateUpload.setUploadButton(new Button("Upload pkcs12 certificate"));
         certificateUpload.setAcceptedFileTypes("application/x-pkcs12");
+
+        certificatePassword = new PasswordField("Certificate password");
 
         portTextField.setStep(1);
         portTextField.setMin(1);
@@ -128,7 +140,8 @@ public class LoginView extends VerticalLayout {
         passwordField.getStyle().set("margin-left", "0px");
         form.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("20em", 2));
         form.add(usernameTextField, passwordField);
-        form.setColspan(certificateUpload,2);
+        form.setColspan(certificateUpload, 2);
+        form.setColspan(certificatePassword, 2);
         Div container = new Div(form);
         container.setWidth("50%");
         setAlignItems(Alignment.CENTER);
@@ -143,10 +156,10 @@ public class LoginView extends VerticalLayout {
      */
     private void toggleView() {
         if (!defaultView) {
-            form.remove(hostTextField, portTextField, certificateUpload);
+            form.remove(hostTextField, portTextField, certificateUpload, certificatePassword);
 
         } else {
-            form.add(hostTextField, portTextField, certificateUpload);
+            form.add(hostTextField, portTextField, certificateUpload, certificatePassword);
         }
         advancedViewButton.setText(defaultView ? "Advanced View" : "Basic View");
         defaultView = !defaultView;
@@ -166,57 +179,66 @@ public class LoginView extends VerticalLayout {
         if (!user.isBlank()) {
             if (Validator.isValidIP(host) || host.equals("localhost")) {
                 if (port > 0 && port <= 65535) {
+                    if(!certificatePassword.getValue().isBlank())
+                        settings.setCAPassword(Base64.getEncoder().encodeToString(certificatePassword.getValue().getBytes()));
                     client = (Client) context.getBean("connectionClient");
-                    if(client.init(user, pass)) {
-                        HttpStatus resp = client.isAuthenticated(host, port);
+                    try {
+                        if (client.init(user, pass)) {
+                            HttpStatus resp = client.isAuthenticated(host, port);
 
-                        switch (resp) {
-                            case OK:
-                                Logger.getGlobal().log(Level.INFO, "User signed in successfully");
-                                accessControl.signedIn(user, client);
-                                UI.getCurrent().navigate("");
-                                break;
-                            case UNAUTHORIZED:
-                                Notification.show("Invalid credentials", new Resources().getNotificationLength(), Notification.Position.TOP_END)
-                                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                Logger.getGlobal().log(Level.WARNING, "Invalid credentials");
-                                break;
-                            case SERVICE_UNAVAILABLE:
-                                Notification
-                                    .show("Server not reachable", new Resources().getNotificationLength(), Notification.Position.TOP_END)
-                                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                Logger.getGlobal().log(Level.SEVERE, "Server not reachable");
-                                break;
-                            case EXPECTATION_FAILED:
-                                Notification.show("Host not registered as an alias in the certificate, try uploading a new certificate", new Resources().getNotificationLength(), Notification.Position.TOP_END)
-                                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                Logger.getGlobal().log(Level.SEVERE, "Host not registered as an alias in the certificate");
-                                break;
-                            default:
-                                Notification.show("Unknown error occured", new Resources().getNotificationLength(), Notification.Position.TOP_END)
-                                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                                Logger.getGlobal().log(Level.SEVERE, "Unknown error occured");
-                                break;
+                            switch (resp) {
+                                case OK:
+                                    Logger.getGlobal().log(Level.INFO, "User signed in successfully");
+                                    accessControl.signedIn(user, client);
+                                    UI.getCurrent().navigate("");
+                                    break;
+                                case UNAUTHORIZED:
+                                    Notification.show("Invalid credentials", settings.getNotificationLength(), Notification.Position.TOP_END)
+                                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    Logger.getGlobal().log(Level.WARNING, "Invalid credentials");
+                                    break;
+                                case SERVICE_UNAVAILABLE:
+                                    Notification
+                                        .show("Server not reachable", settings.getNotificationLength(), Notification.Position.TOP_END)
+                                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    Logger.getGlobal().log(Level.SEVERE, "Server not reachable");
+                                    break;
+                                case EXPECTATION_FAILED:
+                                    Notification.show("Host not registered as an alias in the certificate, try uploading a new certificate", settings.getNotificationLength(), Notification.Position.TOP_END)
+                                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    Logger.getGlobal().log(Level.SEVERE, "Host not registered as an alias in the certificate");
+                                    break;
+                                default:
+                                    Notification.show("Unknown error occured", settings.getNotificationLength(), Notification.Position.TOP_END)
+                                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                    Logger.getGlobal().log(Level.SEVERE, "Unknown error occured");
+                                    break;
+                            }
+                        } else {
+                            Notification.show("Unable to initiate client, have you uploaded the certificate?", settings.getNotificationLength(), Notification.Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Logger.getGlobal().log(Level.SEVERE, "Unable to initiate client no certificate found");
                         }
-                    }else{
-                        Notification.show("Unable to initiate client, have you uploaded the certificate?", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    } catch (Exception e) {
+                        Notification.show("Unable to initiate client " + e.getMessage(), settings.getNotificationLength(), Notification.Position.TOP_END)
                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        Logger.getGlobal().log(Level.SEVERE, "Unable to initiate client no certificate found");
+                        Logger.getGlobal().log(Level.SEVERE, "Unable to initiate client " + e.getMessage());
                     }
                 } else {
-                    Notification.show("Invalid port set", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    Notification.show("Invalid port set", settings.getNotificationLength(), Notification.Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.WARNING, "Invalid port set");
 
                 }
+
             } else {
-                Notification.show("Invalid IP set", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                Notification.show("Invalid IP set", settings.getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.WARNING, "Invalid IP set");
 
             }
         } else {
-            Notification.show("Username can't be blank", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+            Notification.show("Username can't be blank", settings.getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.WARNING, "Username can't be blank");
 
@@ -228,11 +250,11 @@ public class LoginView extends VerticalLayout {
             if (!Files.exists(Paths.get("deduplicator.p12"))) {
                 File newFile = new File("deduplicator.p12");
                 if (newFile.createNewFile()) {
-                    Notification.show("New file created", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    Notification.show("New file created", settings.getNotificationLength(), Notification.Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                     Logger.getGlobal().log(Level.INFO, "New file created");
                 } else {
-                    Notification.show("File already exists", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    Notification.show("File already exists", settings.getNotificationLength(), Notification.Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.SEVERE, "File already exists");
                 }
@@ -242,7 +264,7 @@ public class LoginView extends VerticalLayout {
             fileOutputStream.close();
 
         } catch (IOException ioe) {
-            Notification.show("An exception occurred, unable to create file", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+            Notification.show("An exception occurred, unable to create file", settings.getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.SEVERE, "IO Exception: " + ioe.getMessage());
 
