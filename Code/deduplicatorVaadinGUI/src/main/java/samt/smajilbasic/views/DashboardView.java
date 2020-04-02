@@ -1,6 +1,5 @@
 package samt.smajilbasic.views;
 
-import com.vaadin.event.dd.acceptcriteria.Not;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -23,24 +22,20 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 import org.vaadin.olli.FileDownloadWrapper;
-import samt.smajilbasic.SpringContext;
-import samt.smajilbasic.configuration.ConfigProperties;
 import samt.smajilbasic.logger.MyLogger;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
+import samt.smajilbasic.properties.Settings;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -57,8 +52,6 @@ public class DashboardView extends FormLayout {
     public static final String VIEW_NAME = "Dashboard";
     private Client client;
 
-    private ConfigProperties props = SpringContext.getBean(ConfigProperties.class);
-
     /**
      * Defines the default root path for the fileBrowser.
      */
@@ -68,7 +61,11 @@ public class DashboardView extends FormLayout {
 
     private Dialog dialog = new Dialog();
 
+    private Settings settings = new Settings();
+
     public DashboardView() {
+
+
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
 
         if (client != null) {
@@ -85,19 +82,19 @@ public class DashboardView extends FormLayout {
             Button downloadLogsButton = new Button("Download logs");
             Button addUser = new Button("Add user", event -> addUser());
 
-            File logPath = new File(props.getLogPath());
+            File logPath = new File(settings.getLogPath());
             File[] files = logPath.listFiles();
             FileDownloadWrapper buttonWrapper = null;
             if (files == null) {
 
                 Logger.getGlobal().log(Level.SEVERE, "log files path invalid");
-                Notification.show("log files path invalid", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("log files path invalid", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 clearLogsButton.setEnabled(false);
                 downloadLogsButton.setEnabled(false);
             } else {
                 if (files.length == 0) {
                     Logger.getGlobal().log(Level.SEVERE, "No log files found");
-                    Notification.show("Not log files found", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Not log files found", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     clearLogsButton.setEnabled(false);
                     downloadLogsButton.setEnabled(false);
                 } else {
@@ -118,17 +115,40 @@ public class DashboardView extends FormLayout {
             refreshIntervalField.setMin(0d);
             refreshIntervalField.setMax(10000d);
             refreshIntervalField.setHasControls(true);
-            //TODO: check refresh interval value change
+
+            refreshIntervalField.addValueChangeListener(event ->
+            {
+                if (event.getValue() > 0) {
+                    settings.setRefreshInterval(event.getValue().intValue());
+                }
+            });
+
+
+            NumberField notificationLength = new NumberField("Notification duration in  ms:");
+
+            notificationLength.setStep(100d);
+            notificationLength.setMin(0d);
+            notificationLength.setMax(5000d);
+            notificationLength.setHasControls(true);
+
+            notificationLength.addValueChangeListener(event ->
+            {
+                if (event.getValue() > 0) {
+                    settings.setNotificationLength(event.getValue().intValue());
+                }
+            });
+
+
             try {
-                int refreshIntProp = Integer.parseInt(props.getRefreshInterval());
+                int refreshIntProp = settings.getRefreshInterval();
                 refreshIntervalField.setValue((double) refreshIntProp);
             } catch (NumberFormatException nfe) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to read refresh interval property value");
-                Notification.show("Unable to read refresh interval property value", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to read refresh interval property value", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 refreshIntervalField.setValue(500d);
             }
 
-            rightSide.add(refreshIntervalField);
+            rightSide.add(refreshIntervalField,notificationLength);
             leftSide.add(changePasswordButton, clearLogsButton, changeUsernameButton, addUser);
 
             if (buttonWrapper != null)
@@ -166,15 +186,15 @@ public class DashboardView extends FormLayout {
                         ResponseEntity<String> response = client.addUser(usernameField.getValue(), newPasswordField.getValue());
                         if (response != null) {
                             if (response.getStatusCode().equals(HttpStatus.OK)) {
-                                Notification.show("Successfully added user ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                Notification.show("Successfully added user ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                                 Logger.getGlobal().log(Level.INFO, "Successfully updated the username ");
                                 dialog.close();
                             } else {
-                                Notification.show("Unable to add user - Error: " + response.getStatusCode(), new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                Notification.show("Unable to add user - Error: " + response.getStatusCode(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                                 Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
                             }
                         } else {
-                            Notification.show("Unable to add user - Unable to get response", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Notification.show("Unable to add user - Unable to get response", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                             Logger.getGlobal().log(Level.SEVERE, "Unable to update username - Unable to get response");
                         }
                     }
@@ -257,20 +277,20 @@ public class DashboardView extends FormLayout {
                     ResponseEntity<String> response = client.updateUsername(usernameField.getValue());
                     if (response != null) {
                         if (response.getStatusCode().equals(HttpStatus.OK)) {
-                            Notification.show("Successfully updated the username ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                            Notification.show("Successfully updated the username ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                             Logger.getGlobal().log(Level.INFO, "Successfully updated the username ");
                             logOutLoadingDialog();
                         } else {
-                            Notification.show("Unable to update username - Error: " + response.getStatusCode(), new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Notification.show("Unable to update username - Error: " + response.getStatusCode(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                             Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
 
                         }
                     } else {
-                        Notification.show("Unable to update username - Unable to get response", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("Unable to update username - Unable to get response", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         Logger.getGlobal().log(Level.SEVERE, "Unable to update username - Unable to get response");
                     }
                 } else {
-                    Notification.show("Username invalid", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Username invalid", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.WARNING, "Username invalid");
                 }
             } else {
@@ -288,7 +308,7 @@ public class DashboardView extends FormLayout {
     }
 
     private void clearLogs() {
-        File logPath = new File(props.getLogPath());
+        File logPath = new File(settings.getLogPath());
         File[] files = logPath.listFiles();
         try {
             if (files != null) {
@@ -298,18 +318,18 @@ public class DashboardView extends FormLayout {
                     writer.print("");
                     writer.close();
                     Logger.getGlobal().log(Level.INFO, "Log file cleared");
-                    Notification.show("Log file cleared", new Resources().getNotificationLength(), Notification.Position.TOP_END);
+                    Notification.show("Log file cleared", settings.getNotificationLength(), Notification.Position.TOP_END);
                 } else {
                     Logger.getGlobal().log(Level.SEVERE, "Unable to clear file - file does not exist");
-                    Notification.show("Unable to clear file - file does not exist", new Resources().getNotificationLength(), Notification.Position.TOP_END);
+                    Notification.show("Unable to clear file - file does not exist", settings.getNotificationLength(), Notification.Position.TOP_END);
                 }
             } else {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to clear file - log path invalid");
-                Notification.show("Unable to clear file - log path invalid", new Resources().getNotificationLength(), Notification.Position.TOP_END);
+                Notification.show("Unable to clear file - log path invalid", settings.getNotificationLength(), Notification.Position.TOP_END);
             }
         } catch (FileNotFoundException ex) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to clear file - file does not exist");
-            Notification.show("Unable to clear file - file does not exist", new Resources().getNotificationLength(), Notification.Position.TOP_END);
+            Notification.show("Unable to clear file - file does not exist", settings.getNotificationLength(), Notification.Position.TOP_END);
 
         }
     }
@@ -344,24 +364,24 @@ public class DashboardView extends FormLayout {
 
                         if (response != null) {
                             if (response.getStatusCode().equals(HttpStatus.OK)) {
-                                Notification.show("Successfully updated the password ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                                Notification.show("Successfully updated the password ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                                 Logger.getGlobal().log(Level.INFO, "Successfully updated the password ");
                                 logOutLoadingDialog();
                             } else {
-                                Notification.show("Unable to update password - Error: " + response.getStatusCode(), new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                Notification.show("Unable to update password - Error: " + response.getStatusCode(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                                 Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
                             }
                         } else {
-                            Notification.show("Unable to update password - Unable to get response", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                            Notification.show("Unable to update password - Unable to get response", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                             Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Unable to get response");
 
                         }
                     } else {
-                        Notification.show("Unable to update password - password length ", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("Unable to update password - password length ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Unable to get response");
                     }
                 } else {
-                    Notification.show("All fields must be valid", new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("All fields must be valid", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.SEVERE, "Unable to update password - All fields must be valid");
 
                 }
@@ -487,7 +507,7 @@ public class DashboardView extends FormLayout {
         fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
         fileBrowser.setSelectionMode(Grid.SelectionMode.SINGLE);
         Button confirmButton = new Button("Close", button -> {
-            Notification.show("New log path set as " + newLogPath, new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
             File file = fileBrowser.getSelectedItems().iterator().next();
 
@@ -514,14 +534,13 @@ public class DashboardView extends FormLayout {
         for (Handler handler : Logger.getGlobal().getHandlers()) {
             handler.close();
         }
-
-        //TODO: check pudateLogger file position change
-        props.setLogPath(newLogPath);
+        //TODO: check updateLogger file position change
+        settings.setLogPath(newLogPath);
         MyLogger logger = new MyLogger();
         try {
             logger.setup();
         } catch (IOException ioe) {
-            Notification.show("New log path set as " + newLogPath, new Resources().getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
 
         }
     }

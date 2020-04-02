@@ -16,6 +16,7 @@ import samt.smajilbasic.entity.MinimalDuplicate;
 import samt.smajilbasic.model.DuplicateGrid;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.model.Utils;
+import samt.smajilbasic.properties.Settings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class DuplicateGridService {
     private Client client;
     private boolean forMainView;
     private List<GlobalPath> paths = new ArrayList<GlobalPath>();
+    private Settings settings = new Settings();
     /**
      * The encoder used to map the return values from the server to a GlobalPath
      * object.
@@ -42,7 +44,7 @@ public class DuplicateGridService {
     private Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
 
 
-    public DuplicateGridService(String selectValue, Client client,boolean forMainView) {
+    public DuplicateGridService(String selectValue, Client client, boolean forMainView) {
         this.client = client;
         this.forMainView = forMainView;
         setReportId(selectValue);
@@ -51,17 +53,17 @@ public class DuplicateGridService {
         ResponseEntity<String> response = client.get("report/duplicate/" + reportId + "/");
         System.out.println("got data in " + (System.currentTimeMillis() - start) + "ms");
         if (response != null) {
-            if(response.getStatusCode().equals(HttpStatus.OK)) {
+            if (response.getStatusCode().equals(HttpStatus.OK)) {
                 try {
                     duplicatesArray = Utils.getArray((JSONArray) parser.parse(response.getBody()));
                 } catch (ParseException pe) {
-                    Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
-                    Notification.show("Unable to read status", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    Logger.getGlobal().log(Level.SEVERE, "Unable to read status");
+                    Notification.show("Unable to read status", settings.getNotificationLength(), Notification.Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
-            }else{
-                Logger.getGlobal().log(Level.SEVERE,"Unable to read status");
-                Notification.show("Unable to read status", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+            } else {
+                Logger.getGlobal().log(Level.SEVERE, "Unable to read status");
+                Notification.show("Unable to read status", settings.getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         }
@@ -80,7 +82,7 @@ public class DuplicateGridService {
             List<GlobalPath> currPaths = getPathsFromDuplicate(reportId, duplicate.getHash());
             if (currPaths != null) {
                 paths.addAll(currPaths);
-                DuplicateGrid grid = new DuplicateGrid(currPaths,duplicate,forMainView);
+                DuplicateGrid grid = new DuplicateGrid(currPaths, duplicate, forMainView);
                 insideGrids.add(grid);
             } else {
                 System.err.println("Unable to fetch paths for duplicate");
@@ -101,20 +103,20 @@ public class DuplicateGridService {
                     try {
                         paths.add(objectMapper.readValue(jsonObject.toJSONString(), GlobalPath.class));
                     } catch (Exception e) {
-                        Logger.getGlobal().log(Level.SEVERE,"Exception while mapping GlobalPath for duplicate representation: " + e.getMessage());
+                        Logger.getGlobal().log(Level.SEVERE, "Exception while mapping GlobalPath for duplicate representation: " + e.getMessage());
                     }
                 }
                 return paths;
 
             } catch (ParseException pe) {
                 Notification
-                    .show("Unable to read paths from duplicate", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                    .show("Unable to read paths from duplicate", settings.getNotificationLength(), Notification.Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
             Notification
-                .show("Unable to retrieve paths from duplicate", new Resources().getNotificationLength(), Notification.Position.TOP_END)
+                .show("Unable to retrieve paths from duplicate", settings.getNotificationLength(), Notification.Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
