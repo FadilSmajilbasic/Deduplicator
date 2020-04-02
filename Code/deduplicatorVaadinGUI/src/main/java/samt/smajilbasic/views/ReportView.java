@@ -279,10 +279,10 @@ public class ReportView extends VerticalLayout {
             dateStartCalendar.setTimeInMillis(report.getStart());
 
             Label durationLabel = new Label("Duration: " + report.getDuration() / 1000 + "s");
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:SS");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
             Label dateStartLabel = new Label("Date start : " + dateFormat.format(dateStartCalendar.getTime()));
             Label filesScannedLabel = new Label("Files scanned: " + report.getFilesScanned().toString());
-            Label averageDuplicateCountLabel = new Label("Files scanned: " + report.getAverageDuplicateCount().toString());
+            Label averageDuplicateCountLabel = new Label("Average duplicate count:  " + report.getAverageDuplicateCount().toString());
             Label userLabel;
             try {
                 userLabel = new Label("User: " + ((JSONObject) parser.parse(report.getUser())).get("username"));
