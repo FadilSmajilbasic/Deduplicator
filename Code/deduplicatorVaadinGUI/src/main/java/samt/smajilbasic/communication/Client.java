@@ -186,25 +186,21 @@ public class Client {
         return null;
     }
 
-    public ResponseEntity<String> delete(String path, String param) {
+public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
 
-        MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-        values.add("path", param);
+    HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
-
-        ResponseEntity<String> response = null;
-        try {
-            response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
-                    String.class);
-        } catch (RestClientException rce) {
-            Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
-            System.err.println("[ERROR] Delete rce: " + rce.getMessage());
-        }
-
-        return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
-
+    ResponseEntity<String> response = null;
+    try {
+        response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+                String.class);
+    } catch (RestClientException rce) {
+        Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
     }
+
+    return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
+
+}
 
     public ResponseEntity<String> post(String path, MultiValueMap<String, Object> values) {
         values = values == null ? new LinkedMultiValueMap<>() : values;
@@ -259,7 +255,9 @@ public class Client {
     public HttpStatus deletePath(GlobalPath value) {
 
         if (value != null) {
-            ResponseEntity<String> response = delete("/path", value.getPath());
+            MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
+            values.add("path",  value.getPath());
+            ResponseEntity<String> response = delete("/path",values);
             return response.getStatusCode();
         } else {
             return HttpStatus.BAD_REQUEST;
