@@ -47,6 +47,7 @@ import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.entity.GlobalPath;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.model.Utils;
+import samt.smajilbasic.properties.Settings;
 
 /**
  * PathView is the view to manage paths.
@@ -93,6 +94,8 @@ public class PathView extends VerticalLayout {
      */
     private File root = new File("/");
 
+    private Settings settings = new Settings();
+
     /**
      * The default constructor.
      */
@@ -102,16 +105,14 @@ public class PathView extends VerticalLayout {
         if (client != null) {
 
             pathTextField = new TextField("Path");
-            pathTextField.addFocusListener(new ComponentEventListener<FocusNotifier.FocusEvent<TextField>>() {
-
-                @Override
-                public void onComponentEvent(FocusNotifier.FocusEvent<TextField> event) {
-                    openRootSelect();
-                }
-            });
+            pathTextField.addFocusListener((ComponentEventListener<FocusNotifier.FocusEvent<TextField>>) event -> openRootSelect());
 
             Button addButton = new Button("Add", new Icon(VaadinIcon.PLUS), e -> {
-                savePath();
+                if (!pathTextField.getValue().isBlank()) {
+                    savePath();
+                } else {
+                    Notification.show("No path selected", settings.getNotificationLength(), Position.TOP_END);
+                }
             });
 
             pathTextField.setMinWidth("30em");
@@ -146,19 +147,19 @@ public class PathView extends VerticalLayout {
             try {
                 resp = (JSONObject) parser.parse(response.getBody());
                 if (response.getStatusCode() == HttpStatus.OK) {
-                    Notification.show("Path successfully saved", new Resources().getNotificationLength(), Position.TOP_END);
+                    Notification.show("Path successfully saved", settings.getNotificationLength(), Position.TOP_END);
                 } else {
 
                     System.out.println("[ERROR] saving path: " + resp.get("message").toString());
-                    Notification.show(resp.get("message").toString(), new Resources().getNotificationLength(), Position.TOP_END)
+                    Notification.show(resp.get("message").toString(), settings.getNotificationLength(), Position.TOP_END)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } catch (ParseException pe) {
-                Notification.show("Unable to parse the response", new Resources().getNotificationLength(), Position.TOP_END)
+                Notification.show("Unable to parse the response", settings.getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to get response from server", new Resources().getNotificationLength(), Position.TOP_END)
+            Notification.show("Unable to get response from server", settings.getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -171,9 +172,8 @@ public class PathView extends VerticalLayout {
      */
     private void openRootSelect() {
         File[] rootsArray = File.listRoots();
-        ArrayList<File> roots = new ArrayList<File>();
 
-        roots.addAll(Arrays.asList(rootsArray));
+        ArrayList<File> roots = new ArrayList<File>(Arrays.asList(rootsArray));
 
         if (roots.size() == 1) {
             root = roots.get(0);
@@ -214,7 +214,7 @@ public class PathView extends VerticalLayout {
         FilesystemDataProvider fileSystem = new FilesystemDataProvider(rootData);
 
         TreeGrid<File> fileBrowser = new TreeGrid<>();
-        fileBrowser.setItems(rootData.getChildren(root));
+
         fileBrowser.setDataProvider(fileSystem);
         fileBrowser.addSelectionListener(event -> {
             Optional<File> selected = event.getFirstSelectedItem();
@@ -291,7 +291,7 @@ public class PathView extends VerticalLayout {
                                         dialog.close();
                                     } catch (RuntimeException re) {
                                         Notification
-                                            .show("Invalid Path" + re.getMessage(), new Resources().getNotificationLength(),
+                                            .show("Invalid Path" + re.getMessage(), settings.getNotificationLength(),
                                                 Notification.Position.TOP_END)
                                             .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     }
@@ -327,11 +327,11 @@ public class PathView extends VerticalLayout {
                 }
 
             } catch (ParseException pe) {
-                Notification.show("Unable to retrieve paths: " + pe.getMessage(), new Resources().getNotificationLength(),
+                Notification.show("Unable to retrieve paths: " + pe.getMessage(), settings.getNotificationLength(),
                     Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
-            Notification.show("Unable to retrieve paths", new Resources().getNotificationLength(), Position.TOP_END)
+            Notification.show("Unable to retrieve paths", settings.getNotificationLength(), Position.TOP_END)
                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
@@ -344,16 +344,16 @@ public class PathView extends VerticalLayout {
         HttpStatus response = client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
         if (response.equals(HttpStatus.OK)) {
             Logger.getGlobal().log(Level.INFO, "Successfully updated the path" + oldPath);
-            Notification.show("Successfully updated the path" + oldPath, new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Notification.show("Successfully updated the path" + oldPath, settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } else if (response.equals(HttpStatus.SERVICE_UNAVAILABLE)) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to get response from server");
-            Notification.show("Unable to get response from server", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to get response from server", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (response.equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to update path - Unable to delete old value");
-            Notification.show("Unable to update path - Unable to delete old value", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to update path - Unable to delete old value", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (response.equals(HttpStatus.BAD_REQUEST)) {
             Logger.getGlobal().log(Level.SEVERE, "Old path value invalid");
-            Notification.show("Old path value invalid", new Resources().getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Old path value invalid", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
         updatePaths();
