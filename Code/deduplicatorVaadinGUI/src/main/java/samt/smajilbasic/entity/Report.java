@@ -70,6 +70,10 @@ public class Report {
         return reportId;
     }
 
+    public void setId(Integer reportId) {
+        this.reportId = reportId;
+    }
+
     /**
      * Metodo getter della variabile duration.
      * 
@@ -166,5 +170,4 @@ public class Report {
     public void setFilesScanned(Integer filesScanned) {
         this.filesScanned = (filesScanned >= 0) ? filesScanned : 0;
     }
-
 }

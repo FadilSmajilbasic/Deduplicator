@@ -17,6 +17,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -33,18 +34,19 @@ public class Application extends SpringBootServletInitializer {
     }
 
     @PostConstruct
-    public void startup(){
-        try{
+    public void startup() {
+        try {
             MyLogger logger = (MyLogger) context.getBean("myLogger");
             logger.setup();
-        }catch(IOException ioe){
+        } catch (IOException ioe) {
             System.out.println("Unable to setup logger");
             ioe.printStackTrace();
         }
     }
 
     @PreDestroy
-    public void closeLogFileHandler(){
+    public void closeLogFileHandler() {
+        Logger.getGlobal().log(Level.INFO,"Closing log handlers");
         for (Handler handler : Logger.getGlobal().getHandlers()) {
             handler.close();
         }

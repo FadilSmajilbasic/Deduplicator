@@ -1,13 +1,7 @@
 package samt.smajilbasic.logger;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-import samt.smajilbasic.configuration.ConfigProperties;
+import samt.smajilbasic.properties.Settings;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,11 +18,10 @@ import java.util.logging.Logger;
 @Component
 public class MyLogger {
 
-    @Autowired
-    private ConfigProperties props;
+    private Settings settings = new Settings();
 
     public void setup() throws IOException {
-        String logPath = props.getLogPath();
+        String logPath = settings.getLogPath();
         Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         Path p = Paths.get(logPath);
         File logFolder = new File(p.toAbsolutePath().toString());
