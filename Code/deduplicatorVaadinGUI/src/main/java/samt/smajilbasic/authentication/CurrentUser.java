@@ -8,7 +8,7 @@ import samt.smajilbasic.model.Resources;
 /**
  * Class for retrieving and setting the name and {@link Client} of the current user of the current
  * session (without using JAAS). 
- *
+ * Source: https://vaadin.com/start/v14
  * @author Vaadin Framework Simple UI example
  */
 public final class CurrentUser {

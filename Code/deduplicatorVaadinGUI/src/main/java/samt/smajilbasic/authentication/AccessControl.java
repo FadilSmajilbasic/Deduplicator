@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Source: https://vaadin.com/start/v14
  * @author Vaadin Framework Simple UI example
  */
 public class AccessControl implements AccessControlInterface {
