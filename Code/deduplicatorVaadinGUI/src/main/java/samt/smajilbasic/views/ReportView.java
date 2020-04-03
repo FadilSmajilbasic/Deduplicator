@@ -52,7 +52,7 @@ import samt.smajilbasic.properties.Settings;
 import samt.smajilbasic.service.DuplicateGridService;
 
 /**
- * ReportView
+ * ReportView is the view to manage reports of scans.
  */
 @Route(value = "reports", layout = MainLayout.class)
 @PageTitle(value = "Deduplicator - Report")

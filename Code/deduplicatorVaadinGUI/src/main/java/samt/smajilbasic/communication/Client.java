@@ -245,7 +245,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
         return response;
     }
 
-    public ResponseEntity<String> savePath(String value, String type) {
+    public ResponseEntity<String> savePath(String path, String type) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", value);

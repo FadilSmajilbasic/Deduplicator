@@ -50,7 +50,7 @@ import samt.smajilbasic.model.Utils;
 import samt.smajilbasic.properties.Settings;
 
 /**
- * PathView is the view to manage paths.
+ * PathView is the view to manage paths stored in the deduplicator service.
  */
 @Route(value = "path", layout = MainLayout.class)
 @PageTitle(value = "Deduplicator - Path")
@@ -105,7 +105,8 @@ public class PathView extends VerticalLayout {
         if (client != null) {
 
             pathTextField = new TextField("Path");
-            pathTextField.addFocusListener((ComponentEventListener<FocusNotifier.FocusEvent<TextField>>) event -> openRootSelect());
+            pathTextField.addFocusListener(
+                    (ComponentEventListener<FocusNotifier.FocusEvent<TextField>>) event -> openRootSelect());
 
             Button addButton = new Button("Add", new Icon(VaadinIcon.PLUS), e -> {
                 if (!pathTextField.getValue().isBlank()) {
@@ -141,7 +142,6 @@ public class PathView extends VerticalLayout {
      */
     private void savePath() {
         ResponseEntity<String> response = client.savePath(pathTextField.getValue(), type);
-
         if (response != null) {
             JSONObject resp = new JSONObject();
             try {
@@ -149,18 +149,18 @@ public class PathView extends VerticalLayout {
                 if (response.getStatusCode() == HttpStatus.OK) {
                     Notification.show("Path successfully saved", settings.getNotificationLength(), Position.TOP_END);
                 } else {
-
                     System.out.println("[ERROR] saving path: " + resp.get("message").toString());
-                    Notification.show(resp.get("message").toString(), settings.getNotificationLength(), Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification
+                            .show(resp.get("message").toString(), settings.getNotificationLength(), Position.TOP_END)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             } catch (ParseException pe) {
                 Notification.show("Unable to parse the response", settings.getNotificationLength(), Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
             Notification.show("Unable to get response from server", settings.getNotificationLength(), Position.TOP_END)
-                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
         updatePaths();
@@ -251,7 +251,8 @@ public class PathView extends VerticalLayout {
 
                 for (JSONObject jsonObject : array) {
                     try {
-                        paths.add(encoder.getObjectMapper().readValue(jsonObject.toJSONString().replace("date", "lastModified"), GlobalPath.class));
+                        paths.add(encoder.getObjectMapper().readValue(
+                                jsonObject.toJSONString().replace("date", "lastModified"), GlobalPath.class));
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
@@ -291,9 +292,9 @@ public class PathView extends VerticalLayout {
                                         dialog.close();
                                     } catch (RuntimeException re) {
                                         Notification
-                                            .show("Invalid Path" + re.getMessage(), settings.getNotificationLength(),
-                                                Notification.Position.TOP_END)
-                                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                                .show("Invalid Path" + re.getMessage(),
+                                                        settings.getNotificationLength(), Notification.Position.TOP_END)
+                                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
                                     }
                                 });
                                 Button cancelButtonModify = new Button("Cancel", cancelEvent -> {
@@ -328,11 +329,11 @@ public class PathView extends VerticalLayout {
 
             } catch (ParseException pe) {
                 Notification.show("Unable to retrieve paths: " + pe.getMessage(), settings.getNotificationLength(),
-                    Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
         } else {
             Notification.show("Unable to retrieve paths", settings.getNotificationLength(), Position.TOP_END)
-                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
     }
@@ -344,16 +345,21 @@ public class PathView extends VerticalLayout {
         HttpStatus response = client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
         if (response.equals(HttpStatus.OK)) {
             Logger.getGlobal().log(Level.INFO, "Successfully updated the path" + oldPath);
-            Notification.show("Successfully updated the path" + oldPath, settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            Notification
+                    .show("Successfully updated the path" + oldPath, settings.getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } else if (response.equals(HttpStatus.SERVICE_UNAVAILABLE)) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to get response from server");
-            Notification.show("Unable to get response from server", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to get response from server", settings.getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (response.equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to update path - Unable to delete old value");
-            Notification.show("Unable to update path - Unable to delete old value", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to update path - Unable to delete old value", settings.getNotificationLength(),
+                    Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
         } else if (response.equals(HttpStatus.BAD_REQUEST)) {
             Logger.getGlobal().log(Level.SEVERE, "Old path value invalid");
-            Notification.show("Old path value invalid", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Old path value invalid", settings.getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
 
         updatePaths();

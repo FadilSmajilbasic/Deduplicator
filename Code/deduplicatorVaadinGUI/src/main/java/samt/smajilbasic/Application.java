@@ -26,6 +26,9 @@ import java.util.logging.Logger;
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer {
 
+    /**
+     * The application context
+     */
     @Autowired
     ApplicationContext context;
 
@@ -33,6 +36,9 @@ public class Application extends SpringBootServletInitializer {
         SpringApplication.run(Application.class, args);
     }
 
+    /**
+     * Method called after the application has started in order to configure the global logger.
+     */
     @PostConstruct
     public void startup() {
         try {
@@ -43,7 +49,9 @@ public class Application extends SpringBootServletInitializer {
             ioe.printStackTrace();
         }
     }
-
+    /**
+     * Method called before the application has closed in order to close the log file handlers.
+     */
     @PreDestroy
     public void closeLogFileHandler() {
         Logger.getGlobal().log(Level.INFO,"Closing log handlers");
