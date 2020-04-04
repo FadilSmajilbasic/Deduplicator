@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import samt.smajilbasic.deduplicator.Validator;
+import samt.smajilbasic.deduplicator.entity.Action;
+import samt.smajilbasic.deduplicator.repository.ActionRepository;
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.Scheduler;
 import samt.smajilbasic.deduplicator.exception.Response;
@@ -46,6 +48,9 @@ public class SchedulerController {
      */
     @Autowired
     private SchedulerRepository schedulerRepository;
+
+    @Autowired
+    private ActionRepository actionRepository;
 
     /**
      * L'attributo context contiene il contesto dell'applicazione. Viene usato per
@@ -168,6 +173,8 @@ public class SchedulerController {
         if (intId != null) {
             if (schedulerRepository.existsById(intId)) {
                 Scheduler scheduler = schedulerRepository.findById(intId).get();
+                List<Action> actions = actionRepository.findActionsFromScheduler(scheduler);
+                actions.forEach(action -> actionRepository.delete(action));
                 schedulerRepository.delete(scheduler);
                 return scheduler;
             } else {

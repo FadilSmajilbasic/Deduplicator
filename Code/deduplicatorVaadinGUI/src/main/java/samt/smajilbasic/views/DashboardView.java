@@ -562,7 +562,6 @@ public class DashboardView extends FormLayout {
         for (Handler handler : Logger.getGlobal().getHandlers()) {
             handler.close();
         }
-        //TODO: check updateLogger file position change
         settings.setLogPath(newLogPath);
         MyLogger logger = new MyLogger();
         try {

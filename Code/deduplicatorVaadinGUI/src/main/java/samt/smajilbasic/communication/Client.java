@@ -188,12 +188,16 @@ public class Client {
     }
 
     public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
-
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
-
+        HttpEntity<MultiValueMap<String, Object>> requestEntity;
+        if(values != null)
+            requestEntity = new HttpEntity<>(values, createHeaders(true));
+        else {
+            values = new LinkedMultiValueMap<>();
+            requestEntity = new HttpEntity<>(values, createHeaders(false));
+        }
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port +"/" + path, HttpMethod.DELETE, requestEntity,
                 String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
@@ -259,7 +263,7 @@ public class Client {
         if (value != null) {
             MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
             values.add("path", value.getPath());
-            ResponseEntity<String> response = delete("/path", values);
+            ResponseEntity<String> response = delete("path/", values);
             return response.getStatusCode();
         } else {
             return HttpStatus.BAD_REQUEST;
