@@ -48,10 +48,9 @@ public class DuplicateGridService {
         this.client = client;
         this.forMainView = forMainView;
         setReportId(selectValue);
-        System.out.println("path: " + reportId);
         long start = System.currentTimeMillis();
         ResponseEntity<String> response = client.get("report/duplicate/" + reportId + "/");
-        System.out.println("got data in " + (System.currentTimeMillis() - start) + "ms");
+        Logger.getGlobal().log(Level.INFO, "Got report data in " + (System.currentTimeMillis() - start) + "ms");
         if (response != null) {
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 try {
@@ -76,7 +75,7 @@ public class DuplicateGridService {
 
             MinimalDuplicate duplicate = new MinimalDuplicate();
             duplicate.setHash(duplicatesArray[i].get("hash").toString());
-            duplicate.setSize(duplicatesArray[i].get("size").toString());
+            duplicate.setSize(Long.parseLong(duplicatesArray[i].get("size").toString()));
             duplicate.setCount(duplicatesArray[i].get("count").toString());
 
             List<GlobalPath> currPaths = getPathsFromDuplicate(reportId, duplicate.getHash());

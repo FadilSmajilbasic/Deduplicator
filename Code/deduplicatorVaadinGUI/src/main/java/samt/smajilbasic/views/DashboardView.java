@@ -22,11 +22,14 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 import org.vaadin.olli.FileDownloadWrapper;
+import samt.smajilbasic.Application;
 import samt.smajilbasic.logger.MyLogger;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
@@ -34,12 +37,20 @@ import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.properties.Settings;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.lang.reflect.Array;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -53,9 +64,14 @@ public class DashboardView extends FormLayout {
     private Client client;
 
     /**
+     * The application context
+     */
+    @Autowired
+    ApplicationContext context;
+    /**
      * Defines the default root path for the fileBrowser.
      */
-    private File root = new File(".");
+    private File root = new File(String.valueOf(File.listRoots()[0]));
 
     private String newLogPath;
 
@@ -84,25 +100,21 @@ public class DashboardView extends FormLayout {
 
             File logPath = new File(settings.getLogPath());
             File[] files = logPath.listFiles();
-            FileDownloadWrapper buttonWrapper = null;
-            if (files == null) {
+            Arrays.sort(files);
+            List<File> fileList = new ArrayList<File>(Arrays.asList(files));
+            fileList.removeIf(file -> (!(file.getName().startsWith("log.") && file.getName().endsWith(".txt"))));
 
-                Logger.getGlobal().log(Level.SEVERE, "log files path invalid");
-                Notification.show("log files path invalid", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            FileDownloadWrapper buttonWrapper = null;
+            if (fileList.size() == 0) {
+                Logger.getGlobal().log(Level.SEVERE, "No log files found");
+                Notification.show("No log files found", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 clearLogsButton.setEnabled(false);
                 downloadLogsButton.setEnabled(false);
             } else {
-                if (files.length == 0) {
-                    Logger.getGlobal().log(Level.SEVERE, "No log files found");
-                    Notification.show("Not log files found", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    clearLogsButton.setEnabled(false);
-                    downloadLogsButton.setEnabled(false);
-                } else {
-                    buttonWrapper = new FileDownloadWrapper(files[files.length - 1].getName(), files[files.length - 1].getAbsoluteFile());
-                    buttonWrapper.wrapComponent(downloadLogsButton);
-                    clearLogsButton.setEnabled(true);
-                    downloadLogsButton.setEnabled(true);
-                }
+                buttonWrapper = new FileDownloadWrapper(fileList.get(fileList.size() - 1).getName(), new File(String.valueOf(fileList.get(fileList.size() - 1))));
+                buttonWrapper.wrapComponent(downloadLogsButton);
+                clearLogsButton.setEnabled(true);
+                downloadLogsButton.setEnabled(true);
             }
 
             Button changeLogFileLocationButton = new Button("Change log file location", event -> openFileSelect());
@@ -145,10 +157,19 @@ public class DashboardView extends FormLayout {
             } catch (NumberFormatException nfe) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to read refresh interval property value");
                 Notification.show("Unable to read refresh interval property value", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                refreshIntervalField.setValue(500d);
+                refreshIntervalField.setValue((double) Resources.REFRESH_INTERVAL);
             }
 
-            rightSide.add(refreshIntervalField,notificationLength);
+            try {
+                int notificationIntProp = settings.getNotificationLength();
+                notificationLength.setValue((double) notificationIntProp);
+            } catch (NumberFormatException nfe) {
+                Logger.getGlobal().log(Level.SEVERE, "Unable to read notification length property value");
+                Notification.show("Unable to read notification length property value", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                refreshIntervalField.setValue((double) Resources.NOTIFICATION_LENGTH);
+            }
+
+            rightSide.add(refreshIntervalField, notificationLength);
             leftSide.add(changePasswordButton, clearLogsButton, changeUsernameButton, addUser);
 
             if (buttonWrapper != null)
@@ -310,12 +331,15 @@ public class DashboardView extends FormLayout {
     private void clearLogs() {
         File logPath = new File(settings.getLogPath());
         File[] files = logPath.listFiles();
+        Arrays.sort(files);
+        List<File> fileList = new ArrayList<File>(Arrays.asList(files));
+        fileList.removeIf(file -> (!(file.getName().startsWith("log.") && file.getName().endsWith(".txt"))));
         try {
-            if (files != null) {
-                if (files.length > 0) {
-
-                    PrintWriter writer = new PrintWriter(files[files.length - 1]);
-                    writer.print("");
+            if (fileList != null) {
+                if (fileList.size() > 0) {
+                    FileWriter writer = new FileWriter(fileList.get(fileList.size() - 1), StandardCharsets.UTF_8, false);
+                    writer.write("");
+                    writer.flush();
                     writer.close();
                     Logger.getGlobal().log(Level.INFO, "Log file cleared");
                     Notification.show("Log file cleared", settings.getNotificationLength(), Notification.Position.TOP_END);
@@ -330,6 +354,10 @@ public class DashboardView extends FormLayout {
         } catch (FileNotFoundException ex) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to clear file - file does not exist");
             Notification.show("Unable to clear file - file does not exist", settings.getNotificationLength(), Notification.Position.TOP_END);
+
+        } catch (IOException e) {
+            Logger.getGlobal().log(Level.SEVERE, "Unable to clear file - IO error while writing");
+            Notification.show("Unable to clear file - IO error while writing", settings.getNotificationLength(), Notification.Position.TOP_END);
 
         }
     }
@@ -504,7 +532,7 @@ public class DashboardView extends FormLayout {
 
         });
 
-        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
+        fileBrowser.addHierarchyColumn(File::getName).setHeader("Path");
         fileBrowser.setSelectionMode(Grid.SelectionMode.SINGLE);
         Button confirmButton = new Button("Close", button -> {
             Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);

@@ -221,8 +221,7 @@ public class PathView extends VerticalLayout {
             pathTextField.setValue(selected.get().getAbsolutePath());
 
         });
-
-        fileBrowser.addHierarchyColumn(File::getAbsolutePath).setHeader("Path");
+        fileBrowser.addHierarchyColumn(File::getName).setHeader("Path");
 
         Dialog dialog = new Dialog();
         Button confirmButton = new Button("Close", button -> {
@@ -236,6 +235,7 @@ public class PathView extends VerticalLayout {
         dialog.setCloseOnOutsideClick(false);
         dialog.add(layout);
         dialog.open();
+        fileBrowser.expand(root);
     }
 
     /**
@@ -344,9 +344,9 @@ public class PathView extends VerticalLayout {
     private void modifyPath(GlobalPath oldPath, boolean newIgnoreValue) {
         HttpStatus response = client.modifyPath(oldPath, (newIgnoreValue ? "ignore" : "scan"));
         if (response.equals(HttpStatus.OK)) {
-            Logger.getGlobal().log(Level.INFO, "Successfully updated the path" + oldPath);
+            Logger.getGlobal().log(Level.INFO, "Successfully updated the path" + oldPath.getPath());
             Notification
-                    .show("Successfully updated the path" + oldPath, settings.getNotificationLength(), Position.TOP_END)
+                    .show("Successfully updated the path" + oldPath.getPath(), settings.getNotificationLength(), Position.TOP_END)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } else if (response.equals(HttpStatus.SERVICE_UNAVAILABLE)) {
             Logger.getGlobal().log(Level.SEVERE, "Unable to get response from server");

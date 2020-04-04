@@ -55,6 +55,7 @@ public class ActionsManager implements Runnable {
     @Override
     public void run() {
         Logger.getGlobal().log(Level.INFO, "WORKER STARTED");
+
         if (actionScheduler != null) {
             actions = actionRepository.findActionsFromScheduler(actionScheduler);
         } else {
@@ -119,14 +120,12 @@ public class ActionsManager implements Runnable {
                 }
 
             } else {
-                Logger.getGlobal().log(Level.WARNING, "No action to execute set");
+                Logger.getGlobal().log(Level.WARNING, "No action to execute set on scheduler " + actionScheduler.getSchedulerId());
 
             }
         } else {
             Logger.getGlobal().log(Level.WARNING, "Action is null");
         }
-        Logger.getGlobal().log(Level.INFO, "Actions manager finished");
-
     }
 
     private boolean move(String oldPath, String newPath) {

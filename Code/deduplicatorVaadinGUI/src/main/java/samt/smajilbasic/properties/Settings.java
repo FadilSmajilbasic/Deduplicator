@@ -106,7 +106,6 @@ public class Settings {
     }
 
     public void setRefreshInterval(int refreshInterval) {
-        System.out.println("refrush; " + refreshInterval);
         if (refreshInterval > 0)
             this.refreshInterval = refreshInterval;
         else

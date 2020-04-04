@@ -194,7 +194,7 @@ public class Client {
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
         }
@@ -229,14 +229,15 @@ public class Client {
                     String.class);
         } catch (RestClientException rce) {
             try {
-                JSONObject resp = (JSONObject) parser.parse(rce.getMessage());
+                JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(":")[0]);
                 if (resp.get("message") != null) {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception with error: " + resp.get("message"));
                 } else {
-                    Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
+                    Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message value");
                 }
             } catch (ParseException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
+
 
             }
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: general error");
@@ -248,7 +249,7 @@ public class Client {
     public ResponseEntity<String> savePath(String path, String type) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-        values.add("path", value);
+        values.add("path", path);
         values.add("ignorePath", type.equals("ignore"));
         return put("path/", values);
     }
@@ -327,8 +328,8 @@ public class Client {
         }
     }
 
-    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
-            String repetition) {
+    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, String weekNumber, String monthNumber,
+                                                 String repetition) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("weekly", Objects.requireNonNullElse(weekNumber, ""));
@@ -426,8 +427,8 @@ public class Client {
 
     }
 
-    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
-            String repetition) {
+    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, String weekNumber, String monthNumber,
+                                                      String repetition) {
         ResponseEntity<String> response = insertSchedule(dateTime, weekNumber, monthNumber, repetition);
         if (response != null) {
             ResponseEntity<String> responseEntity = response;
@@ -466,16 +467,15 @@ public class Client {
         if (response != null) {
             try {
                 JSONObject body = (JSONObject) parser.parse(response.getBody());
-                Report report = new Report(body.get("user").toString());
+                Report report = new Report(Objects.requireNonNullElse(body.get("user"), "unknown").toString());
                 report.setAverageDuplicateCount(Float.parseFloat(body.get("averageDuplicateCount").toString()));
                 report.setFilesScanned(Integer.parseInt(body.get("filesScanned").toString()));
                 report.setStart(Long.parseLong(body.get("start").toString()));
                 report.setDuration(Long.parseLong(body.get("duration").toString()));
                 report.setId(Integer.parseInt(body.get("id").toString()));
                 return report;
-            } catch (ParseException | NumberFormatException pe) {
-                Notification.show("Unable to parse response from server", settings.getNotificationLength(),
-                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (ParseException | NumberFormatException | NullPointerException pe) {
+                Notification.show("Unable to parse response from server", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server: " + pe.getMessage());
                 return null;
             }
