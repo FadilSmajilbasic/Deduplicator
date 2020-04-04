@@ -56,6 +56,9 @@ import samt.smajilbasic.properties.Settings;
 @CssImport("./styles/radio-buttons-vertical.css")
 public class SchedulerView extends VerticalLayout {
 
+    /**
+     * The name of the view
+     */
     public static final String VIEW_NAME = "Scheduler";
 
     /**

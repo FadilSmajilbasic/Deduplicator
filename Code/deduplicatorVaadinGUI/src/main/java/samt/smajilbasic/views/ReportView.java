@@ -65,6 +65,7 @@ public class ReportView extends VerticalLayout {
      * status.
      */
     private JSONParser parser = new JSONParser();
+
     /**
      * The HTTP/HTTPS client used for the communication.
      */
@@ -103,7 +104,8 @@ public class ReportView extends VerticalLayout {
                     if (!Objects.requireNonNullElse(reportSelect.getValue(), "").isBlank()) {
                         getReportInfo();
                     } else {
-                        Notification.show("No report chosen", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.show("No report chosen", settings.getNotificationLength(), Position.TOP_END)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 });
                 Button applyButton = new Button("Apply selected changes", event -> {
@@ -111,7 +113,8 @@ public class ReportView extends VerticalLayout {
                 });
                 applyButton.setMinWidth("");
                 FormLayout formButtonsLayout = new FormLayout(reportSelect, applyButton, infoButton);
-                formButtonsLayout.setResponsiveSteps(new ResponsiveStep("0", 1), new ResponsiveStep(Resources.SIZE_MOBILE_L, 3));
+                formButtonsLayout.setResponsiveSteps(new ResponsiveStep("0", 1),
+                        new ResponsiveStep(Resources.SIZE_MOBILE_L, 3));
                 formButtonsLayout.setWidthFull();
                 verticalLayout.add(formButtonsLayout);
                 verticalLayout.setAlignItems(Alignment.START);
@@ -123,7 +126,6 @@ public class ReportView extends VerticalLayout {
             setMinWidth(Resources.SIZE_MOBILE_S);
         }
     }
-
 
     private void checkActions() {
         Logger.getGlobal().log(Level.INFO, "Check actions dialog opened");
@@ -146,12 +148,10 @@ public class ReportView extends VerticalLayout {
             }).setHeader("Move path").setFlexGrow(2);
             actionsGrid.addColumn(path -> path.getAction().getType()).setHeader("Action type").setFlexGrow(1);
 
-            actionsGrid.addColumn(new ComponentRenderer<Button, GlobalPath>(
-                path -> new Button("Delete", event -> {
-                    paths.remove(path);
-                    actionsGrid.getDataProvider().refreshAll();
-                })
-            )).setHeader("Delete action").setFlexGrow(1);
+            actionsGrid.addColumn(new ComponentRenderer<Button, GlobalPath>(path -> new Button("Delete", event -> {
+                paths.remove(path);
+                actionsGrid.getDataProvider().refreshAll();
+            }))).setHeader("Delete action").setFlexGrow(1);
 
             actionsGrid.setClassName("inside-grid");
 
@@ -178,7 +178,7 @@ public class ReportView extends VerticalLayout {
                     LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
                     if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
                         Notification.show("Date and time can't be in the past", settings.getNotificationLength(),
-                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                         Logger.getGlobal().log(Level.SEVERE, "Date and time can't be in the past");
                         datePicker.setValue(LocalDate.now());
                         timePicker.setValue(LocalTime.now());
@@ -201,7 +201,8 @@ public class ReportView extends VerticalLayout {
             actionsGrid.setMinWidth("50em");
             applyDialog.open();
         } else {
-            Notification.show("No duplicate loaded", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("No duplicate loaded", settings.getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.SEVERE, "No duplicate loaded");
         }
     }
@@ -213,13 +214,12 @@ public class ReportView extends VerticalLayout {
             if (!reportId.isBlank()) {
                 duplicateGridService = new DuplicateGridService(reportId, client, forMainView);
                 if (duplicateGridService.getTotalDuplicatesCount() > 0) {
-                    DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(
-                        query -> {
-                            int offset = query.getOffset();
-                            int limit = query.getLimit();
-                            List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
-                            return duplicates.stream();
-                        }, query -> getDuplicateGridService().getTotalDuplicatesCount());
+                    DataProvider<DuplicateGrid, Void> dataProvider = DataProvider.fromCallbacks(query -> {
+                        int offset = query.getOffset();
+                        int limit = query.getLimit();
+                        List<DuplicateGrid> duplicates = getDuplicateGridService().fetchInsideGrids(offset, limit);
+                        return duplicates.stream();
+                    }, query -> getDuplicateGridService().getTotalDuplicatesCount());
                     duplicatesGrid.setDataProvider(dataProvider);
 
                     duplicatesGrid.addColumn(new ComponentRenderer<VerticalLayout, DuplicateGrid>((grid -> {
@@ -233,7 +233,8 @@ public class ReportView extends VerticalLayout {
                         countLabel.setClassName("duplicate-header-label");
                         FormLayout formLayout = new FormLayout(hashLabel, sizeLabel, countLabel);
 
-                        formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_TABLET, 3));
+                        formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1),
+                                new ResponsiveStep(Resources.SIZE_TABLET, 3));
 
                         formLayout.setClassName("duplicate-header");
                         formLayout.setSizeFull();
@@ -247,12 +248,13 @@ public class ReportView extends VerticalLayout {
 
                     duplicatesGrid.setSizeFull();
                 } else {
-                    Notification.show("No duplicates found for selected report", settings.getNotificationLength(), Position.TOP_END);
+                    Notification.show("No duplicates found for selected report", settings.getNotificationLength(),
+                            Position.TOP_END);
                     Logger.getGlobal().log(Level.INFO, "No duplicates found for selected report");
                 }
             } else {
                 Notification.show("Unable to retrieve reports", settings.getNotificationLength(), Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
         } else {
@@ -266,7 +268,6 @@ public class ReportView extends VerticalLayout {
     private DuplicateGridService getDuplicateGridService() {
         return duplicateGridService;
     }
-
 
     private void getReportInfo() {
         Dialog dialog = new Dialog();
@@ -282,7 +283,8 @@ public class ReportView extends VerticalLayout {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
             Label dateStartLabel = new Label("Date start : " + dateFormat.format(dateStartCalendar.getTime()));
             Label filesScannedLabel = new Label("Files scanned: " + report.getFilesScanned().toString());
-            Label averageDuplicateCountLabel = new Label("Average duplicate count:  " + report.getAverageDuplicateCount().toString());
+            Label averageDuplicateCountLabel = new Label(
+                    "Average duplicate count:  " + report.getAverageDuplicateCount().toString());
             Label userLabel;
             try {
                 userLabel = new Label("User: " + ((JSONObject) parser.parse(report.getUser())).get("username"));
@@ -292,13 +294,14 @@ public class ReportView extends VerticalLayout {
             }
             Label idLabel = new Label("Id: " + report.getId().toString());
 
-            verticalLayout.add(idLabel, durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel, userLabel,
-                new Button("Close", event -> dialog.close()));
+            verticalLayout.add(idLabel, durationLabel, dateStartLabel, filesScannedLabel, averageDuplicateCountLabel,
+                    userLabel, new Button("Close", event -> dialog.close()));
 
             dialog.add(verticalLayout);
             dialog.open();
         } else {
-            Notification.show("Unable to get report information", settings.getNotificationLength(), Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("Unable to get report information", settings.getNotificationLength(), Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             Logger.getGlobal().log(Level.SEVERE, "Unable to get report information");
 
         }
@@ -326,12 +329,12 @@ public class ReportView extends VerticalLayout {
 
             } catch (ParseException pe) {
                 Notification.show("Unable to read status", settings.getNotificationLength(), Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         }
         Notification.show("Unable to retrieve reports", settings.getNotificationLength(), Position.TOP_END)
-            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
         return null;
     }
 
@@ -345,16 +348,16 @@ public class ReportView extends VerticalLayout {
                 return String.valueOf(report.get("id"));
 
             } catch (ParseException pe) {
-                Notification.show("Unable to get last report id", settings.getNotificationLength(), Notification.Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to get last report id", settings.getNotificationLength(),
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
-            Notification.show("Unable to get last report", settings.getNotificationLength(), Notification.Position.TOP_END)
-                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification
+                    .show("Unable to get last report", settings.getNotificationLength(), Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
     }
-
 
 }
