@@ -2,6 +2,7 @@ package samt.smajilbasic.deduplicator.timer;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -70,55 +71,69 @@ public class ScheduleChecker extends Thread {
 
                 Calendar startCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
                 startCalendar.setTimeInMillis(startDate);
+                if (!schedule.isScheduled()) {
+                    if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) {
 
-                if (schedule.getExecutionCounter() == 0 || schedule.isRepeated()) {
+                        actionsManager.setActionScheduler(schedule);
 
-                    actionsManager.setActionScheduler(schedule);
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+                        long delay = startCalendar.getTimeInMillis() - Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
+                        Logger.getGlobal().log(Level.INFO, "Action manager of schedule " + schedule.getSchedulerId() + " scheduled to execute on the " + dateFormat.format(startCalendar.getTime()) + " which is in exactly " + delay + "ms from now and it " + (schedule.isRepeated() ? "is" : "isn't") + " repeated");
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-dd-mm HH:mm:SS");
-                    long delay = startCalendar.getTimeInMillis() - Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
-                    Logger.getGlobal().log(Level.INFO, "Action manager scheduled to execute on the " + dateFormat.format(startCalendar.getTime()) + " which is in exactly " + delay + "ms from now and it " + (schedule.isRepeated()?"is":"isn't") + " repeated");
+                        delay = delay < 0 ? 0 : delay;
 
-                    delay = delay < 0 ? 0 : delay;
+                        if (schedule.isRepeated()) {
 
-                    if (schedule.isRepeated()) {
+                            long difference = 0;
+                            Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-                        long difference = 0;
-                        Calendar nextDate = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                            long period;
+                            if (schedule.getMonthly() != null) {
+                                nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH),
+                                    schedule.getMonthly());
+                                difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
+                                Logger.getGlobal().log(Level.INFO, "Schedule is monthly");
+                                period = YearMonth.of(startCalendar.get(Calendar.YEAR), startCalendar.get(Calendar.MONTH)).lengthOfMonth();
+                            } else if (schedule.getWeekly() != null) {
+                                Logger.getGlobal().log(Level.INFO, "Schedule is weekly");
+                                difference = Math.abs(schedule.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                                period = 7;
+                            } else {
+                                Logger.getGlobal().log(Level.INFO, "Schedule is daily");
+                                period = 1;
+                            }
+                            long initialDelay = startCalendar.getTimeInMillis() + difference;
+                            if (startCalendar.getTime().before(new Date())) {
+                                initialDelay = 0;
+                                Logger.getGlobal().log(Level.INFO, "Schedule executing now, is scheduled before now");
+                            }
 
-                        boolean passed = false;
-                        if (startCalendar.getTime().before(new Date())) {
-                            passed = true;
-                        }
-                        boolean monthly = false;
-                        if (schedule.getMonthly() != null) {
-                            nextDate.set(startCalendar.get(Calendar.YEAR) + 1900, startCalendar.get(Calendar.MONTH),
-                                schedule.getMonthly());
-                            difference = Math.abs(nextDate.getTimeInMillis() - startCalendar.getTimeInMillis());
-                            monthly = true;
+                            scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, period, TimeUnit.DAYS);
+                            schedule.setScheduled(true);
+                            schedulerRepository.save(schedule);
+
                         } else {
-                            difference = Math.abs(schedule.getWeekly() - startCalendar.get(Calendar.DAY_OF_WEEK));
+                            scheduledExecutor.schedule(actionsManager, delay, TimeUnit.MILLISECONDS);
+                            schedule.setScheduled(true);
+                            schedulerRepository.save(schedule);
                         }
-                        long initialDelay = startCalendar.getTimeInMillis() + difference;
-                        if (passed)
-                            initialDelay = 0;
-
-                        scheduledExecutor.scheduleAtFixedRate(actionsManager, initialDelay, monthly ? 30 : 7,
-                            TimeUnit.DAYS);
                     } else {
-                        scheduledExecutor.schedule(actionsManager, delay, TimeUnit.MILLISECONDS);
+                        Logger.getGlobal().log(Level.INFO, "Scheduler already executed");
                     }
                 } else {
-                    Logger.getGlobal().log(Level.INFO, "Scheduler already executed");
+                    Logger.getGlobal().log(Level.INFO, "Scheduler already scheduled");
                 }
             } catch (Exception ex) {
-                Logger.getGlobal().log(Level.SEVERE, "An exception occurred: " + ex.getMessage());
+                Logger.getGlobal().log(Level.SEVERE, "An exception occurred: " + ex.getStackTrace()[0]);
+                ex.printStackTrace(System.out);
             }
         });
         try {
             scheduledExecutor.awaitTermination(DEFAULT_TERMINATION_TIMEOUT, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            Logger.getGlobal().log(Level.SEVERE, "An execution exeption: " + ex.getMessage());
+        } catch (
+            Exception ex) {
+            Logger.getGlobal().log(Level.SEVERE, "An execution exception: " + ex.getStackTrace()[0]);
+            ex.printStackTrace(System.out);
         }
     }
 }

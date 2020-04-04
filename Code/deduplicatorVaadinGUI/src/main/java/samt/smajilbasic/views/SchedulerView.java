@@ -49,17 +49,17 @@ public class SchedulerView extends VerticalLayout {
      * The HTTP/HTTPS client used for the communication.
      */
     private Client client;
-    private int weekNumber = 0;
-    private int monthNumber = 0;
+    private Integer weekNumber;
+    private Integer monthNumber;
     private Settings settings = new Settings();
+    private DatePicker datePicker = new DatePicker("Start date");
+    private TimePicker timePicker = new TimePicker("Start time");
 
     public SchedulerView() {
         super();
         client = (Client) UI.getCurrent().getSession().getAttribute(Resources.CURRENT_CLIENT_SESSION_ATTRIBUTE_KEY);
 
         if (client != null) {
-            DatePicker datePicker = new DatePicker("Start date");
-            TimePicker timePicker = new TimePicker("Start time");
 
             LocalDateTime ldt = LocalDateTime.now();
             ldt = ldt.plusMinutes(1);
@@ -77,8 +77,7 @@ public class SchedulerView extends VerticalLayout {
                 @Override
                 public void valueChanged(ValueChangeEvent<?> event) {
                     if (!timePicker.getValue().toString().isBlank() && !datePicker.getValue().toString().isBlank()) {
-                        LocalDateTime inputs = LocalDateTime.of(datePicker.getValue(), timePicker.getValue());
-                        if (inputs.isBefore(LocalDateTime.now()) && !inputs.isEqual(LocalDateTime.now())) {
+                        if (!checkDateTimeValues(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()))) {
                             Notification.show("Date and time can't be in the past", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                             datePicker.setValue(LocalDate.now());
                             timePicker.setValue(LocalTime.now());
@@ -120,6 +119,8 @@ public class SchedulerView extends VerticalLayout {
             radioButtonGroup.addValueChangeListener(event -> {
                     weekRadioButtonGroup.setVisible(false);
                     monthlyDatePicker.setVisible(false);
+                    monthNumber = null;
+                    weekNumber = null;
                     if (event != null) {
                         switch (radioButtonGroup.getItemPosition(event.getValue())) {
                             case 2:
@@ -143,19 +144,24 @@ public class SchedulerView extends VerticalLayout {
             });
 
             Button button = new Button("Set scan schedule", event -> {
-
-                ResponseEntity<String> response = client.insertScheduledScan(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), weekNumber, monthNumber, radioButtonGroup.getValue());
-                if (response != null) {
-                    if (response.getStatusCode().equals(HttpStatus.OK)) {
-                        Logger.getGlobal().log(Level.INFO, "Schedule added successfully");
-                        Notification.show("Schedule added successfully", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                if (checkDateTimeValues(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()))) {
+                    ResponseEntity<String> response = client.insertScheduledScan(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), (weekNumber != null ? weekNumber : "").toString(), (monthNumber != null ? monthNumber : "").toString(), radioButtonGroup.getValue());
+                    if (response != null) {
+                        if (response.getStatusCode().equals(HttpStatus.OK)) {
+                            Logger.getGlobal().log(Level.INFO, "Schedule added successfully");
+                            Notification.show("Schedule added successfully", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        } else {
+                            Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
+                            Notification.show("Unable to add scheduler ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        }
                     } else {
                         Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
                         Notification.show("Unable to add scheduler ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
                 } else {
-                    Logger.getGlobal().log(Level.SEVERE, "Unable to add scheduler ");
-                    Notification.show("Unable to add scheduler ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Date and time can't be in the past", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    datePicker.setValue(LocalDate.now());
+                    timePicker.setValue(LocalTime.now());
                 }
             });
             pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);
@@ -163,5 +169,9 @@ public class SchedulerView extends VerticalLayout {
             add(pickerLayout, pickerSideLayouts, button);
             setMinWidth(Resources.SIZE_MOBILE_S);
         }
+    }
+
+    public boolean checkDateTimeValues(LocalDateTime input) {
+        return !(input.isBefore(LocalDateTime.now()) && !input.isEqual(LocalDateTime.now()));
     }
 }

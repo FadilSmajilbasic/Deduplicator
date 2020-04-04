@@ -56,6 +56,11 @@ public class Scheduler {
     private Integer executionCounter = 0;
 
     /**
+     * L'attributo scheduled descrive se lo scheduler è già stato impostato per l'esecuzione
+     */
+    private boolean scheduled = false;
+
+    /**
      * L'attributo action contiene tutte le azioni che lo scheduler dovrà eseguire
      */
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "scheduler")
@@ -63,7 +68,7 @@ public class Scheduler {
 
     /**
      * Metodo getter per l'attributo schedulerId.
-     * 
+     *
      * @return l'id dello scheduler.
      */
     public Integer getSchedulerId() {
@@ -72,7 +77,7 @@ public class Scheduler {
 
     /**
      * Il metodo getter per l'attriburo monthly.
-     * 
+     *
      * @return il valore del attributo monthly.
      */
     public Integer getMonthly() {
@@ -81,7 +86,7 @@ public class Scheduler {
 
     /**
      * Il metodo setter per l'attributo monthly
-     * 
+     *
      * @param monthly il giorno del mese al quale eseguire lo scheduler. Il valore
      *                impostato dovrebbe essere una potenza di 2 [2^(1-31)].
      */
@@ -91,7 +96,7 @@ public class Scheduler {
 
     /**
      * Il metodo getter per l'attributo weekly
-     * 
+     *
      * @return il valore dell'attributo weekly.
      */
     public Integer getWeekly() {
@@ -100,7 +105,7 @@ public class Scheduler {
 
     /**
      * Il metodo setter per l'attributo weekly.
-     * 
+     *
      * @param weekly il giorno della settimana al quale eseguire lo scheduler. Il
      *               valore impostato dovrebbe essere una potenza di 2 [2^(1-7)].
      */
@@ -110,9 +115,9 @@ public class Scheduler {
 
     /**
      * Il metodo getter per l'attributo repeated.
-     * 
+     *
      * @return true se lo scheduler è impostato per essere eseguito più volte, false
-     *         altrimenti.
+     * altrimenti.
      */
     public boolean isRepeated() {
         return repeated;
@@ -120,7 +125,7 @@ public class Scheduler {
 
     /**
      * Il metodo setter per l'attributo repeated.
-     * 
+     *
      * @param repeated true se si vuole che lo scheduler si ripete, false se
      *                 l'esecuzione deve avvenire solo una volta.
      */
@@ -130,7 +135,7 @@ public class Scheduler {
 
     /**
      * Il metodo getter per l'attributo timeStart.
-     * 
+     *
      * @return data e ora della prima esecuzione in formato timestamp.
      */
     public Long getTimeStart() {
@@ -139,7 +144,7 @@ public class Scheduler {
 
     /**
      * Il metodo setter per l'attributi timeStart.
-     * 
+     *
      * @param timeStart la data e ora della prima esecutione in formato timestamp
      */
     public void setTimeStart(Long timeStart) {
@@ -148,7 +153,7 @@ public class Scheduler {
 
     /**
      * Il Metodo getter per l'attributo executionCounter.
-     * 
+     *
      * @return il numero di volte che lo scheduler è stato eseguito.
      */
     public Integer getExecutionCounter() {
@@ -158,10 +163,18 @@ public class Scheduler {
     /**
      * Metodo chiamato per incrementare il valore dell'attributo executionCounter.
      * Viene chiamato quando un
-     * {@link samt.smajilbasic.deduplicator.worker.ActionsManager} finisce con
+     * {@link samt.smajilbasic.deduplicator.timer.ScheduleChecker} finisce con
      * l'esecuzione.
      */
     public void executed() {
         executionCounter++;
+    }
+
+    public boolean isScheduled() {
+        return scheduled;
+    }
+
+    public void setScheduled(boolean value) {
+        this.scheduled = value;
     }
 }

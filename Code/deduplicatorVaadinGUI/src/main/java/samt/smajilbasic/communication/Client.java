@@ -229,14 +229,15 @@ public class Client {
                 String.class);
         } catch (RestClientException rce) {
             try {
-                JSONObject resp = (JSONObject) parser.parse(rce.getMessage());
+                JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(":")[0]);
                 if (resp.get("message") != null) {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception with error: " + resp.get("message"));
                 } else {
-                    Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
+                    Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message value");
                 }
             } catch (ParseException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
+
 
             }
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: general error");
@@ -327,7 +328,7 @@ public class Client {
         }
     }
 
-    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
+    public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, String weekNumber, String monthNumber,
                                                  String repetition) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
@@ -428,7 +429,7 @@ public class Client {
 
     }
 
-    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
+    public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, String weekNumber, String monthNumber,
                                                       String repetition) {
         ResponseEntity<String> response = insertSchedule(dateTime, weekNumber, monthNumber, repetition);
         if (response != null) {

@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
+import samt.smajilbasic.deduplicator.repository.SchedulerRepository;
 import samt.smajilbasic.deduplicator.timer.ScheduleChecker;
 import samt.smajilbasic.deduplicator.entity.AuthenticationDetails;
 import samt.smajilbasic.deduplicator.logger.MyLogger;
@@ -30,6 +31,8 @@ public class DeduplicatorApplication {
 
 	@Autowired
 	AuthenticationDetailsRepository adr;
+	@Autowired
+	SchedulerRepository schedulerRepository;
 
 
 	public static void main(String[] args) {
@@ -49,6 +52,14 @@ public class DeduplicatorApplication {
 			System.err.println("Unable to setup logger");
 			ioe.printStackTrace();
 		}
+
+		schedulerRepository.findAll().forEach(scheduler -> {
+			scheduler.setScheduled(false);
+			schedulerRepository.save(scheduler);
+			System.out.println("reset scheduled");
+
+		});
+
 	}
 
 	@EventListener(ApplicationReadyEvent.class)

@@ -2,6 +2,8 @@ package samt.smajilbasic.deduplicator.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,9 +133,7 @@ public class SchedulerController {
                         scheduler.setWeekly(dayWeek);
 
                     } else {
-                        return new ResponseEntity<Response>(
-                            new Response("Schedule monthly and weekly parameters invalid"),
-                            HttpStatus.INTERNAL_SERVER_ERROR);
+                        Logger.getGlobal().log(Level.INFO,"Schedule is daily");
                     }
                 } else {
                     return new ResponseEntity<Response>(new Response("Schedule hour parameter invalid"),
