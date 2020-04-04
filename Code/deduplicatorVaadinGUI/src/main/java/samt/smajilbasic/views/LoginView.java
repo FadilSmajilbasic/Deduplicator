@@ -107,7 +107,7 @@ public class LoginView extends VerticalLayout {
         certificateUpload = new Upload(buffer);
         certificateUpload.addSucceededListener(event -> {
             Notification.show("File uploaded successfully", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            writeCertificate(buffer.getInputStream());
+            saveCertificate(buffer.getInputStream());
         });
         certificateUpload.addFailedListener(event -> {
             Notification.show("Unable to upload file: " + event.getReason().getMessage(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -126,6 +126,7 @@ public class LoginView extends VerticalLayout {
         portTextField.setValue(8443d);
         hostTextField.setValue("localhost");
         portTextField.setHasControls(true);
+        //TODO: delete from final build
         usernameTextField.setValue("admin");
         passwordField.setValue("administrator");
 
@@ -166,7 +167,7 @@ public class LoginView extends VerticalLayout {
     }
 
     /**
-     * The tyLogin method attempts to authenticate the {@link Client} to the
+     * The tryLogin method attempts to authenticate the {@link Client} to the
      * deduplicator service.
      *
      * @param host the host IP to conenct to.
@@ -177,7 +178,7 @@ public class LoginView extends VerticalLayout {
     private void tryLogin(String host, int port, String user, String pass) {
 
         if (!user.isBlank()) {
-            if (Validator.isValidIP(host) || host.equals("localhost")) {
+            if (Validator.isValidIP(host) || host.equals("localhost") || Validator.isValidURL(host)) {
                 if (port > 0 && port <= 65535) {
                     if(!certificatePassword.getValue().isBlank())
                         settings.setCAPassword(Base64.getEncoder().encodeToString(certificatePassword.getValue().getBytes()));
@@ -245,20 +246,24 @@ public class LoginView extends VerticalLayout {
         }
     }
 
-    private void writeCertificate(InputStream in) {
+    private void saveCertificate(InputStream in) {
         try {
-            if (!Files.exists(Paths.get("deduplicator.p12"))) {
-                File newFile = new File("deduplicator.p12");
-                if (newFile.createNewFile()) {
-                    Notification.show("New file created", settings.getNotificationLength(), Notification.Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                    Logger.getGlobal().log(Level.INFO, "New file created");
-                } else {
-                    Notification.show("File already exists", settings.getNotificationLength(), Notification.Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                    Logger.getGlobal().log(Level.SEVERE, "File already exists");
-                }
+            File newFile = new File("deduplicator.p12");
+            
+            if (newFile.exists()) {
+                newFile.delete();
             }
+            
+            if (newFile.createNewFile()) {
+                Notification.show("New file created", settings.getNotificationLength(), Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                Logger.getGlobal().log(Level.INFO, "New file created");
+            } else {
+                Notification.show("File already exists", settings.getNotificationLength(), Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Logger.getGlobal().log(Level.SEVERE, "File already exists");
+            }
+
             FileOutputStream fileOutputStream = new FileOutputStream("deduplicator.p12");
             fileOutputStream.write(in.readAllBytes());
             fileOutputStream.close();

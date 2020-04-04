@@ -43,6 +43,9 @@ import samt.smajilbasic.properties.Settings;
 @CssImport("./styles/radio-buttons-vertical.css")
 public class SchedulerView extends VerticalLayout {
 
+    /**
+     * The name of the view
+     */
     public static final String VIEW_NAME = "Scheduler";
 
     /**
@@ -143,7 +146,6 @@ public class SchedulerView extends VerticalLayout {
             });
 
             Button button = new Button("Set scan schedule", event -> {
-
                 ResponseEntity<String> response = client.insertScheduledScan(LocalDateTime.of(datePicker.getValue(), timePicker.getValue()), weekNumber, monthNumber, radioButtonGroup.getValue());
                 if (response != null) {
                     if (response.getStatusCode().equals(HttpStatus.OK)) {

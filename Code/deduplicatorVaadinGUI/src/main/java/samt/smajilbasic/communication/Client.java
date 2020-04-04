@@ -100,7 +100,7 @@ public class Client {
             try {
                 TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
                 SSLContext sslContext = SSLContextBuilder.create().loadKeyMaterial(keyStore, caPassword.toCharArray())
-                    .loadTrustMaterial(null, acceptingTrustStrategy).build();
+                        .loadTrustMaterial(null, acceptingTrustStrategy).build();
 
                 HttpClient httpClient = HttpClients.custom().setSSLContext(sslContext).build();
 
@@ -111,7 +111,7 @@ public class Client {
                 return true;
 
             } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException
-                | KeyManagementException e) {
+                    | KeyManagementException e) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to create client: " + e.getMessage());
                 e.printStackTrace();
                 return false;
@@ -129,7 +129,7 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET,
-                requestEntity, String.class);
+                    requestEntity, String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: " + rce.getMessage());
             if (rce.getMessage().contains("Connection refused")) {
@@ -173,7 +173,7 @@ public class Client {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
-                String.class, requestEntity);
+                    String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 return response;
@@ -187,21 +187,21 @@ public class Client {
         return null;
     }
 
-public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
+    public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
 
-    HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
-    ResponseEntity<String> response = null;
-    try {
-        response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
-                String.class);
-    } catch (RestClientException rce) {
-        Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+                    String.class);
+        } catch (RestClientException rce) {
+            Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
+        }
+
+        return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
+
     }
-
-    return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
-
-}
 
     public ResponseEntity<String> post(String path, MultiValueMap<String, Object> values) {
         values = values == null ? new LinkedMultiValueMap<>() : values;
@@ -209,7 +209,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
-                String.class);
+                    String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
             rce.printStackTrace(System.out);
@@ -226,7 +226,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
-                String.class);
+                    String.class);
         } catch (RestClientException rce) {
             try {
                 JSONObject resp = (JSONObject) parser.parse(rce.getMessage());
@@ -245,7 +245,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
         return response;
     }
 
-    public ResponseEntity<String> savePath(String value, String type) {
+    public ResponseEntity<String> savePath(String path, String type) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("path", value);
@@ -257,8 +257,8 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
 
         if (value != null) {
             MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-            values.add("path",  value.getPath());
-            ResponseEntity<String> response = delete("/path",values);
+            values.add("path", value.getPath());
+            ResponseEntity<String> response = delete("/path", values);
             return response.getStatusCode();
         } else {
             return HttpStatus.BAD_REQUEST;
@@ -291,8 +291,8 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
                 try {
                     String body = response.getBody();
                     JSONObject resp = (JSONObject) parser.parse(body);
-                    if (resp.get("fileCount") != null && resp.get("progress") != null
-                        && resp.get("timestamp") != null && resp.get("totalFiles") != null) {
+                    if (resp.get("fileCount") != null && resp.get("progress") != null && resp.get("timestamp") != null
+                            && resp.get("totalFiles") != null) {
                         return resp;
                     } else {
                         HashMap<String, String> error = new HashMap<String, String>();
@@ -328,7 +328,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
     }
 
     public ResponseEntity<String> insertSchedule(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
-                                                 String repetition) {
+            String repetition) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
         values.add("weekly", Objects.requireNonNullElse(weekNumber, ""));
@@ -351,7 +351,6 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
     }
 
     public HttpStatus addActions(LocalDateTime time, List<GlobalPath> actions, String schedulerId) {
-
         if (schedulerId == null) {
             ResponseEntity<String> response = insertSchedule(time, null, null, "One off");
             try {
@@ -359,14 +358,14 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
                 schedulerId = responseJSON.get("schedulerId").toString();
             } catch (ParseException e) {
                 Notification.show("Unable to parse server response", settings.getNotificationLength(),
-                    Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse server response");
                 return HttpStatus.BAD_REQUEST;
             } catch (NullPointerException npe) {
                 Notification
-                    .show("Unable to add action - insertScheduler response is null",
-                        settings.getNotificationLength(), Notification.Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        .show("Unable to add action - insertScheduler response is null",
+                                settings.getNotificationLength(), Notification.Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to add action - insert scheduler response is null ");
                 return HttpStatus.BAD_REQUEST;
             }
@@ -374,19 +373,18 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
         for (GlobalPath path : actions) {
             Action action = path.getAction();
             ResponseEntity<String> response = insertAction(action.getType(), path.getPath(), action.getNewPath(),
-                schedulerId);
+                    schedulerId);
             if (response != null) {
                 Logger.getGlobal().log(Level.INFO,
-                    "Added action " + path.getPath() + " status: " + response.getStatusCode());
+                        "Added action " + path.getPath() + " status: " + response.getStatusCode());
                 if (response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
-                    Notification.show("Unable to add action of: " + path.getPath(),
-                        settings.getNotificationLength(), Notification.Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.show("Unable to add action of: " + path.getPath(), settings.getNotificationLength(),
+                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.WARNING, "Unable to add action of: " + path.getPath());
                 }
             } else {
                 Logger.getGlobal().log(Level.SEVERE,
-                    "No response from server - unable to add action of " + path.getPath());
+                        "No response from server - unable to add action of " + path.getPath());
 
             }
 
@@ -429,7 +427,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
     }
 
     public ResponseEntity<String> insertScheduledScan(LocalDateTime dateTime, Integer weekNumber, Integer monthNumber,
-                                                      String repetition) {
+            String repetition) {
         ResponseEntity<String> response = insertSchedule(dateTime, weekNumber, monthNumber, repetition);
         if (response != null) {
             ResponseEntity<String> responseEntity = response;
@@ -441,13 +439,14 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
             } catch (ParseException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server");
                 Notification.show("Unable to parse response from server", settings.getNotificationLength(),
-                    Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
             Logger.getGlobal().log(Level.SEVERE, "Unable to insert scheduler");
-            Notification.show("Unable to insert scheduler", settings.getNotificationLength(),
-                Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification
+                    .show("Unable to insert scheduler", settings.getNotificationLength(), Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
     }
@@ -475,7 +474,8 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
                 report.setId(Integer.parseInt(body.get("id").toString()));
                 return report;
             } catch (ParseException | NumberFormatException pe) {
-                Notification.show("Unable to parse response from server", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                Notification.show("Unable to parse response from server", settings.getNotificationLength(),
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server: " + pe.getMessage());
                 return null;
             }
