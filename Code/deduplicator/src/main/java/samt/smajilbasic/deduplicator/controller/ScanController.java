@@ -123,10 +123,10 @@ public class ScanController implements ScanListener {
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 if (authentication != null) {
                     Optional<AuthenticationDetails> tempUser = adr.findById(authentication.getName());
-                    report = tempUser.map(Report::new).orElseGet(() -> new Report(adr.findById("scheduler").get()));
+                    report = new Report(tempUser.get());
                 } else {
                     Logger.getGlobal().log(Level.WARNING, "No user set");
-                    report = new Report();
+                    report = new Report(adr.findById("scheduler").get());
                 }
                 report.setStart(System.currentTimeMillis());
                 reportRepository.save(report);

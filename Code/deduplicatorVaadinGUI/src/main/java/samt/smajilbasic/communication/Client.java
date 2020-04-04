@@ -187,21 +187,21 @@ public class Client {
         return null;
     }
 
-public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
+    public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
 
-    HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
 
-    ResponseEntity<String> response = null;
-    try {
-        response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange(prefix + host + ":" + port + "/path/", HttpMethod.DELETE, requestEntity,
                 String.class);
-    } catch (RestClientException rce) {
-        Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
+        } catch (RestClientException rce) {
+            Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
+        }
+
+        return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
+
     }
-
-    return Objects.requireNonNullElseGet(response, () -> new ResponseEntity<String>(HttpStatus.BAD_REQUEST));
-
-}
 
     public ResponseEntity<String> post(String path, MultiValueMap<String, Object> values) {
         values = values == null ? new LinkedMultiValueMap<>() : values;
@@ -248,7 +248,7 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
     public ResponseEntity<String> savePath(String path, String type) {
 
         MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-        values.add("path", value);
+        values.add("path", path);
         values.add("ignorePath", type.equals("ignore"));
         return put("path/", values);
     }
@@ -257,8 +257,8 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
 
         if (value != null) {
             MultiValueMap<String, Object> values = new LinkedMultiValueMap<>();
-            values.add("path",  value.getPath());
-            ResponseEntity<String> response = delete("/path",values);
+            values.add("path", value.getPath());
+            ResponseEntity<String> response = delete("/path", values);
             return response.getStatusCode();
         } else {
             return HttpStatus.BAD_REQUEST;
@@ -467,14 +467,14 @@ public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> 
         if (response != null) {
             try {
                 JSONObject body = (JSONObject) parser.parse(response.getBody());
-                Report report = new Report(body.get("user").toString());
+                Report report = new Report(Objects.requireNonNullElse(body.get("user"), "unknown").toString());
                 report.setAverageDuplicateCount(Float.parseFloat(body.get("averageDuplicateCount").toString()));
                 report.setFilesScanned(Integer.parseInt(body.get("filesScanned").toString()));
                 report.setStart(Long.parseLong(body.get("start").toString()));
                 report.setDuration(Long.parseLong(body.get("duration").toString()));
                 report.setId(Integer.parseInt(body.get("id").toString()));
                 return report;
-            } catch (ParseException | NumberFormatException pe) {
+            } catch (ParseException | NumberFormatException | NullPointerException pe) {
                 Notification.show("Unable to parse response from server", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server: " + pe.getMessage());
                 return null;
