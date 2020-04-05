@@ -3,11 +3,13 @@ A program to manage duplicate files
 
 # Usage instructions
 
-## Start the deduplicator service
+## Start the deduplicator REST service
 
-##### Prerequisites:
+##### Requisites:
 - MYSQL service running
-- Have a MYSQL user with enough access to create a nd modify table and database structure
+- Have a MYSQL user with enough access to create and modify table and database structure
+- nodejs version >12.16 
+- npm version >6.13.4 
 
 ##### Configuration file setup:
 
@@ -23,7 +25,7 @@ After cloning the repo navigate to `Code/deduplicator/src/main/resources` and ch
 
 ##### Compiling:
 
-In order to compile the application navigate to Code/deduplicator and run the Gradle wrapper by opening the terminal and writing the following command: <br>`./gradlew build` 
+In order to compile the application navigate to `Code/deduplicator` and run the Gradle wrapper by opening the terminal and writing the following command: <br>`./gradlew build` 
 
 The gradle wrapper will create an executable jar in the folder `Code/deduplicator/build/libs/`
 
