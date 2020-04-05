@@ -162,7 +162,7 @@ public class LoginView extends VerticalLayout {
         } else {
             form.add(hostTextField, portTextField, certificateUpload, certificatePassword);
         }
-        advancedViewButton.setText(defaultView ? "Advanced View" : "Basic View");
+        advancedViewButton.setText(defaultView ? "Basic View" : "Advanced View");
         defaultView = !defaultView;
     }
 

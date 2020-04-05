@@ -21,7 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class AuthenticationDetails {
 
     /**
-     * L'attributo username descrive lo username del utente.
+     * L'attributo username descrive il username del utente.
      * Utilizza l'annotazione @Id per indicare che è una chiave primaria della tabella.
      */
     @Id
@@ -55,7 +55,7 @@ public class AuthenticationDetails {
 
     /**
      * Costruttore che prende come parametro username e password dell'utente.
-     * @param username lo username del utente
+     * @param username il username del utente
      * @param password la password del utente
      * @throws NoSuchAlgorithmException eccezione sollevata se sulla macchina host non esiste la crittografia BCrypt (min java version 1.8).
      */
@@ -73,7 +73,7 @@ public class AuthenticationDetails {
 
     /**
      * Metodo getter per la variabile username.
-     * @return lo username del utente
+     * @return il username del utente
      */
     public String getUsername() {
         return username;

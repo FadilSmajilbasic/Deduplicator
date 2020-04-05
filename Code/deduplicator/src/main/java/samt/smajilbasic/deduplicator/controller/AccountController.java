@@ -92,7 +92,9 @@ public class AccountController {
                         AuthenticationDetails ad = new AuthenticationDetails(username, password);
                         adr.save(ad);
                         User.UserBuilder builder = User.builder();
-
+                        if(inMemoryUserDetailsManager.userExists(username)){
+                            inMemoryUserDetailsManager.deleteUser(username);
+                        }
                         inMemoryUserDetailsManager.createUser(builder.username(username).password(ad.getPassword()).roles("USER").build());
                         return adr.findById(username).get();
                     } catch (NoSuchAlgorithmException e) {
@@ -195,16 +197,22 @@ public class AccountController {
                     AuthenticationDetails internalUser = adr.findById(authentication.getName()).get();
                     if (!internalUser.getUsername().equals("admin")) {
                         if (encoder.matches(password, internalUser.getPassword())) {
-                            delete(internalUser.getUsername());
-                            insert(newUsername, password);
-                            if (updateUsernameInMemory(internalUser.getUsername(), newUsername)) {
-                                Logger.getGlobal().log(Level.INFO, "Username updated successfully from "
-                                    + internalUser.getUsername() + " to " + newUsername);
-                                return new ResponseEntity<String>(HttpStatus.OK);
-                            } else {
-                                Logger.getGlobal().log(Level.SEVERE,
-                                    "An error occurred while updating the username of " + internalUser.getUsername());
-                                return new ResponseEntity<Response>(new Response("An error occurred while updating the username of " + internalUser.getUsername()), HttpStatus.INTERNAL_SERVER_ERROR);
+                            if (!adr.existsById(newUsername)) {
+                                delete(internalUser.getUsername());
+                                insert(newUsername, password);
+                                if (updateUsernameInMemory(internalUser.getUsername(), newUsername)) {
+                                    Logger.getGlobal().log(Level.INFO, "Username updated successfully from "
+                                        + internalUser.getUsername() + " to " + newUsername);
+                                    return new ResponseEntity<String>(HttpStatus.OK);
+                                } else {
+                                    Logger.getGlobal().log(Level.SEVERE,
+                                        "An error occurred while updating the username of " + internalUser.getUsername());
+                                    return new ResponseEntity<Response>(new Response("An error occurred while updating the username of " + internalUser.getUsername()), HttpStatus.INTERNAL_SERVER_ERROR);
+                                }
+                            }else{
+                                Logger.getGlobal().log(Level.SEVERE, "Username already taken");
+                                return new ResponseEntity<Response>(new Response("Username already taken"),
+                                    HttpStatus.INTERNAL_SERVER_ERROR);
                             }
                         } else {
                             Logger.getGlobal().log(Level.WARNING, "Invalid user in database");

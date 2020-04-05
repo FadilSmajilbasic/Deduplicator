@@ -100,7 +100,7 @@ public class Client {
             try {
                 TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
                 SSLContext sslContext = SSLContextBuilder.create().loadKeyMaterial(keyStore, caPassword.toCharArray())
-                        .loadTrustMaterial(null, acceptingTrustStrategy).build();
+                    .loadTrustMaterial(null, acceptingTrustStrategy).build();
 
                 HttpClient httpClient = HttpClients.custom().setSSLContext(sslContext).build();
 
@@ -111,7 +111,7 @@ public class Client {
                 return true;
 
             } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException
-                    | KeyManagementException e) {
+                | KeyManagementException e) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to create client: " + e.getMessage());
                 e.printStackTrace();
                 return false;
@@ -129,7 +129,7 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/access/login/", HttpMethod.GET,
-                    requestEntity, String.class);
+                requestEntity, String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: " + rce.getMessage());
             if (rce.getMessage().contains("Connection refused")) {
@@ -173,7 +173,7 @@ public class Client {
         HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(createHeaders(false));
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(prefix + host + ":" + port + "/" + path,
-                    String.class, requestEntity);
+                String.class, requestEntity);
 
             if (response.getStatusCode().equals(HttpStatus.OK)) {
                 return response;
@@ -189,7 +189,7 @@ public class Client {
 
     public ResponseEntity<String> delete(String path, MultiValueMap<String, Object> values) {
         HttpEntity<MultiValueMap<String, Object>> requestEntity;
-        if(values != null)
+        if (values != null)
             requestEntity = new HttpEntity<>(values, createHeaders(true));
         else {
             values = new LinkedMultiValueMap<>();
@@ -197,7 +197,7 @@ public class Client {
         }
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange(prefix + host + ":" + port +"/" + path, HttpMethod.DELETE, requestEntity,
+            response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.DELETE, requestEntity,
                 String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
@@ -213,7 +213,7 @@ public class Client {
         ResponseEntity<String> response = null;
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
             rce.printStackTrace(System.out);
@@ -230,19 +230,18 @@ public class Client {
 
         try {
             response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.PUT, requestEntity,
-                    String.class);
+                String.class);
         } catch (RestClientException rce) {
             try {
-                JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(":")[0]);
+                JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(" : ")[1].replace("[", "").replace("]", ""));
                 if (resp.get("message") != null) {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception with error: " + resp.get("message"));
                 } else {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message value");
                 }
-            } catch (ParseException pe) {
+                return new ResponseEntity<>(String.valueOf(resp.get("message")), HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch (ParseException | ClassCastException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
-
-
             }
             Logger.getGlobal().log(Level.SEVERE, "Rest client exception: general error");
         }
@@ -297,7 +296,7 @@ public class Client {
                     String body = response.getBody();
                     JSONObject resp = (JSONObject) parser.parse(body);
                     if (resp.get("fileCount") != null && resp.get("progress") != null && resp.get("timestamp") != null
-                            && resp.get("totalFiles") != null) {
+                        && resp.get("totalFiles") != null) {
                         return resp;
                     } else {
                         HashMap<String, String> error = new HashMap<String, String>();
@@ -363,14 +362,14 @@ public class Client {
                 schedulerId = responseJSON.get("schedulerId").toString();
             } catch (ParseException e) {
                 Notification.show("Unable to parse server response", settings.getNotificationLength(),
-                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse server response");
                 return HttpStatus.BAD_REQUEST;
             } catch (NullPointerException npe) {
                 Notification
-                        .show("Unable to add action - insertScheduler response is null",
-                                settings.getNotificationLength(), Notification.Position.TOP_END)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    .show("Unable to add action - insertScheduler response is null",
+                        settings.getNotificationLength(), Notification.Position.TOP_END)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 Logger.getGlobal().log(Level.SEVERE, "Unable to add action - insert scheduler response is null ");
                 return HttpStatus.BAD_REQUEST;
             }
@@ -378,18 +377,18 @@ public class Client {
         for (GlobalPath path : actions) {
             Action action = path.getAction();
             ResponseEntity<String> response = insertAction(action.getType(), path.getPath(), action.getNewPath(),
-                    schedulerId);
+                schedulerId);
             if (response != null) {
                 Logger.getGlobal().log(Level.INFO,
-                        "Added action " + path.getPath() + " status: " + response.getStatusCode());
+                    "Added action " + path.getPath() + " status: " + response.getStatusCode());
                 if (response.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
                     Notification.show("Unable to add action of: " + path.getPath(), settings.getNotificationLength(),
-                            Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                     Logger.getGlobal().log(Level.WARNING, "Unable to add action of: " + path.getPath());
                 }
             } else {
                 Logger.getGlobal().log(Level.SEVERE,
-                        "No response from server - unable to add action of " + path.getPath());
+                    "No response from server - unable to add action of " + path.getPath());
 
             }
 
@@ -444,14 +443,14 @@ public class Client {
             } catch (ParseException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Unable to parse response from server");
                 Notification.show("Unable to parse response from server", settings.getNotificationLength(),
-                        Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return null;
             }
         } else {
             Logger.getGlobal().log(Level.SEVERE, "Unable to insert scheduler");
             Notification
-                    .show("Unable to insert scheduler", settings.getNotificationLength(), Notification.Position.TOP_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                .show("Unable to insert scheduler", settings.getNotificationLength(), Notification.Position.TOP_END)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return null;
         }
     }

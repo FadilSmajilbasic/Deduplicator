@@ -22,6 +22,9 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -29,7 +32,6 @@ import org.springframework.http.ResponseEntity;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 import org.vaadin.olli.FileDownloadWrapper;
-import samt.smajilbasic.Application;
 import samt.smajilbasic.logger.MyLogger;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
@@ -37,20 +39,15 @@ import samt.smajilbasic.communication.Client;
 import samt.smajilbasic.properties.Settings;
 
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -97,6 +94,10 @@ public class DashboardView extends FormLayout {
             Button changeUsernameButton = new Button("Change username", event -> changeUsername());
             Button downloadLogsButton = new Button("Download logs");
             Button addUser = new Button("Add user", event -> addUser());
+
+            if (client.getUsername().equalsIgnoreCase("admin")) {
+                changeUsernameButton.setEnabled(false);
+            }
 
             File logPath = new File(settings.getLogPath());
             File[] files = logPath.listFiles();
@@ -291,7 +292,7 @@ public class DashboardView extends FormLayout {
             }
         });
 
-        Button changeUsernameButton = new Button("Change password", event -> {
+        Button changeUsernameButton = new Button("Change username", event -> {
             if (passwordField.getValue().equals(client.getPassword())) {
                 passwordField.setInvalid(false);
                 if (!usernameField.isInvalid()) {
@@ -302,9 +303,16 @@ public class DashboardView extends FormLayout {
                             Logger.getGlobal().log(Level.INFO, "Successfully updated the username ");
                             logOutLoadingDialog();
                         } else {
-                            Notification.show("Unable to update username - Error: " + response.getStatusCode(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                            Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
+                            try {
+                                JSONParser parser = new JSONParser();
+                                JSONObject resp = (JSONObject) parser.parse(response.getBody().split(" : ")[1].replace("[", "").replace("]", ""));
+                                Notification.show("Unable to update username - " + resp.get("message"), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                Logger.getGlobal().log(Level.SEVERE, "Unable to update password - " + resp.get("message"));
+                            } catch (ParseException pe) {
+                                Notification.show("Unable to update username - Error: " + response.getStatusCode() + " Message: " + response.getBody(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Error: " + response.getStatusCode() + "\nError body: " + response.getBody());
 
+                            }
                         }
                     } else {
                         Notification.show("Unable to update username - Unable to get response", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -387,7 +395,7 @@ public class DashboardView extends FormLayout {
         Button changePasswordButton = new Button("Change password", event -> {
             if (passwordField.getValue().equals(client.getPassword())) {
                 if (!passwordField.isInvalid() && !newPasswordField.isInvalid() && !repeatedPasswordField.isInvalid()) {
-                    if (newPasswordField.getValue().length() < Resources.PASSWORD_LENGTH) {
+                    if (newPasswordField.getValue().length() >= Resources.PASSWORD_LENGTH) {
                         ResponseEntity<String> response = client.updatePassword(newPasswordField.getValue());
 
                         if (response != null) {
@@ -405,8 +413,8 @@ public class DashboardView extends FormLayout {
 
                         }
                     } else {
-                        Notification.show("Unable to update password - password length ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
-                        Logger.getGlobal().log(Level.SEVERE, "Unable to update password - Unable to get response");
+                        Notification.show("Unable to update password - new password is not long enough ", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        Logger.getGlobal().log(Level.SEVERE, "Unable to update password - new password is not long enough");
                     }
                 } else {
                     Notification.show("All fields must be valid", settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -425,40 +433,36 @@ public class DashboardView extends FormLayout {
         });
 
 
-        ComponentEventListener<KeyUpEvent> listener = new ComponentEventListener<KeyUpEvent>() {
-            @Override
-            public void onComponentEvent(KeyUpEvent event) {
-                if (newPasswordField.getValue().equals(passwordField.getValue())) {
-                    if (newPasswordField.getErrorMessage() != null) {
-                        newPasswordField.setInvalid(true);
-                        newPasswordField.setErrorMessage("New password is same as old password");
-                    }
-                } else {
-                    newPasswordField.setInvalid(false);
-                    newPasswordField.setErrorMessage("");
+        ComponentEventListener<KeyUpEvent> listener = (ComponentEventListener<KeyUpEvent>) event -> {
+            if (newPasswordField.getValue().equals(passwordField.getValue())) {
+                if (newPasswordField.getErrorMessage() != null) {
+                    newPasswordField.setInvalid(true);
+                    newPasswordField.setErrorMessage("New password is same as old password");
                 }
+            } else {
+                newPasswordField.setInvalid(false);
+                newPasswordField.setErrorMessage("");
+            }
 
-                if (!newPasswordField.getValue().isBlank()) {
-                    if (newPasswordField.getValue().length() >= Resources.PASSWORD_LENGTH) {
-                        if (!newPasswordField.getValue().equals(repeatedPasswordField.getValue())) {
-                            if (repeatedPasswordField.getErrorMessage() != null) {
-                                repeatedPasswordField.setInvalid(true);
-                                repeatedPasswordField.setErrorMessage("Passwords don't match");
-                            }
-                        } else {
-                            repeatedPasswordField.setInvalid(false);
-                            repeatedPasswordField.setErrorMessage("");
+            if (!newPasswordField.getValue().isBlank()) {
+                if (newPasswordField.getValue().length() >= Resources.PASSWORD_LENGTH) {
+                    if (!newPasswordField.getValue().equals(repeatedPasswordField.getValue())) {
+                        if (repeatedPasswordField.getErrorMessage() != null) {
+                            repeatedPasswordField.setInvalid(true);
+                            repeatedPasswordField.setErrorMessage("Passwords don't match");
                         }
                     } else {
-                        if (newPasswordField.getErrorMessage() != null) {
-                            newPasswordField.setInvalid(true);
-                            newPasswordField.setErrorMessage("Password should be at least " + Resources.PASSWORD_LENGTH + " characters long");
-                        }
+                        repeatedPasswordField.setInvalid(false);
+                        repeatedPasswordField.setErrorMessage("");
+                    }
+                } else {
+                    if (newPasswordField.getErrorMessage() != null) {
+                        newPasswordField.setInvalid(true);
+                        newPasswordField.setErrorMessage("Password should be at least " + Resources.PASSWORD_LENGTH + " characters long");
                     }
                 }
-
-
             }
+
 
         };
         passwordField.addKeyUpListener(listener);

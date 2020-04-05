@@ -191,7 +191,7 @@ public class SchedulerView extends VerticalLayout {
             form.setSizeFull();
 
             pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);
-            Button deleteScheduleButton = new Button("Delete schedule", event -> deleteScheduler());
+            Button deleteScheduleButton = new Button("Delete a schedule", event -> deleteScheduler());
             add(pickerLayout, pickerSideLayouts, new HorizontalLayout(button, deleteScheduleButton));
             setMinWidth(Resources.SIZE_MOBILE_S);
         }
