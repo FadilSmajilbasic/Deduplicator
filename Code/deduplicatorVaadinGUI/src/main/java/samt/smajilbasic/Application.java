@@ -44,9 +44,8 @@ public class Application extends SpringBootServletInitializer {
         try {
             MyLogger logger = (MyLogger) context.getBean("myLogger");
             logger.setup();
-        } catch (IOException ioe) {
-            System.out.println("Unable to setup logger");
-            ioe.printStackTrace();
+        } catch (IOException  ioe) {
+            System.out.println("Unable to setup logger : " + ioe.getMessage());
         }
     }
     /**

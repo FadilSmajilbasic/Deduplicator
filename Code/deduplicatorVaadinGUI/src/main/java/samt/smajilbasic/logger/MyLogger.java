@@ -26,16 +26,12 @@ public class MyLogger {
         Path p = Paths.get(logPath);
         File logFolder = new File(p.toAbsolutePath().toString());
         if (!logFolder.exists()) {
-            if (Files.isWritable(Paths.get(logFolder.getParent()))) {
-                if (!logFolder.mkdir()) {
-                    logPath = "";
-                } else {
-                    Logger.getGlobal().log(Level.SEVERE, "Unable to make log directory");
-                    Logger.getGlobal().log(Level.INFO, "Writing logs to current working directory");
-                }
+            if (logFolder.mkdirs()) {
+                Logger.getGlobal().log(Level.INFO, "Log directory made");
             } else {
-                Logger.getGlobal().log(Level.SEVERE, "Unable to write to parent directory");
+                Logger.getGlobal().log(Level.SEVERE, "Unable to make log directory");
                 Logger.getGlobal().log(Level.INFO, "Writing logs to current working directory");
+                logPath = "";
             }
         }
         FileHandler fileHandler = new FileHandler(logPath + "log." + System.currentTimeMillis() + ".txt");
