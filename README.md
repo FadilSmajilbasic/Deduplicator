@@ -13,7 +13,7 @@ A program to manage duplicate files
 
 ##### Configuration file setup:
 
-After cloning the repo navigate to `Code/deduplicator/src/main/resources` and change the following fields according to mysql server settings and mysql user's username and password
+After cloning the repo navigate to `5_Sito /deduplicator/src/main/resources` and change the following fields according to mysql server settings and mysql user's username and password
 
 |Property| Description|
 |-|-|
