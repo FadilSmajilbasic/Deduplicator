@@ -126,9 +126,6 @@ public class LoginView extends VerticalLayout {
         portTextField.setValue(8443d);
         hostTextField.setValue("localhost");
         portTextField.setHasControls(true);
-        //TODO: delete from final build
-        usernameTextField.setValue("admin");
-        passwordField.setValue("administrator");
 
         Button button = new Button("Login", e -> tryLogin(hostTextField.getValue(), portTextField.getValue().intValue(),
             usernameTextField.getValue(), passwordField.getValue()));
