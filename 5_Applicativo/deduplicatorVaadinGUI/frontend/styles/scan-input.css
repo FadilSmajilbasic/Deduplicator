@@ -1,0 +1,13 @@
+.custom-input {
+    border:     none;
+    background: white;
+}
+:host(.custom-input) [part="input-field"]{
+    border:     none;
+    background: white;
+    box-shadow: none;
+}
+
+:host(.custom-input) [part="input-field"]::after{
+    content: none;
+}
