@@ -22,6 +22,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.shared.communication.PushMode;
 import com.vaadin.flow.shared.ui.Transport;
+import org.apache.juli.logging.Log;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -32,7 +33,9 @@ import org.springframework.http.ResponseEntity;
 import org.vaadin.filesystemdataprovider.FilesystemData;
 import org.vaadin.filesystemdataprovider.FilesystemDataProvider;
 import org.vaadin.olli.FileDownloadWrapper;
+import samt.smajilbasic.entity.Action;
 import samt.smajilbasic.logger.MyLogger;
+import samt.smajilbasic.model.ActionType;
 import samt.smajilbasic.model.Resources;
 import samt.smajilbasic.authentication.AccessControlFactory;
 import samt.smajilbasic.communication.Client;
@@ -90,7 +93,12 @@ public class DashboardView extends FormLayout {
             Button changePasswordButton = new Button("Change password", event -> {
                 changePassword();
             });
-            Button clearLogsButton = new Button("Clear logs", event -> clearLogs());
+            Button clearLogsButton = new Button("Clear logs", event -> {
+                new Dialog(new VerticalLayout(new Label("Are you sure you want to clear the log file?"), new Button("Clear Logs", clearEvent -> {
+                    clearLogs();
+                    ((Dialog) (clearEvent.getSource().getParent().get().getParent().get())).close();
+                }))).open();
+            });
             Button changeUsernameButton = new Button("Change username", event -> changeUsername());
             Button downloadLogsButton = new Button("Download logs");
             Button addUser = new Button("Add user", event -> addUser());
@@ -331,7 +339,7 @@ public class DashboardView extends FormLayout {
 
         Button cancel = new Button("Cancel", event -> dialog.close());
 
-        layout.add(usernameField, passwordField, new HorizontalLayout(changeUsernameButton, cancel));
+        layout.add(usernameField, passwordField, new HorizontalLayout(cancel, changeUsernameButton));
         dialog.add(layout);
         dialog.open();
     }
@@ -514,7 +522,7 @@ public class DashboardView extends FormLayout {
 
 
     private void openFileSelect() {
-
+        dialog.removeAll();
         dialog.setCloseOnEsc(false);
         dialog.setCloseOnOutsideClick(false);
 
@@ -527,11 +535,18 @@ public class DashboardView extends FormLayout {
         fileBrowser.addSelectionListener(event -> {
             Optional<File> selected = event.getFirstSelectedItem();
             selected.ifPresent(file -> {
-                if (file.isDirectory()) {
+                if (file.isDirectory() && file.canWrite()) {
                     newLogPath = file.getAbsolutePath();
+                    updateLogger();
+                    dialog.close();
+                    Logger.getGlobal().log(Level.INFO, "Log file moved");
                 } else {
-                    Notification.show("Path selected is not a directory");
+                    Notification.show("Path selected is not a directory or it is not writeable",
+                        settings.getNotificationLength(), Notification.Position.TOP_END)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Logger.getGlobal().log(Level.SEVERE, "Move dialog - path selected is not a directory or it is not writeable");
                 }
+
             });
 
         });
@@ -539,17 +554,7 @@ public class DashboardView extends FormLayout {
         fileBrowser.addHierarchyColumn(File::getName).setHeader("Path");
         fileBrowser.setSelectionMode(Grid.SelectionMode.SINGLE);
         Button confirmButton = new Button("Close", button -> {
-            Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-            File file = fileBrowser.getSelectedItems().iterator().next();
-
-            if (file.isDirectory() && Files.isWritable(Paths.get(file.getPath()))) {
-                newLogPath = file.getAbsolutePath();
-                updateLogger();
-                dialog.close();
-            } else {
-                Notification.show("Path selected is not a directory");
-            }
+            dialog.close();
         });
 
         VerticalLayout layout = new VerticalLayout();
@@ -562,7 +567,6 @@ public class DashboardView extends FormLayout {
     }
 
     private void updateLogger() {
-
         for (Handler handler : Logger.getGlobal().getHandlers()) {
             handler.close();
         }
@@ -570,8 +574,9 @@ public class DashboardView extends FormLayout {
         MyLogger logger = new MyLogger();
         try {
             logger.setup();
+            Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } catch (IOException ioe) {
-            Notification.show("New log path set as " + newLogPath, settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            Notification.show("An exception occurred " + ioe.getMessage(), settings.getNotificationLength(), Notification.Position.TOP_END).addThemeVariants(NotificationVariant.LUMO_ERROR);
 
         }
     }

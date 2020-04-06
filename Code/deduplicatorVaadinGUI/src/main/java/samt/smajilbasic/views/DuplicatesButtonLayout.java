@@ -114,7 +114,6 @@ public class DuplicatesButtonLayout extends FormLayout {
         VerticalLayout layout = new VerticalLayout();
         layout.add(new Label("Select a folder"), fileBrowser);
         layout.setMinWidth("50em");
-//        layout.setAlignItems(Alignment.CENTER);
         dialog.setCloseOnOutsideClick(false);
         dialog.setCloseOnEsc(false);
         dialog.add(layout);

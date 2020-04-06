@@ -5,6 +5,7 @@
 .duplicate-header-label{
     min-width: 5em;
     white-space: pre-wrap;
+    word-break:break-all;
 }
 
 .inside-grid-button{

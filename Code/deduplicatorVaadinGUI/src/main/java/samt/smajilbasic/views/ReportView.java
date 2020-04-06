@@ -233,7 +233,7 @@ public class ReportView extends VerticalLayout {
                         countLabel.setClassName("duplicate-header-label");
                         FormLayout formLayout = new FormLayout(hashLabel, sizeLabel, countLabel);
 
-                        formLayout.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1),
+                        formLayout.setResponsiveSteps(new ResponsiveStep("0", 1),
                                 new ResponsiveStep(Resources.SIZE_TABLET, 3));
 
                         formLayout.setClassName("duplicate-header");

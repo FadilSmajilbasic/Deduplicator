@@ -212,11 +212,16 @@ public class Client {
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(values, createHeaders(true));
         ResponseEntity<String> response = null;
         try {
-            response = restTemplate.exchange(prefix + host + ":" + port + "/" + path, HttpMethod.POST, requestEntity,
+            response = restTemplate.postForEntity(prefix + host + ":" + port + "/" + path, requestEntity,
                 String.class);
         } catch (RestClientException rce) {
-            Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
-            rce.printStackTrace(System.out);
+            try {
+                JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(" : ")[1].replace("[", "").replace("]", ""));
+                Logger.getGlobal().log(Level.SEVERE, "Rest Client Exception: " + rce.getMessage());
+                return new ResponseEntity<>(String.valueOf(resp.get("message")), HttpStatus.INTERNAL_SERVER_ERROR);
+            } catch ( Exception pe) {
+                Logger.getGlobal().log(Level.SEVERE, "Unable to parse error message: " + pe.getMessage());
+            }
         }
         return response;
     }
@@ -236,10 +241,10 @@ public class Client {
                 JSONObject resp = (JSONObject) parser.parse(rce.getMessage().split(" : ")[1].replace("[", "").replace("]", ""));
                 if (resp.get("message") != null) {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception with error: " + resp.get("message"));
+                    return new ResponseEntity<>(String.valueOf(resp.get("message")), HttpStatus.INTERNAL_SERVER_ERROR);
                 } else {
                     Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message value");
                 }
-                return new ResponseEntity<>(String.valueOf(resp.get("message")), HttpStatus.INTERNAL_SERVER_ERROR);
             } catch (ParseException | ClassCastException pe) {
                 Logger.getGlobal().log(Level.SEVERE, "Rest client exception: unable to parse exception message");
             }

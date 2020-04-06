@@ -187,12 +187,12 @@ public class SchedulerView extends VerticalLayout {
                 }
             });
 
-            FormLayout form = new FormLayout();
-            form.setSizeFull();
-
-            pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);
             Button deleteScheduleButton = new Button("Delete a schedule", event -> deleteScheduler());
-            add(pickerLayout, pickerSideLayouts, new HorizontalLayout(button, deleteScheduleButton));
+            FormLayout form = new FormLayout(button, deleteScheduleButton);
+            form.setWidthFull();
+            form.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_L, 2));
+            pickerSideLayouts.add(radioButtonGroup, weekRadioButtonGroup, monthlyDatePicker);
+            add(pickerLayout, pickerSideLayouts, form);
             setMinWidth(Resources.SIZE_MOBILE_S);
         }
     }

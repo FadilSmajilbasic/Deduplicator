@@ -139,7 +139,7 @@ public class LoginView extends VerticalLayout {
 
         form = new FormLayout();
         passwordField.getStyle().set("margin-left", "0px");
-        form.setResponsiveSteps(new ResponsiveStep("10em", 1), new ResponsiveStep("20em", 2));
+        form.setResponsiveSteps(new ResponsiveStep(Resources.SIZE_MOBILE_S, 1), new ResponsiveStep(Resources.SIZE_MOBILE_L, 2));
         form.add(usernameTextField, passwordField);
         form.setColspan(certificateUpload, 2);
         form.setColspan(certificatePassword, 2);
