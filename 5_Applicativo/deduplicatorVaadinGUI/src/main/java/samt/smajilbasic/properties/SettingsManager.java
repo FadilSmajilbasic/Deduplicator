@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,27 +67,25 @@ public class SettingsManager {
         File file = new File(filePath.toAbsolutePath().toString());
         if (!file.exists()) {
             Logger.getGlobal().log(Level.INFO, "Configuration file not found, making a new one");
-            if (Files.isWritable(Paths.get(file.getParent()))) {
-                if (!file.mkdir()) {
-                    try {
-                        if (file.createNewFile()) {
-                            Logger.getGlobal().log(Level.INFO, "Writing new values");
-                            setSetting("logPath", "log/");
-                            setSetting("CAPassword", "");
-                            setSetting("refreshInterval", "500");
-                            setSetting("notificationLength", "2000");
-                            Logger.getGlobal().log(Level.INFO, "Created file and wrote default configuration to file");
-                        } else {
-                            Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration file");
-                        }
-                    } catch (IOException ioe) {
-                        Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration file - IOException: " + ioe.getMessage());
+            if (!file.getParentFile().mkdirs()) {
+                try {
+                    if (file.createNewFile()) {
+                        Logger.getGlobal().log(Level.INFO, "Writing new values");
+                        List<String> lines = new ArrayList<>();
+                        lines.add("logPath" + getSettingDelimiter() + "log/");
+                        lines.add("CAPassword" + getSettingDelimiter());
+                        lines.add("refreshInterval" + getSettingDelimiter() + "500");
+                        lines.add("notificationLength" + getSettingDelimiter() + "2000");
+                        Files.write(filePath, lines, StandardCharsets.UTF_8);
+                        Logger.getGlobal().log(Level.INFO, "Created file and wrote default configuration to file");
+                    } else {
+                        Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration file");
                     }
-                } else {
-                    Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration directory");
+                } catch (IOException ioe) {
+                    Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration file - IOException: " + ioe.getMessage());
                 }
             } else {
-                Logger.getGlobal().log(Level.SEVERE, "Unable to write to parent directory");
+                Logger.getGlobal().log(Level.SEVERE, "Unable to make configuration directory");
             }
         }
     }

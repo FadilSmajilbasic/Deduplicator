@@ -6,8 +6,8 @@ samt/smajilbasic/Application.class
 samt/smajilbasic/properties/SettingsManager.class
 samt/smajilbasic/views/ScanView.class
 samt/smajilbasic/views/LoginView.class
-samt/smajilbasic/logger/MyLogger.class
 samt/smajilbasic/model/PathType.class
+samt/smajilbasic/logger/MyLogger.class
 samt/smajilbasic/views/PathView.class
 samt/smajilbasic/views/SchedulerView.class
 samt/smajilbasic/entity/Scheduler.class
@@ -16,8 +16,8 @@ samt/smajilbasic/views/MainView.class
 samt/smajilbasic/listener/DeduplicatorGUIInitListener.class
 samt/smajilbasic/entity/Action.class
 samt/smajilbasic/model/Validator.class
-samt/smajilbasic/model/Resources.class
 samt/smajilbasic/service/DuplicateGridService.class
+samt/smajilbasic/model/Resources.class
 samt/smajilbasic/authentication/CurrentUser.class
 samt/smajilbasic/views/ScanView$1.class
 samt/smajilbasic/authentication/AccessControlFactory.class

@@ -73,6 +73,7 @@ public class Settings {
     }
 
     public String getLogPath() {
+        loadSettings();
         return logPath;
     }
 
@@ -92,6 +93,7 @@ public class Settings {
     }
 
     public String getCaPassword() {
+        loadSettings();
         return caPassword;
     }
 
@@ -102,6 +104,7 @@ public class Settings {
     }
 
     public int getRefreshInterval() {
+        loadSettings();
         return refreshInterval;
     }
 
@@ -114,6 +117,7 @@ public class Settings {
     }
 
     public int getNotificationLength() {
+        loadSettings();
         return notificationLength;
     }
 
