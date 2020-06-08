@@ -61,3 +61,7 @@ out/
 log/
 node_modules/
 target/
+webpack.config.js
+webpack.generated.js
+package.json
+package-lock.json
