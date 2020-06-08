@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <vaadin.version>14.1.5</vaadin.version>
+        <vaadin.version>14.1.28</vaadin.version>
 
         <drivers.dir>${project.basedir}/drivers</drivers.dir>
         <drivers.downloader.phase>pre-integration-test</drivers.downloader.phase>
@@ -364,41 +364,6 @@
                     </plugin>
                 </plugins>
             </build>
-
-
         </profile>
-
-        <profile>
-            <id>build-executable</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <configuration>
-                                    <archive>
-                                        <manifest>
-                                            <mainClass>
-                                                samt.smajilbasic.Application
-                                            </mainClass>
-                                        </manifest>
-                                    </archive>
-                                    <descriptorRefs>
-                                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                                    </descriptorRefs>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
     </profiles>
 </project>
