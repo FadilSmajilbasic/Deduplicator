@@ -59,5 +59,4 @@ out/
 ### VS Code ###
 .vscode/
 log/
-5_Applicativo/deduplicatorVaadinGUI/node_modules/
-5_Applicativo/deduplicatorVaadinGUI/node_modules/.cache/babel-loader/es5/0a0eae925d4b75a772d83f7731cb7f12.json.gz
+node_modules/**
